@@ -2,12 +2,16 @@
 
 For the human side: `/human` and `/c/[code]`. Read [DIRECTION.md](DIRECTION.md) first.
 
-**This is a mobile utility flow.** Use the tokens, primary and secondary buttons, inputs, the badge, cards and the pulsing live dot. Leave out:
-- hover-only effects as essentials (phones don't hover)
-- gradient overlays on cards
-- marketing-section spacing
+**Desktop-first, responsive down to phones** (changed 2026-10-11). Lay pages out like a modern product site on a laptop, using the reference screenshot [human-desktop-reference.png](human-desktop-reference.png). It has:
+- a top nav bar with the logo on the left, links in the middle and actions on the right
+- a bento grid of white, rounded, bordered cards. The first card is large and spans 2 columns × 2 rows; the smaller cards sit beside it and in a row below.
+- a rounded-square gradient icon tile on each card (rounder and larger on the featured card), a semibold Inter title, and muted body text
+- a "Learn more →"-style accent link at the bottom of the featured card
+- generous whitespace and a faint accent glow in the page background
 
-Calistoga is only for the big pay amount and page titles.
+Hover effects are welcome on desktop: lift, deeper shadow, the icon scaling up, and a faint accent gradient overlay on cards. Nothing essential may depend on hover, because phones still use these pages. On phones everything stacks into one column with full-width buttons.
+
+Calistoga is for page titles, section headlines and the big pay amounts.
 
 ## Philosophy
 
@@ -107,7 +111,8 @@ All buttons use `transition-all duration-200`.
 ### Cards
 
 - White background, 1px border, `rounded-xl` or `rounded-2xl`, `shadow-human-md`, padding `p-5` on phones and `p-6` to `p-10` on larger screens.
-- No gradient overlays on the human side.
+- **Hover (desktop):** `shadow-human-xl`, a lift, and a faint accent overlay (`bg-human-card-glow`, faded in). On the featured card, add a soft corner glow (`bg-human-corner-glow`).
+- **Icon tiles:** a rounded square with `bg-human-gradient` and a white Lucide icon. 56px on small cards, 72–88px with a larger radius on the featured card. On card hover the tile scales up a little.
 
 ### Inputs
 
@@ -131,6 +136,7 @@ All buttons use `transition-all duration-200`.
 - **Easing:** `ease-human`, which is `cubic-bezier(0.16, 1, 0.3, 1)`.
 - **Entrances:** `animate-human-fade-up` fades up 28px over 0.7s. Stagger items 0.1s with `animation-delay`.
 - **Hover transitions:** 200–300ms.
+- **Continuous (decorative only, desktop only, `motion-safe:`):** `animate-human-float` bobs an element 10px over 5s, and `animate-human-spin-slow` turns a decorative ring once a minute.
 - **No Framer Motion:** it isn't in the stack. Use CSS animations only.
 - **Reduced motion:** when `prefers-reduced-motion` is set there are no entrance animations, no pulsing and no flashes. `globals.css` cuts every animation short under reduced motion; still use `motion-safe:` for anything you add.
 

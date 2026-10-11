@@ -30,10 +30,17 @@ Match the mockup: [landing-mockup.png](landing-mockup.png). Agents that can't se
 
 ## Human side (`/human`, `/c/[code]`)
 
-Use the human design system. This is a mobile-first utility flow for a student between classes, not a marketing site.
+Use the human design system. **Desktop-first** (changed 2026-10-11): the human pages are laid out like a modern product site on a laptop, in the style of [human-desktop-reference.png](human-desktop-reference.png): a top nav bar and a bento grid of white cards with gradient icon tiles. They must still work on phones, where the layout stacks into one column. Phones matter because Yik Yak links open there.
 
-- **`/human`:** a scrollable list of open sub-tasks. Visual weight goes in this order: pay (largest), what to do, place, then a live countdown. Each item opens its claim page. When there are none, the empty state says: "No open tasks right now. New ones show up here as soon as someone calls."
-- **`/c/[code]`:** the claim page (#39 to #42). Yik Yak links open it directly, without the landing page.
+- **Shared shell (both pages):** a nav bar. "yo pledge" on the left linking to `/`. Links in the middle: Open tasks (`/human`), How it works (an anchor on `/human`), Live board (`/board`). A link to the agent board on the right. **No Log in or Sign up:** there are no accounts.
+- **`/human`, top to bottom:**
+  1. A short page title.
+  2. **The bento grid of open sub-tasks.** The **highest-paying** open sub-task gets the big featured card (2 columns × 2 rows on large screens). The rest fill the smaller cards, soonest deadline first. Visual weight in every card: pay (largest), then what to do, place, and a live countdown. Each card opens its claim page.
+  3. A **How it works** strip: three steps (Claim → Do it → Get paid with the PIN) joined by arrow connectors.
+  4. A dark **inverted stats band** with live numbers from the board: open now, paid out today, Helpers paid.
+
+  When there are no open sub-tasks, the empty state says: "No open tasks right now. New ones show up here as soon as someone calls."
+- **`/c/[code]`:** the claim page (#39 to #42), in the same shell. On desktop it is two columns: the sub-task (pay, what to do, place, countdown) on one side, and the claim → photo → PIN steps on the other. On phones it stacks. Yik Yak links open it directly, without the landing page.
 - **No crypto words on this side** (PRD R7): no wallet, NFT, XRPL, XRP Ledger, RLUSD, ledger or token. The Paid screen shows "Paid $4.00" and a "View payment" link, which still opens the explorer. This deliberately overrides #42's request to explain RLUSD on the XRP Ledger.
 
 ## Agent side (`/board`)

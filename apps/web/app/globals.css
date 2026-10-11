@@ -79,6 +79,9 @@
   --human-gradient: linear-gradient(135deg, #0052ff, #4d7cff);
   /* Behind button text: ends at #2E66FF so white text stays >= 4.71:1. */
   --human-gradient-button: linear-gradient(to right, #0052ff, #2e66ff);
+  /* Faint accent wash for card hover, and a soft glow for the featured card's corner. */
+  --human-card-glow: linear-gradient(135deg, rgb(0 82 255 / 0.04), transparent 60%);
+  --human-corner-glow: radial-gradient(circle at 100% 0%, rgb(77 124 255 / 0.1), transparent 55%);
   /* Faint dot grid for inverted (slate) blocks. */
   --human-dots: radial-gradient(rgb(255 255 255 / 0.08) 1px, transparent 1px);
 }
@@ -188,6 +191,8 @@ body:has([data-surface="agent"]) { background: #0a0a0a; }
   /* Human: live dot pulse and entrance fade-up. */
   --animate-human-pulse: human-pulse 2s ease-in-out infinite;
   --animate-human-fade-up: human-fade-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-human-float: human-float 5s ease-in-out infinite;
+  --animate-human-spin-slow: human-spin 60s linear infinite;
 
   /* Agent: cursor blink, new-task arrival flash, tx validated flash. */
   --animate-term-blink: term-blink 1.06s steps(1, end) infinite;
@@ -197,6 +202,13 @@ body:has([data-surface="agent"]) { background: #0a0a0a; }
   @keyframes human-pulse {
     0%, 100% { transform: scale(1); opacity: 1; }
     50% { transform: scale(1.3); opacity: 0.7; }
+  }
+  @keyframes human-float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+  @keyframes human-spin {
+    to { transform: rotate(360deg); }
   }
   @keyframes human-fade-up {
     from { opacity: 0; transform: translateY(28px); }
@@ -235,6 +247,12 @@ body:has([data-surface="agent"]) { background: #0a0a0a; }
   background-clip: text;
   -webkit-background-clip: text;
   color: transparent;
+}
+@utility bg-human-card-glow {
+  background-image: var(--human-card-glow);
+}
+@utility bg-human-corner-glow {
+  background-image: var(--human-corner-glow);
 }
 @utility bg-human-dots {
   background-image: var(--human-dots);
