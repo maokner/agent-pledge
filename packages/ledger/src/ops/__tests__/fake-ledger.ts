@@ -23,7 +23,7 @@ const hex64 = (prefix: string, n: number) =>
 /**
  * An in-memory XRPL behind the client methods that the core submitTx and the ops use:
  * isConnected, autofill, getLedgerIndex, and request (submit, tx, account_tx, account_nfts,
- * nft_sell_offers). No network.
+ * nft_sell_offers, ledger_entry for offers). No network.
  *
  * - Submitted blobs are decoded, so tests inspect the real signed transactions (`submitted`).
  * - Like rippled, a submit applies the transaction to the state at once (the open ledger), but it
@@ -71,6 +71,11 @@ export class FakeLedger {
           return this.submit(String(req.tx_blob));
         case "tx": {
           const hash = String(req.transaction);
+          const old = this.history.find((e) => e.hash === hash);
+          if (old) {
+            // Already validated: the port's verifyTx reads it again.
+            return { result: { ...old.tx_json, hash, validated: true, meta: old.meta } };
+          }
           const entry = this.pending.get(hash);
           if (!entry) throw new RippledError("txnNotFound", { error: "txnNotFound" });
           this.pending.delete(hash);
@@ -108,6 +113,23 @@ export class FakeLedger {
             throw new RippledError("objectNotFound", { error: "objectNotFound" });
           }
           return { result: { nft_id: req.nft_id, offers } };
+        }
+        case "ledger_entry": {
+          const offer = this.offers.get(String(req.index));
+          if (!offer) throw new RippledError("entryNotFound", { error: "entryNotFound" });
+          return {
+            result: {
+              index: req.index,
+              node: {
+                LedgerEntryType: "NFTokenOffer",
+                NFTokenID: offer.nftId,
+                Owner: offer.owner,
+                Amount: offer.amount,
+                Flags: 1,
+                ...(offer.destination ? { Destination: offer.destination } : {}),
+              },
+            },
+          };
         }
         default:
           throw new Error(`unexpected ${req.command}`);
