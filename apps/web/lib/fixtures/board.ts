@@ -102,6 +102,29 @@ export function buildLiveRun(opts: { run: number; startSeq: number; startTime: n
   return b.events;
 }
 
+/** The task from a create_task call (the backup form, #38), run through to payout. */
+export function buildCreatedTaskRun(opts: {
+  task: { task_id: string; description: string; place: string; time_limit_minutes: number; price_usd: number };
+  claimCode: string;
+  startSeq: number;
+  startTime: number;
+  stepMs: number;
+}): BoardEvent[] {
+  const { task } = opts;
+  const b = new ScenarioBuilder({ startSeq: opts.startSeq, startTime: opts.startTime, stepMs: opts.stepMs });
+  seatHoldFlow(b, {
+    taskId: task.task_id,
+    subtaskId: task.task_id.replace(/^tsk_/, "sub_"),
+    claimCode: opts.claimCode,
+    description: task.description,
+    place: task.place,
+    timeLimitMinutes: task.time_limit_minutes,
+    price: String(task.price_usd),
+    stopAt: "paid",
+  });
+  return b.events;
+}
+
 export function foldEvents(events: BoardEvent[], from: BoardState = initialBoardState): BoardState {
   return events.reduce(applyBoardMessage, from);
 }

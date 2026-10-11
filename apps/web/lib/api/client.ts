@@ -21,7 +21,10 @@ export interface ApiClient {
   getBoardState(): Promise<BoardSnapshot>;
   /** GET /tasks/:id.json */
   getTaskJson(id: TaskId | SubtaskId): Promise<TaskNftData>;
-  /** POST /tools/create_task, for the backup form on the board (#38). See CONTRACT.md on auth. */
+  /**
+   * POST /tools/create_task. Needs the voice secret, so only the backup form's route handler calls it,
+   * on the web server (lib/backup-task/handler.ts). The browser posts to /api/backup-task instead.
+   */
   createTask(request: CreateTaskRequest): Promise<CreateTaskResponse>;
 
   /** GET /claim/:code */

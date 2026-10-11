@@ -1,17 +1,20 @@
 "use client";
 
+import { selectAgentLog } from "@/lib/board/agent-log";
 import { selectTaskViews } from "@/lib/board/selectors";
 import { useBoard } from "@/lib/board/use-board";
 import { FIXTURE_MODE } from "@/lib/config";
 import { FixtureBadge } from "@/components/ui/FixtureBadge";
 import { AgentLog } from "./AgentLog";
+import { BackupTaskForm } from "./BackupTaskForm";
 import { ConnectionStatus } from "./ConnectionStatus";
 import { FixtureControls } from "./FixtureControls";
+import { LatencyMeter } from "./LatencyMeter";
 import { TaskCard } from "./TaskCard";
 
 /** The public board (PRD 9.1): every task with its sub-tasks and transactions, plus the agent log. */
 export function Board() {
-  const { state, status } = useBoard();
+  const { state, status, latency } = useBoard();
   const tasks = selectTaskViews(state);
 
   return (
@@ -24,6 +27,7 @@ export function Board() {
         <div className="flex items-center gap-3">
           {FIXTURE_MODE && <FixtureControls />}
           <ConnectionStatus status={status} seq={state.seq} />
+          <LatencyMeter latency={latency} seq={state.seq} />
         </div>
       </header>
 
@@ -35,8 +39,12 @@ export function Board() {
             tasks.map((view) => <TaskCard key={view.task.id} view={view} />)
           )}
         </section>
-        <AgentLog lines={state.agentLog} />
+        <AgentLog entries={selectAgentLog(state)} />
       </div>
+
+      <footer className="flex justify-end">
+        <BackupTaskForm isOnBoard={(taskId) => taskId in state.tasks} />
+      </footer>
     </div>
   );
 }
