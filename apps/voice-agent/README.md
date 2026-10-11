@@ -14,7 +14,7 @@ Everything in this package works and is tested without an ElevenLabs API key.
 | `prompt/system-prompt.md` | The agent's system prompt (issue 12). |
 | `prompt/first-message.txt` | What the agent says when it answers. |
 | `tools/create_task.json`, `tools/task_status.json` | The two server tools, in the exact `POST /v1/convai/tools` format, with `${PUBLIC_BASE_URL}` and `${VOICE_TOOL_SECRET_ID}` placeholders (issue 13). |
-| `transcripts/` | Sample calls: normal, no price, not a seat, server error, and "right now". Tests check them against the prompt rules and the samples. |
+| `transcripts/` | Sample calls: normal, no price, not a seat, server error, "right now", and a seat with a coffee. Tests check them against the prompt rules and the samples. |
 | `scripts/provision.ts` | Creates or updates the agent (`pnpm provision`). |
 | `scripts/mock-server.ts` | A local stand-in for the server's tool endpoints (`pnpm mock-server`). |
 | `scripts/simulate.ts` | Sends the sample payloads to a server and checks the responses (`pnpm simulate`). |

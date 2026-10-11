@@ -12,6 +12,7 @@ import {
   SAMPLE_NORMAL_CALL,
   SAMPLE_NO_PRICE_CALL,
   SAMPLE_RIGHT_NOW_CALL,
+  SAMPLE_SEAT_AND_COFFEE_CALL,
   SAMPLE_SERVER_ERROR_CALL,
 } from "../src/samples.js";
 import { packagePath } from "../src/paths.js";
@@ -46,6 +47,7 @@ const FILES = [
   "03-not-a-seat.md",
   "04-server-error.md",
   "05-right-now.md",
+  "06-seat-and-coffee.md",
 ];
 
 describe("every transcript", () => {
@@ -72,6 +74,14 @@ describe("every transcript", () => {
   it.each(FILES)("%s sends only valid create_task payloads", (file) => {
     for (const args of toolCalls(load(file), "create_task")) {
       expect(() => createTaskInputSchema.parse(args)).not.toThrow();
+    }
+  });
+
+  it.each(FILES)("%s puts only the seat hold in the description", (file) => {
+    for (const args of toolCalls(load(file), "create_task")) {
+      expect(createTaskInputSchema.parse(args).description).toMatch(
+        /^Save (one|two|three|four) seats?$/,
+      );
     }
   });
 
@@ -146,6 +156,14 @@ describe("02 no price", () => {
   });
 });
 
+/** The agent turn right after the first caller turn that matches. */
+function answerTo(events: TranscriptEvent[], caller: RegExp): string {
+  const i = events.findIndex((e) => e.kind === "caller" && caller.test(e.text));
+  const next = events[i + 1];
+  if (i < 0 || next?.kind !== "agent") throw new Error(`no agent answer to ${caller}`);
+  return next.text;
+}
+
 describe("03 not a seat", () => {
   const events = load("03-not-a-seat.md");
 
@@ -154,6 +172,34 @@ describe("03 not a seat", () => {
     expect(lines.filter((l) => l.startsWith(REFUSAL)).length).toBeGreaterThanOrEqual(1);
     expect(toolCalls(events, "create_task")).toEqual([]);
     expect(lines.join(" ")).not.toMatch(/Your PIN/);
+  });
+
+  it("refuses food delivery and a spot in a line", () => {
+    expect(answerTo(events, /burrito/)).toMatch(new RegExp(`^${REFUSAL}`));
+    expect(answerTo(events, /spot in the line/)).toMatch(new RegExp(`^${REFUSAL}`));
+  });
+});
+
+describe("06 seat and coffee", () => {
+  const events = load("06-seat-and-coffee.md");
+
+  it("refuses the coffee and offers only the seat hold", () => {
+    expect(answerTo(events, /coffee/)).toBe(`${REFUSAL} Do you want me to save just the seat?`);
+  });
+
+  it("keeps the coffee out of the summary and the task", () => {
+    expect(toolCalls(events, "create_task")).toEqual([SAMPLE_SEAT_AND_COFFEE_CALL]);
+    expect(JSON.stringify(SAMPLE_SEAT_AND_COFFEE_CALL)).not.toMatch(/coffee/i);
+    const summary = agentLines(events).find((l) => l.startsWith("To confirm:"));
+    expect(summary).not.toMatch(/coffee/i);
+  });
+
+  it("says the PIN from the tool result two times", () => {
+    expect(
+      agentLines(events)
+        .join(" ")
+        .split(spoken(successfulPin(events))).length - 1,
+    ).toBe(2);
   });
 });
 

@@ -66,8 +66,12 @@ For each test, write the result in the table at the end.
       Compare with `transcripts/02-no-price.md`.
 - [ ] **T6. Not a seat hold.**
       Ask for a food delivery.
-      Pass if the agent says exactly "Right now I can only save seats." and the mock log shows no create_task request.
+      Then ask the agent to "hold my spot in the line outside Sproul".
+      Pass if the agent says exactly "Right now I can only save seats." both times and the mock log shows no create_task request.
       Compare with `transcripts/03-not-a-seat.md`.
+      In a second call, say: "Save me a seat at the Free Speech Movement Cafe and grab me a coffee. 10 minutes, 6 dollars."
+      Pass if the agent says the same sentence, offers to save only the seat, and the create_task `description` does not mention the coffee.
+      Compare with `transcripts/06-seat-and-coffee.md`.
 - [ ] **T7. Server down.**
       Stop the mock server, or start it with `pnpm mock-server --fail create_task`.
       Make a normal call.

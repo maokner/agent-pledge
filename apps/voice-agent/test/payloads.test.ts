@@ -110,6 +110,11 @@ describe("create_task tool", () => {
     expect(props.place?.type).toBe("string");
   });
 
+  it("tells the LLM to keep add-ons out of the description", () => {
+    expect(props.description?.description).toMatch(/only the seat hold/i);
+    expect(props.description?.description).toMatch(/add-on/);
+  });
+
   it("tells the LLM never to guess the price", () => {
     expect(props.price_usd?.description).toMatch(/never guess/i);
   });

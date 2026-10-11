@@ -13,6 +13,7 @@ export const SAMPLE_CALL_IDS = {
   noPrice: "conv_sample_02",
   serverError: "conv_sample_04",
   rightNow: "conv_sample_05",
+  seatAndCoffee: "conv_sample_06",
 } as const;
 
 /** transcripts/01-normal-call.md */
@@ -53,4 +54,14 @@ export const SAMPLE_RIGHT_NOW_CALL: CreateTaskInput = {
   price_usd: 4,
   caller_phone: "+15105550171",
   call_id: SAMPLE_CALL_IDS.rightNow,
+};
+
+/** transcripts/06-seat-and-coffee.md: the caller also asks for a coffee, which stays out of the task. */
+export const SAMPLE_SEAT_AND_COFFEE_CALL: CreateTaskInput = {
+  description: "Save one seat",
+  place: "the Free Speech Movement Cafe",
+  time_limit_minutes: 10,
+  price_usd: 6,
+  caller_phone: "+15105550163",
+  call_id: SAMPLE_CALL_IDS.seatAndCoffee,
 };

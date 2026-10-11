@@ -29,7 +29,7 @@
         "properties": {
           "description": {
             "type": "string",
-            "description": "The task in a few words, without the place, the time, or the price. Example: Save one seat."
+            "description": "Only the seat hold, in a few words, without the place, the time, the price, or any add-on such as coffee. Example: Save one seat."
           },
           "place": {
             "type": "string",

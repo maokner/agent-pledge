@@ -8,9 +8,10 @@ The board URL `https://agent-pledge.fly.dev/board` is an example; the real URL c
 |---|---|
 | 01-normal-call.md | The caller gives all four values at once. |
 | 02-no-price.md | The caller does not give a price, and asks about the task status. |
-| 03-not-a-seat.md | The caller asks for food delivery. |
+| 03-not-a-seat.md | The caller asks for food delivery, then for a spot in a line. |
 | 04-server-error.md | The server fails two times. |
 | 05-right-now.md | The caller says "right now", so the agent makes the time limit 2 minutes. |
+| 06-seat-and-coffee.md | The caller asks for a seat and a coffee, and the agent saves only the seat. |
 
 Format rules, which `test/transcripts.test.ts` checks:
 

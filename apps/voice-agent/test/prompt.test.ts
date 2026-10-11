@@ -28,6 +28,29 @@ describe("system prompt", () => {
     expect(systemPrompt).toMatch(/Do not create a task that is not a seat hold/);
   });
 
+  it("defines a seat hold narrowly and names what is not one", () => {
+    expect(systemPrompt).toContain(
+      "A seat hold is a request to save a seat or a chair at a table, at a desk, or in a room, for the caller.",
+    );
+    expect(systemPrompt).toContain(
+      "These are not seat holds: a spot in a line or a queue, a parking spot, and any add-on to the seat, for example coffee, food, or printing.",
+    );
+    expect(systemPrompt).not.toMatch(/a seat, a spot, or a place/);
+  });
+
+  it("refuses an add-on with the exact sentence and offers only the seat hold", () => {
+    expect(systemPrompt).toContain(
+      "If the caller asks for a seat hold and also for an add-on, say exactly the same sentence, then offer to do only the seat hold.",
+    );
+    expect(systemPrompt).toContain(`"${REFUSAL} Do you want me to save just the seat?"`);
+  });
+
+  it("keeps add-ons out of the description", () => {
+    expect(systemPrompt).toContain(
+      '- description: only the seat hold, in a few words, for example "Save one seat". Never put an add-on, the place, the time, or the price in it.',
+    );
+  });
+
   it("collects all four values", () => {
     for (const value of ["The task:", "The place:", "The time limit:", "The maximum price:"]) {
       expect(systemPrompt).toContain(value);
