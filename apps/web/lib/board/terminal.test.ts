@@ -1,5 +1,31 @@
 import { describe, expect, it } from "vitest";
-import { asciiBar, pendingFraction, txTag, workTag, wrapWithContinuation } from "./terminal";
+import { asciiBar, edgeTag, pendingFraction, timeLeftFraction, txTag, workTag, wrapWithContinuation } from "./terminal";
+
+describe("edgeTag", () => {
+  it("names each money-tree edge state in text, so the tree never relies on color", () => {
+    expect(edgeTag("planned")).toEqual({ tag: "[--]", word: null, tone: "planned" });
+    expect(edgeTag("pending")).toEqual({ tag: "[..]", word: null, tone: "pending" });
+    expect(edgeTag("settled")).toEqual({ tag: "[HELD]", word: null, tone: "claimed" });
+    expect(edgeTag("paid")).toEqual({ tag: "[OK]", word: null, tone: "validated" });
+    expect(edgeTag("returned")).toEqual({ tag: "[RFND]", word: "↩", tone: "refund" });
+    expect(edgeTag("failed")).toEqual({ tag: "[ERR]", word: null, tone: "failed" });
+  });
+});
+
+describe("timeLeftFraction", () => {
+  const deadline = "2026-10-11T12:03:00.000Z";
+  const at = (iso: string) => Date.parse(iso);
+
+  it("is the share of the time limit still left", () => {
+    expect(timeLeftFraction(deadline, 3, at("2026-10-11T12:00:00.000Z"))).toBe(1);
+    expect(timeLeftFraction(deadline, 3, at("2026-10-11T12:01:30.000Z"))).toBe(0.5);
+  });
+
+  it("is 0 after the deadline and full before the clock starts", () => {
+    expect(timeLeftFraction(deadline, 3, at("2026-10-11T12:05:00.000Z"))).toBe(0);
+    expect(timeLeftFraction(deadline, 3, null)).toBe(1);
+  });
+});
 
 describe("workTag", () => {
   it("gives every work status its tag from the board status map", () => {

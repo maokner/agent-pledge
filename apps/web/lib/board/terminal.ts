@@ -2,6 +2,7 @@
  * Pure helpers for the board's terminal look (docs/design/agent-design-system.md).
  */
 import type { LedgerTx, TxKind, WorkStatus } from "@agent-pledge/shared";
+import type { EdgeState } from "./money-tree";
 
 /** The board status map's keys; each has a `term-status-*` color token. */
 export type TermTone = "open" | "claimed" | "done" | "failed" | "pending" | "validated" | "refund";
@@ -38,6 +39,32 @@ export function txTag(tx: Pick<LedgerTx, "status" | "kind">): TermTag {
     case "validated":
       return REFUND_KINDS.has(tx.kind) ? { tag: "[RFND]", word: "↩", tone: "refund" } : { tag: "[OK]", word: null, tone: "validated" };
   }
+}
+
+/** A money-tree edge's tag; "planned" (not on the ledger yet) is drawn dashed and dim. */
+export interface EdgeTag extends Omit<TermTag, "tone"> {
+  tone: TermTone | "planned";
+}
+
+const EDGE_TAG: Record<EdgeState, EdgeTag> = {
+  planned: { tag: "[--]", word: null, tone: "planned" },
+  pending: { tag: "[..]", word: null, tone: "pending" },
+  settled: { tag: "[HELD]", word: null, tone: "claimed" },
+  paid: { tag: "[OK]", word: null, tone: "validated" },
+  returned: { tag: "[RFND]", word: "↩", tone: "refund" },
+  failed: { tag: "[ERR]", word: null, tone: "failed" },
+};
+
+/** A money-tree edge's state as text: `[HELD]` in the vault, `[OK]` paid, `[RFND] ↩` returned. */
+export function edgeTag(state: EdgeState): EdgeTag {
+  return EDGE_TAG[state];
+}
+
+/** The share of a time limit still left before `deadline`; 1 before the clock starts. */
+export function timeLeftFraction(deadline: string, limitMinutes: number, now: number | null): number {
+  if (now === null) return 1;
+  const left = (Date.parse(deadline) - now) / (limitMinutes * 60_000);
+  return Number.isFinite(left) ? Math.min(1, Math.max(0, left)) : 0;
 }
 
 /** An ASCII progress bar: `asciiBar(0.375, 8)` -> "[|||.....]". */
