@@ -72,10 +72,9 @@ What changes:
   the agent log and the transactions are 22.5 px. On a 3 m wide screen a 1080p pixel is about 1.6 mm, so
   the status capitals are about 4 cm tall: about 14 arc minutes at 10 m, where 5 is the limit of
   normal sight. NFT IDs are left out of the money tree, since nobody can read hex on a wall.
-- **Colors for a washed-out projector.** Always the light scheme, even if the laptop is in dark mode
-  (a projector cannot show black, so dark pages turn grey in a lit room). White background, black text,
-  2 px grey borders instead of faint tints, status bands and solid badges one shade darker than normal
-  (sky, emerald and rose 700), and no light-grey text. Each status is also a word, never only a color.
+- **Colors.** The board is dark terminal style in every mode, big-screen mode included: the demo screen
+  shows black fine. Big-screen mode keeps the scanlines fainter and the phosphor glow subtle so large text
+  stays sharp. See `docs/design/agent-design-system.md`. Each status is also a text tag, never only a color.
 
 Checked in a browser at 1920x1080 and 1280x720 with `/preview?layout=one|three|stops&projector=1` and the
 live fixture stream. **Still to do at rehearsal (#30):** on the real projector, open `/?projector=1` in

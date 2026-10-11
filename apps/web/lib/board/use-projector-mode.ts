@@ -8,8 +8,8 @@ const CHANGE_EVENT = "agent-pledge:projector-change";
 /**
  * Projector mode (#43): on from `?projector=1` or the toggle, remembered in
  * localStorage. While on, `<html>` carries `data-projector`, which switches
- * on the `projector:` Tailwind variant, scales the page to the screen and
- * forces the light color scheme (see app/globals.css).
+ * on the `projector:` Tailwind variant and scales the page to the screen
+ * (see app/globals.css). The board stays dark in this mode.
  *
  *   const [projector, setProjector] = useProjectorMode();
  */
