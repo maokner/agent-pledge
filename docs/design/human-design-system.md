@@ -11,7 +11,7 @@ For the human side: `/human` and `/c/[code]`. Read [DIRECTION.md](DIRECTION.md) 
 
 Hover effects are welcome on desktop: lift, deeper shadow, the icon scaling up, and a faint accent gradient overlay on cards. Nothing essential may depend on hover, because phones still use these pages. On phones everything stacks into one column with full-width buttons.
 
-Calistoga is for page titles, section headlines and the big pay amounts.
+**Inter for all text** (changed 2026-10-11): titles, headlines, pay amounts, body, labels and badges. Calistoga and JetBrains Mono are not used on the human side.
 
 ## Philosophy
 
@@ -23,9 +23,9 @@ Clarity through structure, character through bold detail. Use few elements, each
 - **Inverted contrast:** an occasional block in deep slate (#0F172A) with light text and a faint dot pattern, for emphasis.
 - **Living details:** pulsing dots for "live", and shadows that deepen on press. Motion should feel natural, never decorative.
 - **Fonts:**
-  - Calistoga, a warm serif, only for the big pay amount and page titles.
+  - Inter for everything: bold or semibold with tight tracking for titles and pay, regular for body.
   - Inter for everything else.
-  - JetBrains Mono for small labels and badges.
+  - Small labels and badges are Inter too, uppercase with wide tracking.
 - **Texture:** faint dot grids on dark blocks, soft accent glows and layered shadows instead of flat fills.
 
 ## Tokens
@@ -66,10 +66,10 @@ The danger, success and warning tokens were added for the claim page's states (w
 
 ## Typography
 
-- **Headlines:** Calistoga (`font-display`), tracking -0.02em, leading 1.05–1.15. One key word may use gradient text.
+- **Headlines and pay amounts:** Inter bold or semibold, tracking -0.02em, leading 1.05–1.15. One key word may use gradient text.
 - **Card titles:** Inter 600, lg to 2xl, tracking -0.01em.
 - **Body:** Inter 400, base to lg, line-height 1.625–1.75.
-- **Labels:** JetBrains Mono (`font-mono`) 12px, uppercase, tracking 0.15em, inside a pill badge.
+- **Labels:** Inter 12px, medium, uppercase, tracking 0.15em, inside a pill badge.
 
 ## Layout
 
@@ -124,7 +124,7 @@ All buttons use `transition-all duration-200`.
 
 - A `rounded-full` pill with an accent/30 border, accent/5 background and `px-5 py-2` padding.
 - A small accent dot, which may pulse.
-- Label text: JetBrains Mono xs, uppercase, tracking 0.15em, accent color.
+- Label text: Inter xs, medium, uppercase, tracking 0.15em, accent color.
 
 ### Live dot
 
