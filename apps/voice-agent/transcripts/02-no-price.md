@@ -27,12 +27,7 @@ What is the most you will pay, in dollars?
 
 **Caller:** OK, 8 dollars.
 
-**Agent:** To confirm: save two seats, at Main Stacks, second floor, near the windows, within 15 minutes, for up to 8 dollars.
-Is that right?
-
-**Caller:** Yes.
-
-**Agent:** One moment.
+**Agent:** Sure thing, gotcha covered.
 
 **Tool call:** `create_task`
 
@@ -58,10 +53,7 @@ Is that right?
 ```
 
 **Agent:** Your PIN is 0, 7, 3, 6.
-Again: 0, 7, 3, 6.
-Give this PIN to the helper when you meet them.
-You can watch your task at agent dash pledge dot fly dot dev slash board.
-Do you need anything else?
+Later!
 
 **Caller:** Has anyone taken it yet?
 

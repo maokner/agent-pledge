@@ -9,12 +9,7 @@ I'm your Pledge, I can do anything you want, so what do you need?
 **Caller:** Save me a seat at the front table in the next 3 minutes.
 I will pay 5 dollars.
 
-**Agent:** To confirm: save one seat, at the front table, within 3 minutes, for up to 5 dollars.
-Is that right?
-
-**Caller:** Yes.
-
-**Agent:** One moment.
+**Agent:** Sure thing, gotcha covered.
 
 **Tool call:** `create_task`
 
@@ -40,14 +35,7 @@ Is that right?
 ```
 
 **Agent:** Your PIN is 4, 8, 2, 1.
-Again: 4, 8, 2, 1.
-Give this PIN to the helper when you meet them.
-You can watch your task at agent dash pledge dot fly dot dev slash board.
-Do you need anything else?
-
-**Caller:** No, that's it.
-
-**Agent:** Thanks, goodbye.
+Later!
 
 **Tool call:** `end_call`
 

@@ -15,12 +15,7 @@ Is that OK?
 
 **Caller:** Sure.
 
-**Agent:** To confirm: save one seat, at the front table, within 2 minutes, for up to 4 dollars.
-Is that right?
-
-**Caller:** Yes.
-
-**Agent:** One moment.
+**Agent:** Sure thing, gotcha covered.
 
 **Tool call:** `create_task`
 
@@ -46,14 +41,7 @@ Is that right?
 ```
 
 **Agent:** Your PIN is 3, 9, 6, 5.
-Again: 3, 9, 6, 5.
-Give this PIN to the helper when you meet them.
-You can watch your task at agent dash pledge dot fly dot dev slash board.
-Do you need anything else?
-
-**Caller:** No, thanks.
-
-**Agent:** Thanks, goodbye.
+Later!
 
 **Tool call:** `end_call`
 

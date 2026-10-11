@@ -68,16 +68,9 @@ function spokenUrl(url: string): string {
     .replace(/[.\-/]/g, (c) => ({ ".": " dot ", "-": " dash ", "/": " slash " })[c] as string);
 }
 
-/** Steps 7 and 8 of the prompt: the one turn that may be longer than two sentences. */
-function pinTurn(pin: string, boardUrl: string): string {
-  const digits = spoken(pin);
-  return [
-    `Your PIN is ${digits}.`,
-    `Again: ${digits}.`,
-    "Give this PIN to the helper when you meet them.",
-    `You can watch your task at ${spokenUrl(boardUrl)}.`,
-    "Do you need anything else?",
-  ].join(" ");
+/** Step 7 of the prompt: the PIN once, then the call ends. */
+function pinTurn(pin: string, _boardUrl: string): string {
+  return `Your PIN is ${spoken(pin)}. Later!`;
 }
 
 /** The agent turn right after a successful create_task result. */
@@ -149,43 +142,19 @@ describe("every transcript", () => {
     }
   });
 
-  it.each(FILES)(
-    "%s gets a yes to a summary of the exact values before every create_task",
-    (file) => {
-      const events = load(file);
-      events.forEach((e, i) => {
-        if (e.kind !== "tool_call" || e.name !== "create_task") return;
-        const args = createTaskInputSchema.parse(e.args);
-        expect(events[i - 1], "One moment. before the call").toEqual({
-          kind: "agent",
-          text: "One moment.",
-        });
-        const yes = events[i - 2];
-        expect(yes?.kind === "caller" && YES.test(yes.text), "a caller yes before the call").toBe(
-          true,
-        );
-        const asked = events[i - 3];
-        if (asked?.kind === "agent" && asked.text === RETRY_OFFER) {
-          // A retry: the previous create_task had the same values and failed with an error that is not invalid_input.
-          const previous = lastIndex(
-            events.slice(0, i - 3),
-            (x) => x.kind === "tool_call" && x.name === "create_task",
-          );
-          expect(previous, "an earlier create_task to retry").toBeGreaterThanOrEqual(0);
-          expect((events[previous] as { args: unknown }).args).toEqual(e.args);
-          const result = events[previous + 1];
-          expect(result?.kind === "tool_result" && result.status !== 200).toBe(true);
-          const body = (result as { body: unknown }).body;
-          expect(toolErrorSchema.parse(body).error).not.toBe("invalid_input");
-        } else {
-          expect(asked, "the summary right before the yes").toEqual({
-            kind: "agent",
-            text: summary(args),
-          });
-        }
+  it.each(FILES)("%s says the catchphrase and never asks for a yes before create_task", (file) => {
+    const events = load(file);
+    events.forEach((e, i) => {
+      if (e.kind !== "tool_call" || e.name !== "create_task") return;
+      createTaskInputSchema.parse(e.args);
+      expect(events[i - 1], "the catchphrase before the call").toEqual({
+        kind: "agent",
+        text: "Sure thing, gotcha covered.",
       });
-    },
-  );
+      const before = events.slice(0, i).filter((x) => x.kind === "agent");
+      for (const turn of before) expect(turn.text).not.toMatch(/To confirm|Is that right/);
+    });
+  });
 });
 
 describe("01 normal call", () => {
@@ -196,13 +165,10 @@ describe("01 normal call", () => {
     expect(SAMPLE_NORMAL_CALL.caller_phone).toBe(SAMPLE_CALLER_PHONE);
   });
 
-  it("says the PIN from the tool result two times, digit by digit", () => {
+  it("says the PIN from the tool result once, digit by digit, and no board URL", () => {
     const text = agentLines(events).join(" ");
-    expect(text.split(spoken(successfulPin(events))).length - 1).toBe(2);
-  });
-
-  it("says the board URL", () => {
-    expect(agentLines(events).join(" ")).toContain("agent dash pledge dot fly dot dev slash board");
+    expect(text.split(spoken(successfulPin(events))).length - 1).toBe(1);
+    expect(text).not.toContain("dot fly dot dev");
   });
 });
 
@@ -225,10 +191,10 @@ describe("02 no price", () => {
     expect(toolCalls(events, "create_task")).toEqual([SAMPLE_NO_PRICE_CALL]);
   });
 
-  it("says a PIN with a leading zero two times", () => {
+  it("says a PIN with a leading zero once, digit by digit", () => {
     const pin = successfulPin(events);
     expect(pin.startsWith("0")).toBe(true);
-    expect(agentLines(events).join(" ").split(spoken(pin)).length - 1).toBe(2);
+    expect(agentLines(events).join(" ").split(spoken(pin)).length - 1).toBe(1);
   });
 
   it("asks task_status for the task it created", () => {
@@ -277,16 +243,15 @@ describe("06 seat and coffee", () => {
   it("keeps the coffee out of the summary and the task", () => {
     expect(toolCalls(events, "create_task")).toEqual([SAMPLE_SEAT_AND_COFFEE_CALL]);
     expect(JSON.stringify(SAMPLE_SEAT_AND_COFFEE_CALL)).not.toMatch(/coffee/i);
-    const summary = agentLines(events).find((l) => l.startsWith("To confirm:"));
-    expect(summary).not.toMatch(/coffee/i);
+    expect(agentLines(events).find((l) => l.startsWith("To confirm:"))).toBeUndefined();
   });
 
-  it("says the PIN from the tool result two times", () => {
+  it("says the PIN from the tool result once", () => {
     expect(
       agentLines(events)
         .join(" ")
         .split(spoken(successfulPin(events))).length - 1,
-    ).toBe(2);
+    ).toBe(1);
   });
 });
 
@@ -321,21 +286,20 @@ describe("05 right now", () => {
     expect(SAMPLE_RIGHT_NOW_CALL.time_limit_minutes).toBe(2);
   });
 
-  it("tells the caller about the new time before the summary", () => {
+  it("tells the caller about the new time before creating the task", () => {
     const told = events.findIndex(
       (e) => e.kind === "agent" && e.text === "I will make that 2 minutes. Is that OK?",
     );
-    const summary = events.findIndex((e) => e.kind === "agent" && e.text.startsWith("To confirm:"));
+    const call = events.findIndex((e) => e.kind === "tool_call" && e.name === "create_task");
     expect(told).toBeGreaterThan(0);
-    expect(summary).toBeGreaterThan(told);
-    expect((events[summary] as { text: string }).text).toContain("within 2 minutes");
+    expect(call).toBeGreaterThan(told);
   });
 
-  it("says the PIN from the tool result two times", () => {
+  it("says the PIN from the tool result once", () => {
     expect(
       agentLines(events)
         .join(" ")
         .split(spoken(successfulPin(events))).length - 1,
-    ).toBe(2);
+    ).toBe(1);
   });
 });

@@ -14,12 +14,7 @@ Do you want me to save just the seat?
 
 **Caller:** OK, just the seat.
 
-**Agent:** To confirm: save one seat, at the Free Speech Movement Cafe, within 10 minutes, for up to 6 dollars.
-Is that right?
-
-**Caller:** Yes.
-
-**Agent:** One moment.
+**Agent:** Sure thing, gotcha covered.
 
 **Tool call:** `create_task`
 
@@ -45,14 +40,7 @@ Is that right?
 ```
 
 **Agent:** Your PIN is 7, 2, 4, 8.
-Again: 7, 2, 4, 8.
-Give this PIN to the helper when you meet them.
-You can watch your task at agent dash pledge dot fly dot dev slash board.
-Do you need anything else?
-
-**Caller:** No, that's all.
-
-**Agent:** Thanks, goodbye.
+Later!
 
 **Tool call:** `end_call`
 

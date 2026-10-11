@@ -10,12 +10,7 @@ I'm your Pledge, I can do anything you want, so what do you need?
 **Caller:** Hold a seat for me on the third floor of Moffitt.
 10 minutes, 6 dollars.
 
-**Agent:** To confirm: save one seat, at Moffitt Library, third floor, within 10 minutes, for up to 6 dollars.
-Is that right?
-
-**Caller:** Yes.
-
-**Agent:** One moment.
+**Agent:** Sure thing, gotcha covered.
 
 **Tool call:** `create_task`
 
@@ -44,7 +39,7 @@ Do you want me to try again?
 
 **Caller:** Yes, please.
 
-**Agent:** One moment.
+**Agent:** Sure thing, gotcha covered.
 
 **Tool call:** `create_task`
 

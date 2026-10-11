@@ -84,7 +84,7 @@ describe("system prompt", () => {
     const invalid = section(systemPrompt, "## Invalid input");
     expect(invalid).toContain('If create_task returns the error "invalid_input"');
     expect(invalid).toContain("Ask the caller for that value again");
-    expect(invalid).toContain("Then repeat all four values again and wait for a yes");
+    expect(invalid).toContain("Then call create_task again.");
     expect(invalid).toContain("do not say that the service is down");
     expect(invalid).not.toContain("Do you want me to try again?");
   });
@@ -96,17 +96,16 @@ describe("system prompt", () => {
     expect(other).toContain('"Sorry, it is still not working. Please call back in a few minutes."');
   });
 
-  it("repeats the values and waits for a yes before create_task", () => {
-    expect(systemPrompt).toContain("Repeat all four values");
-    expect(systemPrompt).toContain(
-      "Do not call create_task until the caller says yes to the full summary.",
-    );
+  it("never asks the caller to confirm the values", () => {
+    expect(systemPrompt).toContain('Do not repeat the values back and do not ask "is that right".');
+    expect(systemPrompt).toContain("Never ask the caller to confirm them.");
+    expect(systemPrompt).toContain('say exactly: "Sure thing, gotcha covered."');
   });
 
-  it("says the PIN two times, digit by digit, from the tool result only", () => {
-    expect(systemPrompt).toContain("Say the PIN two times, one digit at a time");
-    expect(systemPrompt).toContain('"Your PIN is D1, D2, D3, D4. Again: D1, D2, D3, D4."');
-    expect(count(systemPrompt, "D1, D2, D3, D4")).toBe(2);
+  it("says the PIN once, digit by digit, from the tool result only, then ends the call", () => {
+    expect(systemPrompt).toContain("Say it once, one digit at a time");
+    expect(systemPrompt).toContain('"Your PIN is D1, D2, D3, D4. Later!"');
+    expect(systemPrompt).toContain("Then end the call right away with the end_call tool.");
     expect(systemPrompt).toContain(
       "Read the PIN only from the pin field of the create_task result.",
     );
@@ -130,7 +129,7 @@ describe("system prompt", () => {
   it("keeps turns short for speakerphone, with the PIN turn as the one exception", () => {
     expect(systemPrompt).toContain("Keep every turn short: one or two short sentences.");
     expect(systemPrompt).toContain(
-      "The one exception is the turn after create_task gives you a PIN, in steps 7 and 8.",
+      "The one exception is the turn after create_task gives you a PIN, in step 7.",
     );
     expect(systemPrompt).toMatch(/speakerphone/);
   });
