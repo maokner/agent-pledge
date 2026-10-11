@@ -170,7 +170,7 @@ describe("create_task", () => {
     expect(res.status).toBe(400);
     const err = toolErrorSchema.parse(res.body);
     expect(err.error).toBe("invalid_input");
-    expect(err.details?.join(" ")).toContain(expected);
+    expect(JSON.stringify(err.details ?? [])).toContain(expected);
   });
 
   it("accepts an empty caller_phone from a dashboard test call", () => {
