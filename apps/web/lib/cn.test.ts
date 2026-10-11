@@ -11,7 +11,7 @@ describe("cn", () => {
     expect(cn("bg-human-card", "bg-human-muted")).toBe("bg-human-muted");
   });
 
-  it("treats font-display as a family, not a weight", () => {
-    expect(cn("font-semibold", "font-display")).toBe("font-semibold font-display");
+  it("treats font-mono as a family, not a weight", () => {
+    expect(cn("font-semibold", "font-mono")).toBe("font-semibold font-mono");
   });
 });

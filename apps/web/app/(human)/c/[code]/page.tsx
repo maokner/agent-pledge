@@ -4,7 +4,7 @@ import { ClaimScreen } from "@/components/claim/ClaimScreen";
 import { HumanShell } from "@/components/human/HumanShell";
 
 export const metadata: Metadata = {
-  title: "Claim a task · Agent Pledge",
+  title: "Claim a task · yo pledge",
   description: "Claim this task, do it, and get paid when the requester gives you the PIN.",
   // Claim links are one-off and shared by hand; keep them out of search results.
   robots: { index: false, follow: false },

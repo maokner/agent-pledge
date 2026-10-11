@@ -5,7 +5,7 @@ import { OpenList } from "@/components/open-list/OpenList";
 import { StatsBand } from "@/components/open-list/StatsBand";
 
 export const metadata: Metadata = {
-  title: "Open tasks · Agent Pledge",
+  title: "Open tasks · yo pledge",
   description: "Do a quick task nearby and get paid when it’s done.",
 };
 
