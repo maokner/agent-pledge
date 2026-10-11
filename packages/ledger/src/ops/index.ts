@@ -8,6 +8,7 @@ export {
   type OpsContext,
 } from "./context.js";
 export * from "./fail.js";
+export { taskLockKey } from "./lock.js";
 export * from "./meta.js";
 export { SUBTASK_NFT_TAXON, TASK_NFT_FLAGS, TASK_NFT_TAXON } from "./nft.js";
 export * from "./payout.js";

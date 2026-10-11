@@ -97,6 +97,37 @@ export function compareIouValues(a: DecimalInput, b: DecimalInput): -1 | 0 | 1 {
   return ua === ub ? 0 : ua < ub ? -1 : 1;
 }
 
+/** Subtracts money values exactly: a - b. Throws a RangeError if the result would be negative. */
+export function subtractIouValues(a: DecimalInput, b: DecimalInput): string {
+  const pa = parse(a);
+  const pb = parse(b);
+  const scale = Math.max(pa.scale, pb.scale);
+  const units = rescale(pa, scale) - rescale(pb, scale);
+  if (units < 0n) throw new RangeError(`${render(pa)} - ${render(pb)} is negative.`);
+  return formatIouValue(render({ units, scale }));
+}
+
+const LEDGER_VALUE_PATTERN = /^(\d+)(?:\.(\d+))?(?:[eE]([+-]?\d+))?$/;
+
+/**
+ * Normalizes an IOU value as the ledger returns it, which may use an exponent ("1e-7", "1.5e3"),
+ * to a plain decimal string. Returns undefined for a negative or malformed value.
+ */
+export function normalizeLedgerValue(value: string): string | undefined {
+  const match = LEDGER_VALUE_PATTERN.exec(value.trim());
+  if (!match) return undefined;
+  const digits = (match[1] ?? "0") + (match[2] ?? "");
+  // The decimal point sits after `point` digits.
+  const point = (match[1] ?? "0").length + Number(match[3] ?? "0");
+  const plain =
+    point <= 0
+      ? `0.${"0".repeat(-point)}${digits}`
+      : point >= digits.length
+        ? digits + "0".repeat(point - digits.length)
+        : `${digits.slice(0, point)}.${digits.slice(point)}`;
+  return render(parse(plain));
+}
+
 export function isZeroIouValue(value: DecimalInput): boolean {
   return parse(value).units === 0n;
 }

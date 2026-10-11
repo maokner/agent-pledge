@@ -182,10 +182,31 @@ async function payOut(f: Fixtures, ctx: OpsContext, task: TaskState, helper: Wal
   ]);
   // Vault transactions: one after another.
   await step("13. NFTokenAcceptOffer by vault (helper +4)", () =>
-    acceptPayoutOffer({ vault, offerId: helperOffer.offerId, taskId, subtaskId }, ctx),
+    acceptPayoutOffer(
+      {
+        vault,
+        offerId: helperOffer.offerId,
+        nftId: task.subtaskNftId,
+        holderAddress: helper.classicAddress,
+        amount: SUBTASK_PRICE,
+        taskId,
+        subtaskId,
+      },
+      ctx,
+    ),
   );
   await step("13. NFTokenAcceptOffer by vault (agent +6)", () =>
-    acceptPayoutOffer({ vault, offerId: agentOffer.offerId, taskId }, ctx),
+    acceptPayoutOffer(
+      {
+        vault,
+        offerId: agentOffer.offerId,
+        nftId: task.taskNftId,
+        holderAddress: agent.classicAddress,
+        amount: AGENT_PAYOUT,
+        taskId,
+      },
+      ctx,
+    ),
   );
   await step("13. NFTokenBurn sub-task NFT", () =>
     burnNft({ vault, nftId: task.subtaskNftId, taskId, subtaskId }, ctx),

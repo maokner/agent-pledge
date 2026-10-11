@@ -119,6 +119,46 @@ export class InvalidTransactionError extends LedgerError {
   }
 }
 
+/** What the vault received on the ledger for one task. Values are token amounts. */
+export interface FundingReceived {
+  /** The task price, from the requester's `task.fund` payments. */
+  price: string;
+  /** The agent's pledge, from validated accepts of the vault's task offer. */
+  pledge: string;
+  /** Sub-task money per sub-task ID, from the agent's `subtask.fund` payments. */
+  subtasks: Record<string, string>;
+}
+
+/**
+ * The amounts the caller expects for a task differ from what the vault received on the ledger.
+ * failTask sends nothing in this case. `received` has the ledger's view, so the server can decide.
+ */
+export class FundingMismatchError extends LedgerError {
+  constructor(
+    public readonly taskId: string,
+    public readonly problems: readonly string[],
+    public readonly received: FundingReceived,
+  ) {
+    super(
+      `Task ${taskId} funding on the ledger differs from the input: ${problems.join("; ")}`,
+      "FUNDING_MISMATCH",
+    );
+  }
+}
+
+/** The offer on the ledger is not the payout offer the vault expects. Nothing was submitted. */
+export class OfferMismatchError extends LedgerError {
+  constructor(
+    offerId: string,
+    public readonly problems: readonly string[],
+  ) {
+    super(
+      `Offer ${offerId} is not the expected payout offer: ${problems.join("; ")}`,
+      "OFFER_MISMATCH",
+    );
+  }
+}
+
 /** An environment variable is missing or invalid. */
 export class ConfigError extends LedgerError {
   constructor(message: string, cause?: unknown) {
