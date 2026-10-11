@@ -150,11 +150,16 @@ export interface SubmitOptions {
   config?: LedgerConfig;
   /** How often to ask for the outcome. Default 1000 ms (testnet closes a ledger every 3 to 5 s). */
   pollIntervalMs?: number;
+  /**
+   * How long to keep trying to learn the outcome while the connection is down. After that,
+   * submitTx emits `tx.unknown` and throws a NetworkError with the hash. Default 180000 ms.
+   */
+  outcomeDeadlineMs?: number;
 }
 
 const DEFAULT_POLL_INTERVAL_MS = 1_000;
 /** Give up on learning the outcome after this long without a connection. */
-const OUTCOME_DEADLINE_MS = 180_000;
+const DEFAULT_OUTCOME_DEADLINE_MS = 180_000;
 
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
@@ -209,7 +214,8 @@ function consumedSequence(preliminary: string): boolean {
  *
  * Emits `tx.pending` once the hash is known, then `tx.validated` or `tx.failed` on `ledgerEvents`.
  * Survives a dropped connection: it waits for the reconnect and keeps polling by hash, because a
- * signed transaction can still validate while the socket is down.
+ * signed transaction can still validate while the socket is down. If the outcome stays unknown
+ * past `outcomeDeadlineMs`, it emits `tx.unknown` (not `tx.failed`) and throws a NetworkError.
  */
 export async function submitTx<T extends SubmittableTransaction>(
   client: Client,
@@ -243,6 +249,17 @@ export async function submitTx<T extends SubmittableTransaction>(
     }
     return error;
   };
+  /** The transaction is signed and maybe sent, but its outcome is not known. It may still apply. */
+  const unknown = (signedHash: string, error: NetworkError): NetworkError => {
+    ledgerEvents.emit("tx.unknown", {
+      ...base,
+      hash: signedHash,
+      errorCode: error.code as LedgerErrorCode,
+      message: error.message,
+      explorerUrl: explorerTxUrl(config, signedHash),
+    });
+    return error;
+  };
 
   /** Polls by hash until a validated ledger has the transaction, or LastLedgerSequence has passed. */
   const outcome = (signedHash: string, lastLedger: number, preliminary: string) =>
@@ -253,13 +270,16 @@ export async function submitTx<T extends SubmittableTransaction>(
       lastLedger,
       preliminary,
       options.pollIntervalMs ?? DEFAULT_POLL_INTERVAL_MS,
+      options.outcomeDeadlineMs ?? DEFAULT_OUTCOME_DEADLINE_MS,
     ).catch((error: unknown) => {
+      if (error instanceof NetworkError) throw unknown(signedHash, error);
+      // TxExpiredError: the validated ledger passed LastLedgerSequence, so it can never apply.
       if (error instanceof LedgerError) throw fail(error, false);
-      throw fail(
+      throw unknown(
+        signedHash,
         new NetworkError(`Outcome of ${signedHash} is unknown: ${String(error)}`, error, {
           hash: signedHash,
         }),
-        false,
       );
     });
 
@@ -369,6 +389,7 @@ async function waitForOutcome<T extends SubmittableTransaction>(
   lastLedger: number,
   preliminary: string,
   pollIntervalMs: number,
+  outcomeDeadlineMs: number,
 ): Promise<TxResponse<T>> {
   let disconnectedSince: number | undefined;
   for (;;) {
@@ -393,7 +414,7 @@ async function waitForOutcome<T extends SubmittableTransaction>(
     } catch (error) {
       if (!isConnectionError(error)) throw error;
       disconnectedSince ??= Date.now();
-      if (Date.now() - disconnectedSince > OUTCOME_DEADLINE_MS) {
+      if (Date.now() - disconnectedSince > outcomeDeadlineMs) {
         throw new NetworkError(`Lost the XRPL connection while waiting for ${hash}`, error, {
           hash,
         });

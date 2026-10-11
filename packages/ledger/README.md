@@ -117,6 +117,7 @@ const vault = walletFromSeed(config.XRPL_VAULT_SEED!);
 ledgerEvents.on("tx.pending", (e) => board.broadcast({ type: "tx.pending", ...e }));
 ledgerEvents.on("tx.validated", (e) => board.broadcast({ type: "tx.validated", ...e }));
 ledgerEvents.on("tx.failed", (e) => board.broadcast({ type: "tx.failed", ...e }));
+ledgerEvents.on("tx.unknown", (e) => board.broadcast({ type: "tx.unknown", ...e }));
 ```
 
 `submitTx` returns after the transaction is validated, but `tx.pending` fires as soon as the hash is known (in less than 1 s).
@@ -190,6 +191,7 @@ const response = await submitTx(
 | `taskId?: string` | Appends the task memo to `Memos`. Events then carry `taskId`. |
 | `config?: LedgerConfig` | For explorer links. Default `loadConfig()`. |
 | `pollIntervalMs?: number` | How often to ask for the outcome. Default 1000. |
+| `outcomeDeadlineMs?: number` | How long to keep trying to learn the outcome while the connection is down. Default 180000 (3 minutes). |
 
 What `submitTx` does:
 
@@ -202,6 +204,9 @@ What `submitTx` does:
 5. If the socket drops while it waits, it waits for the reconnect and goes on polling, because a signed transaction can still validate.
 6. On `tesSUCCESS` it emits `tx.validated` and returns.
    Any other result emits `tx.failed` and throws the typed error.
+7. If the connection stays down for longer than `outcomeDeadlineMs`, the outcome is unknown.
+   Then it emits `tx.unknown`, not `tx.failed`, and throws a `NetworkError` with `hash` set.
+   The transaction can still validate and move money, so look up the hash before you build it again.
 
 Steps 1 to 3 run under a lock for each account.
 Thus, many concurrent `submitTx` calls from the vault get different `Sequence` numbers.
@@ -313,7 +318,8 @@ Payload types are in `@agent-pledge/shared` (`LedgerEventMap`).
 |---|---|---|
 | `tx.pending` | The transaction is signed and about to go to the network. | `hash`, `kind`, `txType`, `account`, `taskId`, `explorerUrl` |
 | `tx.validated` | A validated ledger has it with `tesSUCCESS`. | the same, plus `result` (`"tesSUCCESS"`) and `ledgerIndex` |
-| `tx.failed` | It failed before or after it reached a ledger. | `hash`, `kind`, `txType`, `account`, `taskId`, `code`, `errorCode`, `message`, `explorerUrl` |
+| `tx.failed` | It failed before or after it reached a ledger. It did not apply and never will. | `hash`, `kind`, `txType`, `account`, `taskId`, `code`, `errorCode`, `message`, `explorerUrl` |
+| `tx.unknown` | `submitTx` gave up on learning the outcome (the connection stayed down past `outcomeDeadlineMs`). The transaction may still validate. | `hash`, `kind`, `txType`, `account`, `taskId`, `errorCode` (`NETWORK`), `message`, `explorerUrl` |
 | `ledger.disconnected` | The WebSocket dropped unexpectedly. | `url`, `code` (WebSocket close code) |
 | `ledger.connected` | The client connected, or reconnected after a drop. | `url`, `reconnected` |
 
@@ -323,6 +329,12 @@ When there is no result code, `code` is the error code (for example `NETWORK`).
 `explorerUrl` is a link only for `tec` results, because only those are in a validated ledger.
 For results that never reach a ledger (`tem`, `tef`, `tel`, expired), it is `null`.
 Errors before signing (for example a bad config) throw without events, because there is no hash yet.
+
+Show `tx.unknown` on the board as "unknown, checking", not as "failed".
+`explorerUrl` in `tx.unknown` is always the link for the hash.
+The explorer shows the transaction only if it validated.
+Every transaction has a `LastLedgerSequence`, so the outcome is final a few ledgers later.
+The server can then look up the hash (`tx` request) to settle the state.
 
 ## Typed errors
 

@@ -14,6 +14,7 @@ import { loadConfig } from "../config.js";
 import {
   AlreadyClaimedError,
   InvalidTransactionError,
+  NetworkError,
   NotAllowedError,
   TxExpiredError,
 } from "../errors.js";
@@ -113,7 +114,7 @@ function recordEvents() {
   const seen: Array<
     { [E in LedgerEventName]: { name: E; payload: LedgerEventMap[E] } }[LedgerEventName]
   > = [];
-  const names: LedgerEventName[] = ["tx.pending", "tx.validated", "tx.failed"];
+  const names: LedgerEventName[] = ["tx.pending", "tx.validated", "tx.failed", "tx.unknown"];
   const offs = names.map((name) =>
     ledgerEvents.on(name, (payload) => seen.push({ name, payload } as (typeof seen)[number])),
   );
@@ -229,6 +230,27 @@ describe("submitTx", () => {
     await submitTx(client, wallet, payment(), fast);
     expect(mock.connect).toHaveBeenCalled();
     expect(events.seen.map((e) => e.name)).toEqual(["tx.pending", "tx.validated"]);
+  });
+
+  it("emits tx.unknown, not tx.failed, when the connection stays down past the deadline", async () => {
+    const { client } = mockClient({
+      txErrors: Array.from({ length: 10_000 }, () => new DisconnectedError("socket closed")),
+    });
+    const error = await submitTx(client, wallet, payment(), {
+      ...fast,
+      kind: "payout.accept",
+      outcomeDeadlineMs: 20,
+    }).catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(NetworkError);
+    const hash = (error as NetworkError).hash;
+    expect(hash).toMatch(/^[0-9A-F]{64}$/);
+    expect(events.seen.map((e) => e.name)).toEqual(["tx.pending", "tx.unknown"]);
+    expect(events.seen[1]!.payload).toMatchObject({
+      hash,
+      kind: "payout.accept",
+      errorCode: "NETWORK",
+      explorerUrl: `https://testnet.xrpl.org/transactions/${hash}`,
+    });
   });
 
   it("serializes sign and submit per account so Sequence numbers do not collide", async () => {

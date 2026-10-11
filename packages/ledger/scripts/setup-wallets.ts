@@ -52,6 +52,7 @@ ledgerEvents.on("tx.pending", (e) =>
 );
 ledgerEvents.on("tx.validated", (e) => log(`  validated ${e.txType} in ledger ${e.ledgerIndex}`));
 ledgerEvents.on("tx.failed", (e) => log(`  failed    ${e.txType}: ${e.code} (${e.message})`));
+ledgerEvents.on("tx.unknown", (e) => log(`  unknown   ${e.txType}: ${e.message} ${e.explorerUrl}`));
 
 interface Wallets {
   vault: Wallet;
