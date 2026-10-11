@@ -7,3 +7,4 @@ apps/server/drizzle/meta
 apps/web
 README.md
 *.md
+.claude

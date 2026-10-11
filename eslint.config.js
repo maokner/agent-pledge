@@ -14,6 +14,7 @@ export default tseslint.config(
       "**/.data/**",
       "**/drizzle/**",
       "apps/web/**",
+      ".claude/**",
     ],
   },
   js.configs.recommended,
