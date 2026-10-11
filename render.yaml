@@ -1,0 +1,105 @@
+# Render Blueprint for Agent Pledge (issue #26). Steps: docs/deploy.md.
+# Spec: https://render.com/docs/blueprint-spec  (JSON schema: https://render.com/schema/render.yaml.json)
+#
+# One API server (Docker, apps/server/Dockerfile) plus one managed Postgres.
+# The board and claim page (apps/web, Next.js) are a second web service, commented out until apps/web exists.
+# Every secret is `sync: false`: Render asks for the value once, when you create the Blueprint,
+# and it is never stored in git.
+
+services:
+  - type: web
+    name: agent-pledge-api
+    runtime: docker
+    # Paid "starter" instance: free instances sleep after 15 minutes idle and take about a minute to wake,
+    # which drops the board and agent WebSockets and times out the ElevenLabs tool call.
+    plan: starter
+    region: oregon
+    branch: main
+    dockerContext: .
+    dockerfilePath: ./apps/server/Dockerfile
+    healthCheckPath: /health
+    # Deploy each push to main after the GitHub Actions CI checks (lint, typecheck, test) pass.
+    autoDeployTrigger: checksPass
+    buildFilter:
+      paths:
+        - apps/server/**
+        - packages/**
+        - package.json
+        - pnpm-lock.yaml
+        - pnpm-workspace.yaml
+        - tsconfig.base.json
+        - .dockerignore
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: LOG_LEVEL
+        value: info
+      # Internal connection string of the database below. Migrations run at server startup.
+      - key: DATABASE_URL
+        fromDatabase:
+          name: agent-pledge-db
+          property: connectionString
+      # fake = in-memory ledger (works today). Switch to xrpl when packages/ledger is ready (#3-#10).
+      - key: LEDGER_MODE
+        value: fake
+      - key: PLEDGE_AMOUNT
+        value: "1.00"
+      # This service's own URL, no trailing slash, e.g. https://agent-pledge-api.onrender.com
+      - key: PUBLIC_API_URL
+        sync: false
+      # The board/claim page URL (apps/web), no trailing slash. Claim links are <PUBLIC_BASE_URL>/c/<CODE>.
+      - key: PUBLIC_BASE_URL
+        sync: false
+      # Comma-separated origins of the board, e.g. https://agent-pledge-web.onrender.com,http://localhost:3000
+      - key: CORS_ORIGINS
+        sync: false
+      # Secrets: generate each with `openssl rand -hex 32` (or `pnpm deploy:secrets`).
+      - key: VOICE_SHARED_SECRET
+        sync: false
+      - key: AGENT_TOKEN
+        sync: false
+      - key: COOKIE_SECRET
+        sync: false
+      - key: SEED_ENCRYPTION_KEY
+        sync: false
+      # XRPL (LEDGER_MODE=xrpl only; leave empty in fake mode). The agent's seed is never set here.
+      - key: VAULT_SEED
+        sync: false
+      - key: TREASURY_SEED
+        sync: false
+      - key: AGENT_ADDRESS
+        sync: false
+
+  # Board and claim page (apps/web, Next.js). Uncomment when apps/web exists and builds, then sync the
+  # Blueprint. Check the package name and the env var names the front end actually reads.
+  # - type: web
+  #   name: agent-pledge-web
+  #   runtime: node
+  #   plan: starter
+  #   region: oregon
+  #   branch: main
+  #   healthCheckPath: /
+  #   autoDeployTrigger: checksPass
+  #   buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm --filter @agent-pledge/web build
+  #   startCommand: pnpm --filter @agent-pledge/web start
+  #   buildFilter:
+  #     paths:
+  #       - apps/web/**
+  #       - packages/shared/**
+  #       - package.json
+  #       - pnpm-lock.yaml
+  #   envVars:
+  #     - key: NODE_VERSION
+  #       value: "22"
+  #     # The API server's public URL (https://agent-pledge-api.onrender.com). WebSocket: wss://<same host>/ws/board
+  #     - key: NEXT_PUBLIC_API_URL
+  #       sync: false
+
+databases:
+  - name: agent-pledge-db
+    databaseName: agent_pledge
+    user: agent_pledge
+    # Paid plan: free Render Postgres expires after 30 days. Media (photos, screenshots) is stored in it.
+    plan: basic-256mb
+    region: oregon
+    postgresMajorVersion: "17"
