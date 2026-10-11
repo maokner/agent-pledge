@@ -3,17 +3,31 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "The local agent that runs on our laptop (issue #27). Skeleton only.",
+  "description": "The local agent that runs on our laptop (issues #27, #29): claims tasks, makes sub-tasks, posts on Yik Yak, redeems.",
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "start": "tsx src/index.ts",
-    "typecheck": "tsc -p tsconfig.json"
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
   },
   "dependencies": {
+    "@agent-pledge/ledger": "workspace:*",
     "@agent-pledge/shared": "workspace:*",
-    "tsx": "^4.20.6"
+    "@anthropic-ai/claude-agent-sdk": "^0.3.296",
+    "@anthropic-ai/sdk": "^0.133.0",
+    "@modelcontextprotocol/sdk": "^1.32.1",
+    "dotenv": "^17.4.2",
+    "playwright": "1.64.0",
+    "tsx": "^4.20.6",
+    "ws": "^8.22.0",
+    "zod": "^4.6.6"
   },
   "devDependencies": {
-    "@types/node": "^22.18.0"
+    "@fastify/multipart": "^9.4.0",
+    "@fastify/websocket": "^11.3.4",
+    "@types/node": "^22.18.0",
+    "@types/ws": "^8.18.2",
+    "fastify": "^5.12.5",
+    "vitest": "^3.2.7"
   }
 }
