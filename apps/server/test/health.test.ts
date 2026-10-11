@@ -36,7 +36,9 @@ describe("app", () => {
 
   it("routes /tasks/:id.json with the id param", async () => {
     const res = await t.app.inject({ method: "GET", url: "/tasks/sub_abc.json" });
-    expect(res.statusCode).not.toBe(404);
+    // The route matched (our not_found body for an unknown ID, not Fastify's route-not-found).
+    expect(res.json().error).toBe("not_found");
+    expect(res.json().message).toContain("sub_abc");
   });
 
   it("records the system wallets", async () => {
