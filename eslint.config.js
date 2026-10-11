@@ -1,5 +1,5 @@
 // Shared flat ESLint config for the whole monorepo.
-// apps/web (Next.js) may add its own config; it is ignored here.
+// apps/web/public is plain browser JS (no build step), linted with browser globals below.
 import js from "@eslint/js";
 import prettier from "eslint-config-prettier";
 import globals from "globals";
@@ -13,7 +13,6 @@ export default tseslint.config(
       "**/.next/**",
       "**/.data/**",
       "**/drizzle/**",
-      "apps/web/**",
       ".claude/**",
     ],
   },
@@ -32,6 +31,10 @@ export default tseslint.config(
       ],
       "@typescript-eslint/consistent-type-imports": "error",
     },
+  },
+  {
+    files: ["apps/web/public/**/*.js"],
+    languageOptions: { globals: { ...globals.browser } },
   },
   prettier,
 );

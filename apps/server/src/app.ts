@@ -29,6 +29,7 @@ import mediaRoutes from "./routes/media";
 import pinRoutes from "./routes/pin";
 import tasksJsonRoutes from "./routes/tasks-json";
 import toolsRoutes from "./routes/tools";
+import webRoutes from "./routes/web";
 import agentWs from "./ws/agent";
 import boardWs from "./ws/board";
 
@@ -146,6 +147,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   await app.register(mediaRoutes);
   await app.register(pinRoutes);
   await app.register(adminRoutes);
+  await app.register(webRoutes);
 
   return app;
 }
