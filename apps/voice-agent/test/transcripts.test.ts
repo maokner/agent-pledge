@@ -1,5 +1,4 @@
 import { readdirSync } from "node:fs";
-import type { CreateTaskInput } from "../src/shared-types.js";
 import { describe, expect, it } from "vitest";
 import { readText } from "../src/assets.js";
 import {
@@ -50,14 +49,6 @@ const words = (text: string) => text.split(/\s+/).length;
 const isSummary = (text: string) => text.startsWith("To confirm:");
 
 /** The summary from step 5 of the prompt, for the values that create_task sends. */
-
-/** The board address as step 8 of the prompt says it: no https://, and "dot", "dash", "slash". */
-function spokenUrl(url: string): string {
-  return url
-    .replace(/^https?:\/\//, "")
-    .replace(/\/$/, "")
-    .replace(/[.\-/]/g, (c) => ({ ".": " dot ", "-": " dash ", "/": " slash " })[c] as string);
-}
 
 /** Step 7 of the prompt: the PIN once, then the call ends. */
 function pinTurn(pin: string, _boardUrl: string): string {
