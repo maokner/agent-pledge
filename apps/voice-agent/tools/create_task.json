@@ -13,7 +13,7 @@
       "method": "POST",
       "content_type": "application/json",
       "request_headers": {
-        "x-voice-secret": { "secret_id": "${VOICE_TOOL_SECRET_ID}" }
+        "x-agent-pledge-secret": { "secret_id": "${VOICE_TOOL_SECRET_ID}" }
       },
       "request_body_schema": {
         "type": "object",

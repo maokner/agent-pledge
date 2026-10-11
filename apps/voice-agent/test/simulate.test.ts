@@ -90,7 +90,7 @@ describe("runSimulation", () => {
     const ignoresSecret: FetchLike = (url, init) =>
       fetchFn(url, {
         ...init,
-        headers: { ...(init.headers as Record<string, string>), "x-voice-secret": "s" },
+        headers: { ...(init.headers as Record<string, string>), "x-agent-pledge-secret": "s" },
       });
     const results = await runSimulation({
       baseUrl: "http://mock.local",
@@ -142,7 +142,7 @@ describe("runServerCheck", () => {
     const ignoresSecret: FetchLike = (url, init) =>
       fetchFn(url, {
         ...init,
-        headers: { ...(init.headers as Record<string, string>), "x-voice-secret": "s" },
+        headers: { ...(init.headers as Record<string, string>), "x-agent-pledge-secret": "s" },
       });
     const results = await runServerCheck({
       baseUrl: "http://mock.local",

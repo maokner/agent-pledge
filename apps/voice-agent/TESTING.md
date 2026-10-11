@@ -71,7 +71,7 @@ The workspace secret is shared by every agent in the ElevenLabs workspace, inclu
 Do not pass `--rotate-secret` with your own value unless the whole team agrees, because then the deployed server rejects every demo call with 401.
 
 The mock server prints every request and response.
-Use `GET /mock/tasks` (with the `x-voice-secret` header) to see the stored tasks and their PINs.
+Use `GET /mock/tasks` (with the `x-agent-pledge-secret` header) to see the stored tasks and their PINs.
 
 ### Setup with the real server
 
@@ -122,7 +122,7 @@ For each test, write the result in the table at the end.
 - [ ] **T9. Task status.**
       The agent can only check a task from the same call, so keep the call open for this test.
       Make a normal call and stay on the line after the PIN.
-      From a laptop, set the task to claimed: `curl -X POST <base>/mock/tasks/<task_id> -H "x-voice-secret: <secret>" -d '{"status":"claimed","helper_note":"Front table, left side"}'`.
+      From a laptop, set the task to claimed: `curl -X POST <base>/mock/tasks/<task_id> -H "x-agent-pledge-secret: <secret>" -d '{"status":"claimed","helper_note":"Front table, left side"}'`.
       Then ask the agent: "Has anyone taken it yet?"
       Pass if the agent says that a helper has taken it and reads the helper note.
       A call ends after 8 minutes, so do this within a few minutes of the PIN.

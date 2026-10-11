@@ -10,7 +10,7 @@
       "url": "${PUBLIC_BASE_URL}/tools/task_status/{task_id}",
       "method": "GET",
       "request_headers": {
-        "x-voice-secret": { "secret_id": "${VOICE_TOOL_SECRET_ID}" }
+        "x-agent-pledge-secret": { "secret_id": "${VOICE_TOOL_SECRET_ID}" }
       },
       "path_params_schema": {
         "task_id": {

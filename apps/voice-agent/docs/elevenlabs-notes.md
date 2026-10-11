@@ -70,7 +70,7 @@ Thus, a retry after a timeout does not make a second task.
 
 `api_schema.request_headers` is a map from header name to one of: a plain string, `{ "secret_id": ... }`, `{ "variable_name": ... }`, or `{ "env_var_label": ... }`.
 We store `VOICE_TOOL_SECRET` as a workspace secret named `agent_pledge_voice_tool_secret` (`POST /v1/convai/secrets` with `{ "type": "new", "name", "value" }`).
-The tools send it as `"x-voice-secret": { "secret_id": "<id>" }`.
+The tools send it as `"x-agent-pledge-secret": { "secret_id": "<id>" }`.
 Thus, the secret value is never in the tool config or in the git repo.
 `PATCH /v1/convai/secrets/{secret_id}` with `{ "type": "update", "name", "value" }` rotates it.
 A workspace secret is shared by every agent in the workspace, and the API never returns its value.

@@ -11,7 +11,7 @@ import type {
 } from "./shared-types.js";
 
 /** Header that carries the shared secret from ElevenLabs to the server. */
-export const VOICE_SECRET_HEADER = "x-voice-secret";
+export const VOICE_SECRET_HEADER = "x-agent-pledge-secret";
 
 export const CREATE_TASK_PATH = "/tools/create_task";
 export const TASK_STATUS_PATH_PREFIX = "/tools/task_status/";

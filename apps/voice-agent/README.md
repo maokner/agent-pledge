@@ -49,7 +49,7 @@ The scripts read `.env` if it exists; real environment variables win.
 |---|---|---|
 | `ELEVENLABS_API_KEY` | provision | Required, except for `--dry-run`. |
 | `PUBLIC_BASE_URL` | provision | Public https base URL of the server or of a tunnel to the mock server. Required, except for `--dry-run`, which uses `http://localhost:8787`. |
-| `VOICE_TOOL_SECRET` | provision, mock-server, simulate | The shared secret for the `x-voice-secret` header. At least 16 characters. Make one with `openssl rand -hex 24`. |
+| `VOICE_TOOL_SECRET` | provision, mock-server, simulate | The shared secret for the `x-agent-pledge-secret` header. At least 16 characters. Make one with `openssl rand -hex 24`. |
 | `ELEVENLABS_AGENT_ID` | provision | Set it after the first run. With it, the script updates the agent instead of making a new one. |
 | `ELEVENLABS_PHONE_NUMBER_ID` | provision | Optional. The script routes this number to the agent. |
 | `ELEVENLABS_VOICE_ID` | provision | Optional. Defaults to the ElevenLabs API default voice. |
@@ -64,7 +64,7 @@ The scripts read `.env` if it exists; real environment variables win.
 `pnpm provision` does these steps in order:
 
 1. Checks the server at `PUBLIC_BASE_URL`, with the same checks as `pnpm simulate` that have no side effects.
-   `GET /health` must answer 200, a wrong or missing `x-voice-secret` must get 401, and `VOICE_TOOL_SECRET` must get through (400 for a body without a price, 404 for an unknown task).
+   `GET /health` must answer 200, a wrong or missing `x-agent-pledge-secret` must get 401, and `VOICE_TOOL_SECRET` must get through (400 for a body without a price, 404 for an unknown task).
    No check creates a task.
    If a check fails, the script stops and changes nothing.
    `--skip-server-check` skips this step, for example when the server is not deployed yet.
@@ -74,7 +74,7 @@ The scripts read `.env` if it exists; real environment variables win.
    If it exists, the script keeps it unchanged, because every agent in the ElevenLabs workspace uses it.
    Pass `--rotate-secret` to replace its value; the script then prints a warning.
 4. Creates or updates the `create_task` and `task_status` webhook tools.
-   Each tool sends the secret as the `x-voice-secret` header from the secret store.
+   Each tool sends the secret as the `x-agent-pledge-secret` header from the secret store.
    `create_task` fills `caller_phone` from `system__caller_id` and `call_id` from `system__conversation_id`, so the LLM never fills them.
 5. Creates or updates the agent with the prompt, the first message, the tool ids, the `end_call` tool, and the voice settings.
    A call ends after 8 minutes (`MAX_CALL_SECONDS` in `src/payloads.ts`), and the agent says a short goodbye first.
@@ -114,7 +114,7 @@ The server (issue 19) must implement this contract.
 | | `create_task` | `task_status` |
 |---|---|---|
 | Request | `POST /tools/create_task` with a JSON body `CreateTaskInput` | `GET /tools/task_status/:task_id` |
-| Auth | Header `x-voice-secret` must equal `VOICE_TOOL_SECRET`. Otherwise 401, before the body is read. | Same |
+| Auth | Header `x-agent-pledge-secret` must equal `VOICE_TOOL_SECRET`. Otherwise 401, before the body is read. | Same |
 | Success | 200 with `CreateTaskOutput`: `task_id`, `pin` (exactly 4 digits, as a string), `board_url` | 200 with `TaskStatusOutput`: `status` (`open`, `claimed`, `done`, `failed`), `helper_note` (string or null) |
 | Errors | 400 for invalid input, 401, 503 when unavailable | 401, 404 for an unknown task |
 | Retries | A repeated `call_id` returns the existing task (same `task_id`, `pin`, and `board_url`) with 200 and creates nothing. | Safe to repeat. |

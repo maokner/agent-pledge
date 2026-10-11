@@ -39,7 +39,7 @@ export interface MockTask {
 }
 
 export interface MockContext {
-  /** The expected value of the x-voice-secret header. */
+  /** The expected value of the x-agent-pledge-secret header. */
   secret: string;
   /** Returned as board_url for every task. */
   boardUrl: string;

@@ -36,7 +36,7 @@ function req(
   return {
     method,
     url,
-    headers: secret === null ? {} : { "x-voice-secret": secret },
+    headers: secret === null ? {} : { "x-agent-pledge-secret": secret },
     body: body === undefined ? "" : typeof body === "string" ? body : JSON.stringify(body),
   };
 }
