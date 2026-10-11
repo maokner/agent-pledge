@@ -77,7 +77,7 @@ function assertLive(app: FastifyInstance, t: TaskRow) {
 const SEAT_HOLD =
   /\b(seats?|chairs?|tables?|desks?|booths?|spots?|places? in line|save (me )?a place|hold (me )?a place)\b/i;
 
-/** Base demo: seat holds only (PRD 6). */
+/** The PRD 6 base demo rule, applied only when SEAT_HOLDS_ONLY is set. */
 export function isSeatHold(description: string): boolean {
   return SEAT_HOLD.test(description);
 }
@@ -137,7 +137,7 @@ async function createTaskOnce(
   app: FastifyInstance,
   input: CreateTaskRequest,
 ): Promise<CreateTaskResponse> {
-  if (!isSeatHold(input.description)) {
+  if (app.config.SEAT_HOLDS_ONLY && !isSeatHold(input.description)) {
     throw new HttpError(
       422,
       ErrorCode.notSeatHold,

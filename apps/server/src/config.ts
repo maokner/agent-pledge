@@ -49,6 +49,14 @@ export const ConfigSchema = z.object({
   CORS_ORIGINS: z.string().default("http://localhost:3000").transform(splitCsv),
   /** The local agent's XRPL address. In fake mode, defaults to the fake ledger's agent account. */
   AGENT_ADDRESS: z.string().optional(),
+  /**
+   * true = accept only seat holds (the PRD 6 base demo rule) and answer 422 not_seat_hold to
+   * anything else. false (default) = accept any task description.
+   */
+  SEAT_HOLDS_ONLY: z
+    .enum(["true", "false", "1", "0", ""])
+    .default("false")
+    .transform((v) => v === "true" || v === "1"),
   PLEDGE_AMOUNT: Money.default("1.00"),
   /** Treasury -> new requester wallet. Empty = exactly the task price. */
   REQUESTER_FUNDING_AMOUNT: z.union([Money, z.literal("")]).default(""),

@@ -129,12 +129,26 @@ describe("create_task and task_status (#19)", () => {
     });
   });
 
+  it("rejects anything but a seat hold when SEAT_HOLDS_ONLY is set", async () => {
+    const strict = await buildTestApp({ config: { SEAT_HOLDS_ONLY: "true" } });
+    try {
+      const notSeat = await createTask(strict, {
+        ...PRD_EXAMPLE,
+        description: "Pick up my laundry",
+      });
+      expect(notSeat.statusCode).toBe(422);
+      expect(notSeat.json().error).toBe("not_seat_hold");
+      expect((await createTask(strict, PRD_EXAMPLE)).statusCode).toBe(200);
+    } finally {
+      await strict.close();
+    }
+  });
+
   it("normalizes string prices and rejects bad input", async () => {
     const ok = await createTask(t, { ...PRD_EXAMPLE, price_usd: "$7.5" });
     expect(ok.json().price).toBe("7.50");
-    const notSeat = await createTask(t, { ...PRD_EXAMPLE, description: "Pick up my laundry" });
-    expect(notSeat.statusCode).toBe(422);
-    expect(notSeat.json().error).toBe("not_seat_hold");
+    const errand = await createTask(t, { ...PRD_EXAMPLE, description: "Pick up my laundry" });
+    expect(errand.statusCode).toBe(200);
     expect((await createTask(t, { ...PRD_EXAMPLE, price_usd: "abc" })).statusCode).toBe(400);
     expect((await createTask(t, { ...PRD_EXAMPLE, price_usd: 0 })).statusCode).toBe(400);
     expect((await createTask(t, { place: "x" })).statusCode).toBe(400);
