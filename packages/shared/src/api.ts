@@ -42,6 +42,11 @@ export const CreateTaskRequest = z.object({
   /** Number or string from ElevenLabs ("5", 5, "5.00", "$5"). The server normalizes it to Money. */
   price_usd: PriceInput,
   caller_phone: z.string().max(40).nullish(),
+  /**
+   * The ElevenLabs conversation id. A retry of the same tool call (same call_id) returns the
+   * first call's task and PIN instead of making a second task. Empty or absent: no dedupe.
+   */
+  call_id: z.string().max(128).nullish(),
 });
 export type CreateTaskRequest = z.infer<typeof CreateTaskRequest>;
 

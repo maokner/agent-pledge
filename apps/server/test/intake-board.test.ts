@@ -435,3 +435,26 @@ describe("WebSockets (#20, #25)", () => {
     }
   });
 });
+
+describe("create_task retries (call_id dedupe)", () => {
+  let t: TestApp;
+  beforeAll(async () => {
+    t = await buildTestApp({ latencyMs: 0 });
+  });
+  afterAll(() => t.close());
+
+  it("returns the same task and PIN for a retry with the same call_id", async () => {
+    const first = await createTask(t, { ...PRD_EXAMPLE, call_id: "conv_retry_test" });
+    const again = await createTask(t, { ...PRD_EXAMPLE, call_id: "conv_retry_test" });
+    const other = await createTask(t, { ...PRD_EXAMPLE, call_id: "conv_other_call" });
+    const noId = await createTask(t, { ...PRD_EXAMPLE, call_id: "" });
+    expect(first.statusCode).toBe(200);
+    const a = first.json<CreateTaskResponse>();
+    const b = again.json<CreateTaskResponse>();
+    expect(b.task_id).toBe(a.task_id);
+    expect(b.pin).toBe(a.pin);
+    expect(other.json<CreateTaskResponse>().task_id).not.toBe(a.task_id);
+    expect(noId.json<CreateTaskResponse>().task_id).not.toBe(a.task_id);
+    await tasksIdle(t.app);
+  });
+});
