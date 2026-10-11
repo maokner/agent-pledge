@@ -18,6 +18,7 @@ pnpm dev:web            # against a server; see .env.example
 | `components/claim/*` | Claim page UI (#39 to #42). `ClaimScreen.tsx` loads the claim and picks a view per state. |
 | `components/landing/*` | Landing page (`/`): the two role buttons and the "powered by" footer. |
 | `components/human/*` | Human design system pieces (button, card, input, badge, live dot, pay amount, countdown, notice) for `/human` and the claim page. |
+| `components/open-list/*`, `lib/open-list/*` | The `/human` list of open sub-tasks: cards, polling, expiry and announcements. |
 | `lib/api/*` | `getApiClient()`: HTTP client, or the fixture client in fixture mode. |
 | `lib/board/*` | Board state reducer, selectors, sync (reconnect and seq resync), transports, `useBoard`. `terminal.ts`: status tags and ASCII bars; `arrivals.ts`: which tasks flash as new. |
 | `lib/backup-task/*`, `app/api/backup-task/route.ts` | The backup form's validation, browser client and server-side proxy to create_task (#38). |
