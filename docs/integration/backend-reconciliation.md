@@ -9,6 +9,10 @@ The binding contract is the backend's `docs/api.md` (issues #16, #17, #18). None
 
 Refs are `branch:path:line`. `fe` = `frontend`, `be` = `origin/backend-all`, `cv` = `origin/crypto-voice`.
 
+## Status (2026-10-11)
+
+The frontend side is done. `apps/web/lib/backend/` adapts the real server's shapes, mirrored from `origin/backend-all` at 52c72be, into the web app's own types. It was checked end to end against the real server with `LEDGER_MODE=fake`: a task created, the claim, photo, a wrong PIN, the right PIN, the payout, a deadline failure and a server restart. Everything in "Frontend work" below is done. What's left is the open questions for the backend person; until they're answered, the client works around them, as described in `packages/shared/CONTRACT.md` under "The real server".
+
 ## Summary
 
 - **Contracts:** the backend built its own zod-based `packages/shared`. It did not adopt the frontend's DRAFT. `cv` has a third, types-only variant.
@@ -72,7 +76,7 @@ Refs are `branch:path:line`. `fe` = `frontend`, `be` = `origin/backend-all`, `cv
 | Media | `url` strings | `MediaView{url,width,height}` at `${PUBLIC_API_URL}/media/<id>` | Frontend |
 | Workspace | pnpm 11, Node ≥24, `sharp: false` | pnpm 10.12.1, Node ≥22, and the **server needs `sharp` built** | Agree before merging the branches |
 
-## Frontend work, in priority order
+## Frontend work, in priority order (done)
 
 1. **Stop the crash:**
    - Ignore unknown events.
