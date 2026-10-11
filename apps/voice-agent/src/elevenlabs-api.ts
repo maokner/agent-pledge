@@ -9,12 +9,15 @@ import { toSdk } from "./sdk-payloads.js";
 export interface ElevenLabsApiOptions {
   apiKey: string;
   baseUrl: string | null;
+  /** Replaces the network, for tests. */
+  fetch?: typeof fetch;
 }
 
 export function createElevenLabsApi(options: ElevenLabsApiOptions): ProvisionApi {
   const client = new ElevenLabsClient({
     apiKey: options.apiKey,
     ...(options.baseUrl ? { baseUrl: options.baseUrl } : {}),
+    ...(options.fetch ? { fetch: options.fetch, maxRetries: 0 } : {}),
   });
   const ai = client.conversationalAi;
 
