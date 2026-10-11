@@ -2,7 +2,7 @@
  * The real ProvisionApi, built on the official SDK (@elevenlabs/elevenlabs-js).
  * Every body goes through toSdk, which rejects any payload that the SDK would not send unchanged.
  */
-import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
+import { ElevenLabsClient, ElevenLabsError } from "@elevenlabs/elevenlabs-js";
 import type { ProvisionApi } from "./provision.js";
 import { toSdk } from "./sdk-payloads.js";
 
@@ -52,8 +52,14 @@ export function createElevenLabsApi(options: ElevenLabsApiOptions): ProvisionApi
       const toolIds = agent.conversationConfig.agent?.prompt?.toolIds ?? [];
       const byName = new Map<string, string>();
       for (const id of toolIds) {
-        const tool = await ai.tools.get(id);
-        if (tool.toolConfig.type === "webhook") byName.set(tool.toolConfig.name, tool.id);
+        try {
+          const tool = await ai.tools.get(id);
+          if (tool.toolConfig.type === "webhook") byName.set(tool.toolConfig.name, tool.id);
+        } catch (err) {
+          // A tool deleted in the dashboard is still listed on the agent. Skip it; provisioning recreates it.
+          if (err instanceof ElevenLabsError && err.statusCode === 404) continue;
+          throw err;
+        }
       }
       return byName;
     },
