@@ -1,14 +1,11 @@
 import type { LedgerTx, Subtask } from "@agent-pledge/shared";
-import { Countdown } from "@/components/ui/Countdown";
-import { ExplorerLink } from "@/components/ui/ExplorerLink";
-import { Money } from "@/components/ui/Money";
-import { ZoomableImage } from "@/components/ui/ZoomableImage";
+import { cn } from "@/lib/cn";
 import { subtaskHolder } from "@/lib/board/selectors";
 import { formatMinutes } from "@/lib/format";
 import { FAILURE_REASON_LABEL } from "@/lib/labels";
 import { Fact, Facts } from "./Facts";
-import { LiveStatusBadge, StatusGlow } from "./LiveStatus";
-import { WORK_STATUS_STYLE } from "./status-style";
+import { GLOW, LINK, WORK_BORDER } from "./term-style";
+import { ExplorerLink, Money, Pane, SectionTitle, TimeLeft, Waiting, WorkStatusTag, ZoomableImage } from "./term";
 import { TxList } from "./TxList";
 
 /**
@@ -19,21 +16,24 @@ import { TxList } from "./TxList";
 export function SubtaskCard({ subtask, txs, names }: { subtask: Subtask; txs: LedgerTx[]; names: Map<string, string> }) {
   const active = subtask.status === "open" || subtask.status === "claimed";
   return (
-    <section
+    <Pane
       aria-label={`Sub-task: ${subtask.description}`}
-      className={`@container relative rounded-lg border border-l-8 border-zinc-200 p-4 dark:border-zinc-700 ${WORK_STATUS_STYLE[subtask.status].card}`}
+      title="Sub-task // for a helper"
+      headingLevel={3}
+      className={cn("@container", WORK_BORDER[subtask.status])}
+      right={
+        <span className="flex items-baseline gap-3">
+          <Money amount={subtask.price} className={cn("text-lg font-bold", GLOW)} />
+          <WorkStatusTag status={subtask.status} />
+        </span>
+      }
     >
-      <StatusGlow status={subtask.status} />
-      <header className="flex flex-wrap items-start justify-between gap-2">
-        <div className="min-w-0">
-          <p className="text-xs font-semibold tracking-wide text-zinc-500 uppercase dark:text-zinc-400">Sub-task for a helper</p>
-          <h3 className="text-lg font-semibold">{subtask.description}</h3>
-        </div>
-        <div className="flex items-center gap-3">
-          <Money amount={subtask.price} className="text-2xl font-bold" />
-          <LiveStatusBadge status={subtask.status} />
-        </div>
-      </header>
+      <p className="text-lg font-bold wrap-anywhere">
+        <span aria-hidden className="text-term-fg-dim">
+          &gt;{" "}
+        </span>
+        {subtask.description}
+      </p>
 
       <Facts>
         <Fact label="Pay">
@@ -42,12 +42,12 @@ export function SubtaskCard({ subtask, txs, names }: { subtask: Subtask; txs: Le
         <Fact label="Time limit">{formatMinutes(subtask.time_limit_minutes)}</Fact>
         {active && (
           <Fact label="Time left">
-            <Countdown deadline={subtask.deadline_at} className="font-semibold" />
+            <TimeLeft deadline={subtask.deadline_at} limitMinutes={subtask.time_limit_minutes} className="font-bold" />
           </Fact>
         )}
         <Fact label="Held by">{subtaskHolder(subtask)}</Fact>
         <Fact label="Claim link">
-          <a href={subtask.claim_url} className="font-mono underline decoration-dotted underline-offset-2" target="_blank" rel="noopener noreferrer">
+          <a href={subtask.claim_url} className={LINK} target="_blank" rel="noopener noreferrer">
             /c/{subtask.claim_code}
           </a>
         </Fact>
@@ -63,19 +63,21 @@ export function SubtaskCard({ subtask, txs, names }: { subtask: Subtask; txs: Le
         )}
         {subtask.status === "claimed" && (
           <Fact label="PIN tries left">
-            {subtask.pin_locked ? <span className="font-semibold text-rose-700 dark:text-rose-300">Locked</span> : subtask.pin_attempts_left}
+            {subtask.pin_locked ? <span className="font-bold text-term-red">[ERR] LOCKED</span> : subtask.pin_attempts_left}
           </Fact>
         )}
       </Facts>
 
       {subtask.status === "failed" && subtask.failure_reason && (
-        <p className="mt-3 rounded-md bg-rose-600 px-3 py-2 font-semibold text-white">{FAILURE_REASON_LABEL[subtask.failure_reason]}</p>
+        <p className="mt-3 border border-term-red px-2 py-1 font-bold text-term-red">
+          [ERR] FAILED: {FAILURE_REASON_LABEL[subtask.failure_reason]}
+        </p>
       )}
 
       <SubtaskMedia subtask={subtask} />
 
       <TxList txs={txs} names={names} title="Sub-task transactions" />
-    </section>
+    </Pane>
   );
 }
 
@@ -89,31 +91,27 @@ function SubtaskMedia({ subtask }: { subtask: Subtask }) {
   return (
     <div className="mt-3 grid gap-4 @2xl:grid-cols-2">
       {post ? (
-        <figure key={post.screenshot_url} className="motion-safe:animate-fade-in">
-          <figcaption className="mb-1 text-sm font-semibold text-zinc-600 dark:text-zinc-300">The Yik Yak post</figcaption>
+        <figure key={post.screenshot_url}>
+          <figcaption className="mb-1">
+            <SectionTitle as="p">The Yik Yak post</SectionTitle>
+          </figcaption>
           <ZoomableImage src={post.screenshot_url} alt={`Screenshot of the Yik Yak post: ${post.text}`} />
-          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">{post.text}</p>
+          <p className="mt-1 text-sm text-term-fg-dim wrap-anywhere">&quot;{post.text}&quot;</p>
         </figure>
       ) : (
-        waitingForPost && <Waiting>Waiting for the Yik Yak post…</Waiting>
+        waitingForPost && <Waiting>Waiting for the Yik Yak post</Waiting>
       )}
       {photo ? (
-        <figure key={photo.url} className="motion-safe:animate-fade-in">
-          <figcaption className="mb-1 text-sm font-semibold text-zinc-600 dark:text-zinc-300">The helper&apos;s photo</figcaption>
+        <figure key={photo.url}>
+          <figcaption className="mb-1">
+            <SectionTitle as="p">The helper&apos;s photo</SectionTitle>
+          </figcaption>
           <ZoomableImage src={photo.url} alt={photo.note ? `The saved seat: ${photo.note}` : "The helper's photo of the saved seat"} />
-          <p className="mt-1 text-xl font-bold">Seat saved{photo.note ? `: ${photo.note}` : ""}</p>
+          <p className={cn("mt-1 text-lg font-bold wrap-anywhere", GLOW)}>[OK] Seat saved{photo.note ? `: ${photo.note}` : ""}</p>
         </figure>
       ) : (
-        waitingForPhoto && <Waiting>Waiting for the helper&apos;s photo…</Waiting>
+        waitingForPhoto && <Waiting>Waiting for the helper&apos;s photo</Waiting>
       )}
     </div>
-  );
-}
-
-function Waiting({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="flex min-h-24 items-center justify-center rounded-lg border-2 border-dashed border-zinc-300 p-4 text-center text-zinc-500 dark:border-zinc-600 dark:text-zinc-400">
-      {children}
-    </p>
   );
 }

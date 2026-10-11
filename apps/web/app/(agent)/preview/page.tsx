@@ -8,7 +8,7 @@ import { PREVIEW_LAYOUTS, type PreviewLayout } from "@/lib/fixtures/preview";
 export default function PreviewPage({ searchParams }: PageProps<"/preview">) {
   if (!FIXTURE_MODE) notFound();
   return (
-    <Suspense fallback={<p className="p-4 text-zinc-500">Loading…</p>}>
+    <Suspense fallback={<p className="p-4 text-term-fg-dim">&gt; LOADING…</p>}>
       {searchParams.then(({ layout }) => (
         <BoardPreview layout={toLayout(layout)} />
       ))}
