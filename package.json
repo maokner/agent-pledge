@@ -1,0 +1,16 @@
+{
+  "name": "agent-pledge",
+  "private": true,
+  "packageManager": "pnpm@11.9.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev:web": "pnpm --filter @agent-pledge/web dev",
+    "dev:web:fixtures": "pnpm --filter @agent-pledge/web dev:fixtures",
+    "lint": "pnpm -r --if-present lint",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "test": "pnpm -r --if-present test",
+    "build": "pnpm -r --if-present build"
+  }
+}
