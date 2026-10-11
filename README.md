@@ -441,3 +441,4 @@ We enter Context.dev only if we build food delivery (see [section 12](#12-featur
 | 2026-10-11 | Other features wait until the base demo works. | A small demo that works is better than a large demo that does not work. |
 | 2026-10-11 | Our general track is Most Creative. | The main idea is creative: an AI agent hires a person. |
 | 2026-10-11 | We also enter the YZi Labs track. | It accepts any chain. It asks for agents with wallets that people can trust, and for voice-first agents. |
+| 2026-10-11 | The sub-task offer is an open sell offer with Amount "0" (XRP drops) and no Destination. No 1-drop fallback. | The testnet spike (issue #2) validated it: the first accept wins, a second accept (even a simultaneous one) fails with tecOBJECT_NOT_FOUND, and the vault can burn the NFT while a helper holds it. A zero RLUSD amount is temBAD_AMOUNT, so the offer must use XRP drops. |
