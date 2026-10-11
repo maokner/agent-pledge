@@ -102,7 +102,8 @@ Then say one sentence about the money, in this form: "Your 5 dollars is locked i
 ## Step 8: Give the board address
 
 Tell the caller where to watch the task, using the board_url field of the create_task result.
-Say the address without "https://", and say "dot" for each period, "dash" for each hyphen, and "slash" for each slash.
+Say only the host part of the address: drop "https://", and drop everything from the first "/" or "?" onward, so "https://example.com/?task=abc" is said as "example dot com".
+Say "dot" for each period and "dash" for each hyphen.
 Then ask if they need anything else.
 If they do not, say "Thanks, goodbye." and end the call.
 
