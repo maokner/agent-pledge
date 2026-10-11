@@ -176,7 +176,54 @@ Our solution:
 - The claim and the payout are NFT swaps. The XRPL makes each swap complete fully or not at all.
 - If the RLUSD issuer sets `allowTrustLineLocking` later, we can move each task's money into native escrow.
 
-### 5.3 Ledger transactions in the demo
+### 5.3 One NFT for each task and each sub-task
+
+This is the main idea of the NFT escrow.
+
+Each task and each sub-task has its own NFT.
+Each NFT has one holder: the agent or person who does that task.
+An NFT never goes from the local agent to the helper, or from the helper to the local agent.
+
+In the demo, there are two NFTs:
+
+| NFT | Made when | Reserved for | Shows that |
+|---|---|---|---|
+| **Task NFT** ("save a seat, $5") | The requester calls and pays $5. | The local agent | The local agent has the only right to do the $5 task, and the right to the $5 payout. |
+| **Sub-task NFT** ("save a seat, $4") | The local agent posts the $4 job on Yik Yak. | The helper who claims first | The helper has the only right to do the $4 sub-task, and the right to the $4 payout. |
+
+Each Yik Yak post links to one sub-task, and each sub-task has one NFT.
+If the local agent posts a second time for the same task, it makes a new sub-task with a new NFT.
+
+```mermaid
+flowchart LR
+  subgraph T["Task: save a seat, $5"]
+    TN["Task NFT"]
+  end
+  subgraph S["Sub-task: save a seat, $4 (the Yik Yak post)"]
+    SN["Sub-task NFT"]
+  end
+  V["Vault"] -->|reserved for, then claimed by| A["Local agent"]
+  V -->|open to all, claimed by the first helper| H["Helper"]
+  TN -.- A
+  SN -.- H
+  S -->|parent| T
+```
+
+How an NFT reserves a task:
+
+1. The vault makes the NFT when the task is made. The vault holds it, so nobody has the task yet.
+2. The vault makes a sell offer for the NFT.
+   For the task NFT, the offer is only for the local agent (`Destination`).
+   For the sub-task NFT, the offer is open, and the first helper to accept it gets it.
+3. The claimer accepts the offer. Now the claimer holds the NFT, and the task is reserved for that claimer.
+   The XRPL lets only one account accept an offer. Thus, two claimers cannot both get the task.
+4. When the work is done, the holder swaps the NFT back to the vault for the payout, in one transaction.
+5. The vault burns the NFT. The task is closed.
+
+The sub-task NFT has the task NFT ID in its data (its `URI` points to data with a `parent_nft_id` field).
+Thus, the board can draw the money tree from the NFTs, and anyone can audit which task paid for which sub-task.
+
+### 5.4 Ledger transactions in the demo
 
 The vault makes each task NFT with the flags `tfBurnable` and `tfTransferable`.
 The NFT `URI` points to the task data on the server.
@@ -321,7 +368,7 @@ Each part depends on the part before it.
 
 | # | Part | Done when |
 |---|---|---|
-| 1 | XRPL ledger module | A script does the full success flow and the full failure flow from [section 5.3](#53-ledger-transactions-in-the-demo) on testnet. |
+| 1 | XRPL ledger module | A script does the full success flow and the full failure flow from [section 5.4](#54-ledger-transactions-in-the-demo) on testnet. |
 | 2 | Server and database | The server API makes tasks, claims, sub-tasks, and payouts. It sends live updates. |
 | 3 | Board | The board shows the flow from part 1 live, with explorer links. |
 | 4 | Claim page | A helper can claim, add a photo, and enter the PIN from a phone. |
