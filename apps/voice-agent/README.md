@@ -66,6 +66,7 @@ The scripts read `.env` if it exists; real environment variables win.
    Each tool sends the secret as the `x-voice-secret` header from the secret store.
    `create_task` fills `caller_phone` from `system__caller_id` and `call_id` from `system__conversation_id`, so the LLM never fills them.
 3. Creates or updates the agent with the prompt, the first message, the tool ids, the `end_call` tool, and the voice settings.
+   A call ends after 8 minutes (`MAX_CALL_SECONDS` in `src/payloads.ts`), and the agent says a short goodbye first.
 4. If `ELEVENLABS_PHONE_NUMBER_ID` is set, routes that number to the agent.
 
 The run is idempotent.

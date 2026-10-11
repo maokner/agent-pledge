@@ -74,6 +74,15 @@ The tools send it as `"x-voice-secret": { "secret_id": "<id>" }`.
 Thus, the secret value is never in the tool config or in the git repo.
 `PATCH /v1/convai/secrets/{secret_id}` with `{ "type": "update", "name", "value" }` rotates it.
 
+### Call length
+
+`conversation_config.conversation.max_duration_seconds` ends the call after that many seconds.
+The API default is 600.
+We use 480, which caps cost and still leaves room for the status question in TESTING.md T9.
+`conversation_config.agent.max_conversation_duration_message` is what the agent says at the limit.
+If it is empty (the default), the call ends in silence.
+Both fields are in the OpenAPI spec (`ConversationConfig-Input` and `AgentConfigAPIModel-Input`) and in SDK 2.71.0.
+
 ### Phone numbers
 
 The API has no endpoint to buy a phone number.

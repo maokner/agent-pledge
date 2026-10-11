@@ -87,6 +87,8 @@ For each test, write the result in the table at the end.
       From a laptop, set the task to claimed: `curl -X POST <base>/mock/tasks/<task_id> -H "x-voice-secret: <secret>" -d '{"status":"claimed","helper_note":"Front table, left side"}'`.
       Then ask the agent: "Has anyone taken it yet?"
       Pass if the agent says that a helper has taken it and reads the helper note.
+      A call ends after 8 minutes, so do this within a few minutes of the PIN.
+      If the call reaches the limit, pass only if the agent says the time-limit goodbye instead of going silent.
 - [ ] **T10. Right now.**
       Say: "Save me a seat at the front table right now. I will pay 4 dollars."
       Pass if the agent says that it will make that 2 minutes, the summary says 2 minutes, and the create_task request has `time_limit_minutes: 2`.

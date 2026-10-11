@@ -3,6 +3,8 @@ import type { CreateTaskInput } from "@agent-pledge/shared";
 import { loadAssets, TOOL_NAMES } from "../src/assets.js";
 import { CREATE_TASK_PATH, TASK_STATUS_PATH_PREFIX, VOICE_SECRET_HEADER } from "../src/contract.js";
 import {
+  MAX_CALL_MESSAGE,
+  MAX_CALL_SECONDS,
   SECRET_NAME,
   buildAgentCreatePayload,
   buildAgentUpdatePayload,
@@ -169,6 +171,15 @@ describe("agent payload", () => {
     const tts = buildAgentCreatePayload(input).conversation_config.tts;
     expect(tts?.voice_id).toBe("voice_1");
     expect(tts?.model_id).toBe(DEFAULTS.ttsModelId);
+  });
+
+  it("says goodbye at the duration limit instead of ending the call in silence", () => {
+    const config = buildAgentCreatePayload(input).conversation_config;
+    expect(config.conversation?.max_duration_seconds).toBe(MAX_CALL_SECONDS);
+    expect(MAX_CALL_SECONDS).toBeGreaterThanOrEqual(5 * 60);
+    expect(config.agent?.max_conversation_duration_message).toBe(MAX_CALL_MESSAGE);
+    expect(MAX_CALL_MESSAGE).not.toMatch(/\d/);
+    expect(MAX_CALL_MESSAGE.split(/\s+/).length).toBeLessThanOrEqual(25);
   });
 
   it("sends the same settings on create and on update", () => {

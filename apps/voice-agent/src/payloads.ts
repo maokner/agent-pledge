@@ -27,8 +27,15 @@ export const ASR_KEYWORDS = ["Agent Pledge", "Main Stacks", "Moffitt", "Doe Libr
 /** Voice settings for a loud room on speakerphone: steady and a little slower than normal. */
 export const VOICE_SETTINGS = { stability: 0.6, similarity_boost: 0.8, speed: 0.95 } as const;
 
-/** A demo call should take about one minute. This caps cost if a call gets stuck. */
-export const MAX_CALL_SECONDS = 300;
+/**
+ * A demo call takes about one minute. This caps cost if a call gets stuck.
+ * Eight minutes leaves room for T9 in TESTING.md, where the caller stays on the line and asks for the status.
+ */
+export const MAX_CALL_SECONDS = 480;
+
+/** What the agent says when the call reaches MAX_CALL_SECONDS, so the call does not end in silence. */
+export const MAX_CALL_MESSAGE =
+  "Sorry, this call has reached its time limit. Please call again if you need anything else.";
 
 export function buildSecretCreatePayload(value: string): SecretCreateWire {
   return { type: "new", name: SECRET_NAME, value };
@@ -71,6 +78,7 @@ function conversationConfig(input: AgentInput) {
       language: "en",
       // A noisy room must not cut off the greeting.
       disable_first_message_interruptions: true,
+      max_conversation_duration_message: MAX_CALL_MESSAGE,
       prompt: {
         prompt: input.systemPrompt,
         // Env strings; the strict SDK parse in sdk-payloads.ts rejects unknown values.
