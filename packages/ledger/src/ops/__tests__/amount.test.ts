@@ -5,6 +5,8 @@ import {
   compareIouValues,
   formatIouValue,
   isZeroIouValue,
+  normalizeLedgerValue,
+  subtractIouValues,
   tokenAmount,
 } from "../amount.js";
 
@@ -88,5 +90,34 @@ describe("tokenAmount", () => {
 
   it("rejects zero, which rippled rejects as temBAD_AMOUNT", () => {
     expect(() => tokenAmount(config, "0")).toThrow(RangeError);
+  });
+});
+
+describe("subtractIouValues", () => {
+  it("subtracts exactly", () => {
+    expect(subtractIouValues("6", "1")).toBe("5");
+    expect(subtractIouValues("4.5", "0.25")).toBe("4.25");
+    expect(subtractIouValues("1", "1")).toBe("0");
+  });
+
+  it("rejects a negative result", () => {
+    expect(() => subtractIouValues("1", "6")).toThrow(RangeError);
+  });
+});
+
+describe("normalizeLedgerValue", () => {
+  it.each([
+    ["5", "5"],
+    ["4.50", "4.5"],
+    ["1e-7", "0.0000001"],
+    ["1.5e3", "1500"],
+    ["12.5e-1", "1.25"],
+    ["25e0", "25"],
+  ])("normalizes %j to %j", (input, output) => {
+    expect(normalizeLedgerValue(input)).toBe(output);
+  });
+
+  it.each(["-5", "abc", ""])("returns undefined for %j", (input) => {
+    expect(normalizeLedgerValue(input)).toBeUndefined();
   });
 });

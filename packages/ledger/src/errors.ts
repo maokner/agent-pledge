@@ -1,3 +1,5 @@
+import type { LedgerErrorCode } from "@agent-pledge/shared";
+
 /** Extra facts about a failed transaction. Both fields are absent for errors that are not about a transaction. */
 export interface LedgerErrorDetails {
   /** The raw XRPL result code, for example `tecOBJECT_NOT_FOUND`. */
@@ -8,8 +10,8 @@ export interface LedgerErrorDetails {
 
 /**
  * Base class for every error that the ledger package throws on purpose.
- * `code` is a stable value that the server can switch on. The package only uses the values of
- * `LedgerErrorCode` from `@agent-pledge/shared`.
+ * `code` is a stable value that the server can switch on: one of `LedgerErrorCode` from
+ * `@agent-pledge/shared`.
  */
 export class LedgerError extends Error {
   public readonly resultCode: string | undefined;
@@ -17,7 +19,7 @@ export class LedgerError extends Error {
 
   constructor(
     message: string,
-    public readonly code: string,
+    public readonly code: LedgerErrorCode,
     public readonly cause?: unknown,
     details: LedgerErrorDetails = {},
   ) {
@@ -95,8 +97,18 @@ export class OfferExpiredError extends LedgerError {
  * safe to build and submit it again. HTTP 503.
  */
 export class TxExpiredError extends LedgerError {
-  constructor(txType: string, cause?: unknown, details?: LedgerErrorDetails) {
-    super(`${txType} expired before a validated ledger included it`, "TX_EXPIRED", cause, details);
+  /**
+   * @param preliminary The preliminary result from `submit`, if it explains the expiry. For example
+   *   `terINSUF_FEE_B`: the account could not pay the fee, so the server held it until it expired.
+   */
+  constructor(txType: string, cause?: unknown, details?: LedgerErrorDetails, preliminary?: string) {
+    super(
+      `${txType} expired before a validated ledger included it` +
+        (preliminary ? ` (preliminary result ${preliminary})` : ""),
+      "TX_EXPIRED",
+      cause,
+      details,
+    );
   }
 }
 
@@ -104,6 +116,46 @@ export class TxExpiredError extends LedgerError {
 export class InvalidTransactionError extends LedgerError {
   constructor(message: string, cause?: unknown, details?: LedgerErrorDetails) {
     super(message, "INVALID_TX", cause, details);
+  }
+}
+
+/** What the vault received on the ledger for one task. Values are token amounts. */
+export interface FundingReceived {
+  /** The task price, from the requester's `task.fund` payments. */
+  price: string;
+  /** The agent's pledge, from validated accepts of the vault's task offer. */
+  pledge: string;
+  /** Sub-task money per sub-task ID, from the agent's `subtask.fund` payments. */
+  subtasks: Record<string, string>;
+}
+
+/**
+ * The amounts the caller expects for a task differ from what the vault received on the ledger.
+ * failTask sends nothing in this case. `received` has the ledger's view, so the server can decide.
+ */
+export class FundingMismatchError extends LedgerError {
+  constructor(
+    public readonly taskId: string,
+    public readonly problems: readonly string[],
+    public readonly received: FundingReceived,
+  ) {
+    super(
+      `Task ${taskId} funding on the ledger differs from the input: ${problems.join("; ")}`,
+      "FUNDING_MISMATCH",
+    );
+  }
+}
+
+/** The offer on the ledger is not the payout offer the vault expects. Nothing was submitted. */
+export class OfferMismatchError extends LedgerError {
+  constructor(
+    offerId: string,
+    public readonly problems: readonly string[],
+  ) {
+    super(
+      `Offer ${offerId} is not the expected payout offer: ${problems.join("; ")}`,
+      "OFFER_MISMATCH",
+    );
   }
 }
 

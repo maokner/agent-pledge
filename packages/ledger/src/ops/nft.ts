@@ -3,12 +3,13 @@ import {
   NFTokenMintFlags,
   type IssuedCurrencyAmount,
   type Memo,
+  type NFTokenMint,
   type Wallet,
 } from "xrpl";
 import { LedgerError } from "../errors.js";
 import { submitOp, type OpsContext } from "./context.js";
 import { getCreatedOfferId, getMintedNftId } from "./meta.js";
-import type { MintResult, OfferResult } from "./types.js";
+import type { MintOfferResult, MintResult, OfferResult } from "./types.js";
 import { encodeNftUri } from "./uri.js";
 
 /** NFTokenTaxon for task NFTs. Sub-task NFTs use SUBTASK_NFT_TAXON. */
@@ -26,25 +27,50 @@ export interface MintNftParams {
   kind: "task.mint" | "subtask.mint";
 }
 
+/** A sell offer that NFTokenMint makes in the same transaction (the NFTokenMintOffer amendment). */
+export interface MintOfferParams {
+  /** XRP drops as a string, or a token amount. */
+  amount: string | IssuedCurrencyAmount;
+  destination?: string | undefined;
+}
+
+function mintTx(params: MintNftParams, offer?: MintOfferParams): NFTokenMint {
+  return {
+    TransactionType: "NFTokenMint",
+    Account: params.vault.classicAddress,
+    NFTokenTaxon: params.taxon,
+    Flags: TASK_NFT_FLAGS,
+    TransferFee: 0,
+    URI: encodeNftUri(params.uri),
+    ...(offer ? { Amount: offer.amount } : {}),
+    ...(offer?.destination === undefined ? {} : { Destination: offer.destination }),
+    Memos: params.memos,
+  };
+}
+
 /** Shared NFTokenMint for task and sub-task NFTs. */
 export async function mintNft(params: MintNftParams, c: OpsContext): Promise<MintResult> {
-  const { response, tx } = await submitOp(
-    c,
-    params.vault,
-    {
-      TransactionType: "NFTokenMint",
-      Account: params.vault.classicAddress,
-      NFTokenTaxon: params.taxon,
-      Flags: TASK_NFT_FLAGS,
-      TransferFee: 0,
-      URI: encodeNftUri(params.uri),
-      Memos: params.memos,
-    },
-    params.kind,
-  );
+  const { response, tx } = await submitOp(c, params.vault, mintTx(params), params.kind);
   const nftId = getMintedNftId(response.result.meta);
   if (!nftId) throw new LedgerError(`No NFTokenID in mint ${tx.hash}`, "META_PARSE", response);
   return { ...tx, nftId };
+}
+
+/**
+ * NFTokenMint with Amount (and an optional Destination): the NFT and its sell offer in one
+ * transaction, one ledger instead of two. Spike step 7 checked it on testnet.
+ */
+export async function mintNftWithOffer(
+  params: MintNftParams,
+  offer: MintOfferParams,
+  c: OpsContext,
+): Promise<MintOfferResult> {
+  const { response, tx } = await submitOp(c, params.vault, mintTx(params, offer), params.kind);
+  const nftId = getMintedNftId(response.result.meta);
+  if (!nftId) throw new LedgerError(`No NFTokenID in mint ${tx.hash}`, "META_PARSE", response);
+  const offerId = getCreatedOfferId(response.result.meta);
+  if (!offerId) throw new LedgerError(`No NFTokenOffer in mint ${tx.hash}`, "META_PARSE", response);
+  return { ...tx, nftId, offerId };
 }
 
 export interface SellOfferParams {

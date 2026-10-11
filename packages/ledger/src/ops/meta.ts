@@ -39,12 +39,6 @@ function nodes(meta: MetaInput): NodeView[] {
   return views;
 }
 
-/** The engine result, for example "tesSUCCESS", or undefined if the meta has none. */
-export function getTransactionResult(meta: MetaInput): string | undefined {
-  const result = toObject(meta)?.TransactionResult;
-  return typeof result === "string" ? result : undefined;
-}
-
 /** A synthetic field that rippled 1.11+ adds to validated meta, such as nftoken_id or offer_id. */
 function syntheticField(meta: MetaInput, field: "nftoken_id" | "offer_id"): string | undefined {
   const value = toObject(meta)?.[field];

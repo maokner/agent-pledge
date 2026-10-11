@@ -7,4 +7,5 @@ export * from "./wallet.js";
 export * from "./explorer.js";
 export * from "./events.js";
 export * from "./memo.js";
+export * from "./queue.js";
 export * from "./ops/index.js";

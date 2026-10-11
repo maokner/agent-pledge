@@ -8,9 +8,9 @@ import {
   type AccountRef,
   type OpsContext,
 } from "./context.js";
-import { buildMemos } from "./memo.js";
-import { createSellOffer, mintNft, TASK_NFT_TAXON } from "./nft.js";
-import type { MintResult, OfferResult } from "./types.js";
+import { buildMemos } from "../memo.js";
+import { createSellOffer, mintNft, mintNftWithOffer, TASK_NFT_TAXON } from "./nft.js";
+import type { MintOfferResult, MintResult, OfferResult } from "./types.js";
 
 export interface FundTaskInput {
   requester: Wallet;
@@ -72,8 +72,8 @@ export interface OfferTaskToAgentInput {
   /** The pledge in the token, for example "1". The agent pays it when it accepts. */
   pledgeAmount: DecimalInput;
   agentAddress: string;
-  /** Optional. Adds the task ID memo for the audit trail. */
-  taskId?: string | undefined;
+  /** The task ID memo. failTask finds the pledge on the ledger by this memo. */
+  taskId: string;
 }
 
 /** Demo step 7 (offer): sell offer for the pledge, only for the local agent (Destination). */
@@ -91,6 +91,35 @@ export async function offerTaskToAgent(
       memos: buildMemos({ task: input.taskId, action: "task.offer" }),
       kind: "task.offer",
     },
+    c,
+  );
+}
+
+export interface MintTaskNftWithOfferInput extends MintTaskNftInput {
+  /** The pledge in the token, for example "1". The agent pays it when it accepts. */
+  pledgeAmount: DecimalInput;
+  agentAddress: string;
+}
+
+/**
+ * Demo steps 5 and 7 in one transaction: NFTokenMint with Amount = the pledge and Destination = the
+ * local agent. It makes the task NFT and the agent-only sell offer at once, one ledger sooner than
+ * mintTaskNft then offerTaskToAgent. The board sees one `task.mint` transaction.
+ */
+export async function mintTaskNftWithOffer(
+  input: MintTaskNftWithOfferInput,
+  ctx?: Partial<OpsContext>,
+): Promise<MintOfferResult> {
+  const c = await resolveContext(ctx);
+  return mintNftWithOffer(
+    {
+      vault: input.vault,
+      uri: input.uri,
+      taxon: TASK_NFT_TAXON,
+      memos: buildMemos({ task: input.taskId, action: "task.mint" }),
+      kind: "task.mint",
+    },
+    { amount: tokenAmount(c.config, input.pledgeAmount), destination: input.agentAddress },
     c,
   );
 }

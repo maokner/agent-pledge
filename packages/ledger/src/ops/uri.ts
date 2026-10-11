@@ -1,4 +1,4 @@
-import { convertHexToString, convertStringToHex } from "xrpl";
+import { fromHex, toHex } from "../memo.js";
 
 /** NFTokenMint allows at most 256 bytes of URI. */
 export const MAX_NFT_URI_BYTES = 256;
@@ -25,9 +25,11 @@ export function encodeNftUri(url: string): string {
   if (bytes > MAX_NFT_URI_BYTES) {
     throw new RangeError(`NFT URI is ${bytes} bytes. The limit is ${MAX_NFT_URI_BYTES}.`);
   }
-  return convertStringToHex(url);
+  return toHex(url);
 }
 
 export function decodeNftUri(hex: string): string {
-  return convertHexToString(hex);
+  const url = fromHex(hex);
+  if (url === null) throw new TypeError(`NFT URI is not hex: "${hex}"`);
+  return url;
 }

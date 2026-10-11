@@ -8,6 +8,12 @@ export interface OfferResult extends SubmittedTx {
   offerId: string;
 }
 
+/** One NFTokenMint that made the NFT and its sell offer. */
+export interface MintOfferResult extends SubmittedTx {
+  nftId: string;
+  offerId: string;
+}
+
 export interface ClaimResult extends SubmittedTx {
   nftId: string;
   /** The address that holds the NFT after the claim. */

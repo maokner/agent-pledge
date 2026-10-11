@@ -8,13 +8,13 @@ export {
   type OpsContext,
 } from "./context.js";
 export * from "./fail.js";
-export * from "./memo.js";
+export { taskLockKey } from "./lock.js";
 export * from "./meta.js";
 export { SUBTASK_NFT_TAXON, TASK_NFT_FLAGS, TASK_NFT_TAXON } from "./nft.js";
 export * from "./payout.js";
-export { runExclusive } from "./queue.js";
 export * from "./state.js";
 export * from "./subtask.js";
 export * from "./task.js";
+export * from "./transfer.js";
 export * from "./types.js";
 export * from "./uri.js";

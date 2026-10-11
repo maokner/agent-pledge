@@ -22,7 +22,9 @@ export type TxKind =
   | "payout.offer"
   | "payout.accept"
   | "nft.burn"
-  | "refund";
+  | "refund"
+  /** A plain token payment, for example from a treasury into a new requester wallet. */
+  | "token.transfer";
 
 /** Input to the voice agent's create_task tool. PRD section 6. */
 export interface CreateTaskInput {
@@ -76,7 +78,20 @@ export type LedgerErrorCode =
   | "INVALID_TX"
   | "INVALID_INPUT"
   | "CONFIG"
-  | "TX_FAILED";
+  | "TX_FAILED"
+  // Codes from the task ops (packages/ledger/src/ops).
+  /** failTask: a task or sub-task NFT was already paid out, so the task did not fail. */
+  | "ALREADY_PAID_OUT"
+  /** failTask: an NFT is not burned and none of the candidate accounts holds it. */
+  | "NFT_HOLDER_UNKNOWN"
+  /** A validated transaction's metadata has no NFT ID or offer ID. */
+  | "META_PARSE"
+  /** failTask: the caller's amounts differ from what the vault received on the ledger. */
+  | "FUNDING_MISMATCH"
+  /** acceptPayoutOffer: the offer on the ledger is not the expected payout offer. */
+  | "OFFER_MISMATCH"
+  /** failTask: the XRPL server does not have the vault's full history. */
+  | "HISTORY_INCOMPLETE";
 
 /** Fields that every ledger transaction event has. */
 export interface LedgerTxEventBase {
@@ -105,7 +120,7 @@ export interface TxValidatedEvent extends LedgerTxEventBase {
   ledgerIndex: number;
 }
 
-/** Emitted when the transaction fails, before or after it reaches a ledger. */
+/** Emitted when the transaction fails, before or after it reaches a ledger. It did not apply. */
 export interface TxFailedEvent extends LedgerTxEventBase {
   /** Raw XRPL result code (for example `tecOBJECT_NOT_FOUND`), or the `errorCode` when there is none. */
   code: string;
@@ -114,6 +129,19 @@ export interface TxFailedEvent extends LedgerTxEventBase {
   message: string;
   /** Explorer link when the transaction is in a validated ledger (`tec` codes), otherwise `null`. */
   explorerUrl: string | null;
+}
+
+/**
+ * Emitted when `submitTx` cannot learn the outcome of a signed transaction, for example because the
+ * connection stayed down past the deadline. The transaction may still validate and move money, so
+ * do not show it as failed. Look up the hash (`explorerUrl`) before you build it again.
+ */
+export interface TxUnknownEvent extends LedgerTxEventBase {
+  /** Stable error code of the `LedgerError` that `submitTx` throws. Always `NETWORK`. */
+  errorCode: LedgerErrorCode;
+  message: string;
+  /** Explorer link for the hash. It shows the transaction only if it validated. */
+  explorerUrl: string;
 }
 
 /** Emitted when the XRPL WebSocket drops unexpectedly. The package reconnects by itself. */
@@ -135,6 +163,7 @@ export interface LedgerEventMap {
   "tx.pending": TxPendingEvent;
   "tx.validated": TxValidatedEvent;
   "tx.failed": TxFailedEvent;
+  "tx.unknown": TxUnknownEvent;
   "ledger.connected": LedgerConnectedEvent;
   "ledger.disconnected": LedgerDisconnectedEvent;
 }

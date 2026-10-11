@@ -1,12 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import type { TransactionMetadata } from "xrpl";
-import {
-  getAcceptedNftId,
-  getCreatedOfferId,
-  getMintedNftId,
-  getTransactionResult,
-} from "../meta.js";
+import { getAcceptedNftId, getCreatedOfferId, getMintedNftId } from "../meta.js";
 
 /** Real validated metadata from XRPL testnet (rippled 3.4.1), captured on 2026-10-11. */
 const samples = JSON.parse(
@@ -67,12 +62,5 @@ describe("getAcceptedNftId", () => {
 
   it("returns undefined for meta without an accepted offer", () => {
     expect(getAcceptedNftId(withoutSynthetic(samples.offer))).toBeUndefined();
-  });
-});
-
-describe("getTransactionResult", () => {
-  it("reads the engine result", () => {
-    expect(getTransactionResult(samples.accept)).toBe("tesSUCCESS");
-    expect(getTransactionResult(undefined)).toBeUndefined();
   });
 });

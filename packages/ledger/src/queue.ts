@@ -1,7 +1,7 @@
 /**
- * Runs tasks with the same key one after another, in call order.
- * The core submitTx already serializes signing per account. This queue is for higher level
- * idempotency, for example one failTask per task at a time. It is in-process only.
+ * Runs tasks with the same key one after another, in call order. In-process only.
+ * submitTx uses it per account (key `account|<address>`), so autofilled Sequence numbers stay
+ * unique. The ops use it per task (see `taskLockKey`), so a payout and a failTask never interleave.
  */
 const tails = new Map<string, Promise<unknown>>();
 
