@@ -66,3 +66,11 @@ curl -sS -X POST "$API_URL/tools/create_task" \
 The task card appears and the number in the header stays under 2 s. In fixture mode, use the backup form
 (below) instead of `curl`: it also says how long the new task took to reach the board.
 `lib/board/fixture-transport.test.ts` checks that a board catches up within the budget after a dropped connection.
+
+## Agent log (#37)
+
+The right-hand panel shows `agent.log` lines in the order the server sent them, newest at the bottom, each
+with its time and a short tag for its task (the last 4 characters of the task ID; hover for the task's
+description). It follows new lines while scrolled to the bottom. Scrolling up pauses that and shows a
+"N new lines, jump to latest" button. The board keeps the last 200 lines (`AGENT_LOG_LIMIT`).
+The local agent adds lines with `POST /agent/log`.

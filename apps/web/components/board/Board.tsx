@@ -1,5 +1,6 @@
 "use client";
 
+import { selectAgentLog } from "@/lib/board/agent-log";
 import { selectTaskViews } from "@/lib/board/selectors";
 import { useBoard } from "@/lib/board/use-board";
 import { FIXTURE_MODE } from "@/lib/config";
@@ -37,7 +38,7 @@ export function Board() {
             tasks.map((view) => <TaskCard key={view.task.id} view={view} />)
           )}
         </section>
-        <AgentLog lines={state.agentLog} />
+        <AgentLog entries={selectAgentLog(state)} />
       </div>
     </div>
   );
