@@ -42,7 +42,7 @@ export function StatsBand() {
 function Stat({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col-reverse gap-3 border-t border-human-inverted-fg/15 pt-6">
-      <dt className="text-sm font-semibold uppercase tracking-[0.14em] text-human-inverted-fg/80">{label}</dt>
+      <dt className="text-sm font-medium uppercase tracking-[0.15em] text-human-inverted-fg/80">{label}</dt>
       <dd className={NUMBER}>{children}</dd>
     </div>
   );

@@ -8,7 +8,7 @@ import { PayAmount } from "@/components/human/PayAmount";
 import { SubtaskIcon } from "@/components/open-list/SubtaskIcon";
 import { cn } from "@/lib/cn";
 
-const LABEL = "text-xs font-semibold uppercase tracking-[0.14em] text-human-muted-fg";
+const LABEL = "text-xs font-medium uppercase tracking-[0.15em] text-human-muted-fg";
 
 /**
  * The sub-task: an icon tile, the pay in big type, what to do, the place, and
