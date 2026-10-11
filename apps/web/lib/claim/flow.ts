@@ -4,6 +4,7 @@
  */
 import { MAX_PIN_ATTEMPTS, type ClaimView } from "@agent-pledge/shared";
 import { ApiError } from "../api/client";
+import { plainMessage } from "./plain-words";
 
 export const OFFLINE_MESSAGE = "No connection. Check your signal and try again.";
 
@@ -23,17 +24,21 @@ export function stepFor(view: ClaimView, { photoSkipped }: { photoSkipped: boole
   }
 }
 
-/** The line under the spinner while the claim goes through the ledger (usually 4 to 8 seconds). */
+/**
+ * The line under the spinner while the server records the claim (usually 4 to
+ * 8 seconds). Plain words only (PRD R7): the helper never hears how it works.
+ */
 export function claimingMessage(elapsedMs: number): string {
   if (elapsedMs >= 20_000) return "This is slower than usual. Keep this page open.";
-  if (elapsedMs >= 8_000) return "Still working. The ledger can take a few more seconds.";
-  return "Reserving this for you on the XRP Ledger…";
+  if (elapsedMs >= 8_000) return "Still working. This can take a few more seconds.";
+  return "Holding this sub-task for you…";
 }
 
 /**
  * What a failed claim, photo or PIN call means for the page:
  * - state: the sub-task is closed to this phone; show that screen
  * - retry: the server said no for a passing reason; stay on the step and show the message
+ *   (in plain words: a message about the plumbing becomes a generic one)
  * - recheck: no answer reached the phone, so the call may have worked; reload the claim before retrying
  */
 export type ErrorOutcome =
@@ -51,6 +56,6 @@ export function afterError(view: ClaimView, error: unknown): ErrorOutcome {
     case "locked":
       return { kind: "state", view: { ...view, state: "locked", pin_attempts_left: 0 } };
     default:
-      return { kind: "retry", message: error.message };
+      return { kind: "retry", message: plainMessage(error.message) };
   }
 }

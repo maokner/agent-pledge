@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 export default function ClaimPage({ params }: PageProps<"/c/[code]">) {
   return (
-    <Suspense fallback={<p className="p-4 text-lg text-zinc-500">Loading the task…</p>}>
+    <Suspense fallback={<p className="p-4 text-lg text-human-muted-fg">Loading the sub-task…</p>}>
       {params.then(({ code }) => (
         <ClaimScreen code={code.toUpperCase()} />
       ))}
