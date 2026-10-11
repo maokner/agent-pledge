@@ -5,3 +5,4 @@ export * from "./client.js";
 export * from "./submit.js";
 export * from "./wallet.js";
 export * from "./explorer.js";
+export * from "./ops/index.js";

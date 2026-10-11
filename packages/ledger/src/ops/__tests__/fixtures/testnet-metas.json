@@ -1,0 +1,281 @@
+{
+  "nftId": "00090000461CBACF3E94A7D54430D98A603CE98BFED0FB573B4929FE01477C64",
+  "offerId": "33EC916CE460375C2311CCB65AC352783DBB04CF4BAF0FE35DB92F7C16BA4ED8",
+  "mint": {
+    "AffectedNodes": [
+      {
+        "ModifiedNode": {
+          "FinalFields": {
+            "Flags": 0,
+            "NFTokens": [
+              {
+                "NFToken": {
+                  "NFTokenID": "00090000461CBACF3E94A7D54430D98A603CE98BFED0FB57246358FF01477C63",
+                  "URI": "68747470733A2F2F6578616D706C652E636F6D2F61"
+                }
+              },
+              {
+                "NFToken": {
+                  "NFTokenID": "00090000461CBACF3E94A7D54430D98A603CE98BFED0FB573B4929FE01477C64",
+                  "URI": "68747470733A2F2F6578616D706C652E636F6D2F62"
+                }
+              }
+            ]
+          },
+          "LedgerEntryType": "NFTokenPage",
+          "LedgerIndex": "461CBACF3E94A7D54430D98A603CE98BFED0FB57FFFFFFFFFFFFFFFFFFFFFFFF",
+          "PreviousFields": {
+            "NFTokens": [
+              {
+                "NFToken": {
+                  "NFTokenID": "00090000461CBACF3E94A7D54430D98A603CE98BFED0FB57246358FF01477C63",
+                  "URI": "68747470733A2F2F6578616D706C652E636F6D2F61"
+                }
+              }
+            ]
+          },
+          "PreviousTxnID": "1642C4006335164B81125B2FD49BE8B74368B7DA74D7BDF81E5CA5026DBFBED2",
+          "PreviousTxnLgrSeq": 21462118
+        }
+      },
+      {
+        "ModifiedNode": {
+          "FinalFields": {
+            "Account": "rfP55chDRj2wnifsJsD6bHTVuMu9PnJ5cv",
+            "Balance": "99999976",
+            "FirstNFTokenSequence": 21462115,
+            "Flags": 0,
+            "MintedNFTokens": 2,
+            "OwnerCount": 1,
+            "Sequence": 21462117
+          },
+          "LedgerEntryType": "AccountRoot",
+          "LedgerIndex": "8E6C19B44C33314CF6FE91A4D6124854005CEEB476E5272E69CF2CB9439B6399",
+          "PreviousFields": {
+            "Balance": "99999988",
+            "MintedNFTokens": 1,
+            "Sequence": 21462116
+          },
+          "PreviousTxnID": "1642C4006335164B81125B2FD49BE8B74368B7DA74D7BDF81E5CA5026DBFBED2",
+          "PreviousTxnLgrSeq": 21462118
+        }
+      }
+    ],
+    "TransactionIndex": 11,
+    "TransactionResult": "tesSUCCESS",
+    "nftoken_id": "00090000461CBACF3E94A7D54430D98A603CE98BFED0FB573B4929FE01477C64"
+  },
+  "offer": {
+    "AffectedNodes": [
+      {
+        "CreatedNode": {
+          "LedgerEntryType": "DirectoryNode",
+          "LedgerIndex": "2F21B27557107FA17F09B0F35BC6DAD7226FC2AFBB8773B7F607C2ABF3624C84",
+          "NewFields": {
+            "Owner": "rfP55chDRj2wnifsJsD6bHTVuMu9PnJ5cv",
+            "RootIndex": "2F21B27557107FA17F09B0F35BC6DAD7226FC2AFBB8773B7F607C2ABF3624C84"
+          }
+        }
+      },
+      {
+        "CreatedNode": {
+          "LedgerEntryType": "NFTokenOffer",
+          "LedgerIndex": "33EC916CE460375C2311CCB65AC352783DBB04CF4BAF0FE35DB92F7C16BA4ED8",
+          "NewFields": {
+            "Amount": "1",
+            "Destination": "r1Je44PCrwzB3EtUtTdJyjP2RMFRdo9PR",
+            "Flags": 1,
+            "NFTokenID": "00090000461CBACF3E94A7D54430D98A603CE98BFED0FB573B4929FE01477C64",
+            "Owner": "rfP55chDRj2wnifsJsD6bHTVuMu9PnJ5cv"
+          }
+        }
+      },
+      {
+        "ModifiedNode": {
+          "FinalFields": {
+            "Account": "rfP55chDRj2wnifsJsD6bHTVuMu9PnJ5cv",
+            "Balance": "99999964",
+            "FirstNFTokenSequence": 21462115,
+            "Flags": 0,
+            "MintedNFTokens": 2,
+            "OwnerCount": 2,
+            "Sequence": 21462118
+          },
+          "LedgerEntryType": "AccountRoot",
+          "LedgerIndex": "8E6C19B44C33314CF6FE91A4D6124854005CEEB476E5272E69CF2CB9439B6399",
+          "PreviousFields": {
+            "Balance": "99999976",
+            "OwnerCount": 1,
+            "Sequence": 21462117
+          },
+          "PreviousTxnID": "282EC970D77AFFFDE1AB22DE203157DFE577E296EEED645D9F78C8090FE070C3",
+          "PreviousTxnLgrSeq": 21462120
+        }
+      },
+      {
+        "ModifiedNode": {
+          "LedgerEntryType": "AccountRoot",
+          "LedgerIndex": "B66F737C093D610A2D3A7D0464626C7F7FE720820723575C7FF398E779CE900C",
+          "PreviousTxnID": "715E6037B2D630AE20209F9604682577459319DECC14FBBD0422A909D2F139FA",
+          "PreviousTxnLgrSeq": 21462116
+        }
+      },
+      {
+        "CreatedNode": {
+          "LedgerEntryType": "DirectoryNode",
+          "LedgerIndex": "F48A1D17395731588E6B6F691AD94474A7ACA8B6E7FEC0B9E3FF84C09649CE72",
+          "NewFields": {
+            "Flags": 2,
+            "NFTokenID": "00090000461CBACF3E94A7D54430D98A603CE98BFED0FB573B4929FE01477C64",
+            "RootIndex": "F48A1D17395731588E6B6F691AD94474A7ACA8B6E7FEC0B9E3FF84C09649CE72"
+          }
+        }
+      }
+    ],
+    "TransactionIndex": 16,
+    "TransactionResult": "tesSUCCESS",
+    "offer_id": "33EC916CE460375C2311CCB65AC352783DBB04CF4BAF0FE35DB92F7C16BA4ED8"
+  },
+  "accept": {
+    "AffectedNodes": [
+      {
+        "CreatedNode": {
+          "LedgerEntryType": "NFTokenPage",
+          "LedgerIndex": "098386DC0FCF0F08B19171CE275F650B02ECA9F2FFFFFFFFFFFFFFFFFFFFFFFF",
+          "NewFields": {
+            "NFTokens": [
+              {
+                "NFToken": {
+                  "NFTokenID": "00090000461CBACF3E94A7D54430D98A603CE98BFED0FB573B4929FE01477C64",
+                  "URI": "68747470733A2F2F6578616D706C652E636F6D2F62"
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "DeletedNode": {
+          "FinalFields": {
+            "Flags": 0,
+            "Owner": "rfP55chDRj2wnifsJsD6bHTVuMu9PnJ5cv",
+            "PreviousTxnID": "672C2796C0B6965979ABEC311296E1E38DE5A0D1226256A7971199BE8FD88D66",
+            "PreviousTxnLgrSeq": 21462122,
+            "RootIndex": "2F21B27557107FA17F09B0F35BC6DAD7226FC2AFBB8773B7F607C2ABF3624C84"
+          },
+          "LedgerEntryType": "DirectoryNode",
+          "LedgerIndex": "2F21B27557107FA17F09B0F35BC6DAD7226FC2AFBB8773B7F607C2ABF3624C84"
+        }
+      },
+      {
+        "DeletedNode": {
+          "FinalFields": {
+            "Amount": "1",
+            "Destination": "r1Je44PCrwzB3EtUtTdJyjP2RMFRdo9PR",
+            "Flags": 1,
+            "NFTokenID": "00090000461CBACF3E94A7D54430D98A603CE98BFED0FB573B4929FE01477C64",
+            "NFTokenOfferNode": "0",
+            "Owner": "rfP55chDRj2wnifsJsD6bHTVuMu9PnJ5cv",
+            "OwnerNode": "0",
+            "PreviousTxnID": "672C2796C0B6965979ABEC311296E1E38DE5A0D1226256A7971199BE8FD88D66",
+            "PreviousTxnLgrSeq": 21462122
+          },
+          "LedgerEntryType": "NFTokenOffer",
+          "LedgerIndex": "33EC916CE460375C2311CCB65AC352783DBB04CF4BAF0FE35DB92F7C16BA4ED8"
+        }
+      },
+      {
+        "ModifiedNode": {
+          "FinalFields": {
+            "Flags": 0,
+            "NFTokens": [
+              {
+                "NFToken": {
+                  "NFTokenID": "00090000461CBACF3E94A7D54430D98A603CE98BFED0FB57246358FF01477C63",
+                  "URI": "68747470733A2F2F6578616D706C652E636F6D2F61"
+                }
+              }
+            ]
+          },
+          "LedgerEntryType": "NFTokenPage",
+          "LedgerIndex": "461CBACF3E94A7D54430D98A603CE98BFED0FB57FFFFFFFFFFFFFFFFFFFFFFFF",
+          "PreviousFields": {
+            "NFTokens": [
+              {
+                "NFToken": {
+                  "NFTokenID": "00090000461CBACF3E94A7D54430D98A603CE98BFED0FB57246358FF01477C63",
+                  "URI": "68747470733A2F2F6578616D706C652E636F6D2F61"
+                }
+              },
+              {
+                "NFToken": {
+                  "NFTokenID": "00090000461CBACF3E94A7D54430D98A603CE98BFED0FB573B4929FE01477C64",
+                  "URI": "68747470733A2F2F6578616D706C652E636F6D2F62"
+                }
+              }
+            ]
+          },
+          "PreviousTxnID": "282EC970D77AFFFDE1AB22DE203157DFE577E296EEED645D9F78C8090FE070C3",
+          "PreviousTxnLgrSeq": 21462120
+        }
+      },
+      {
+        "ModifiedNode": {
+          "FinalFields": {
+            "Account": "rfP55chDRj2wnifsJsD6bHTVuMu9PnJ5cv",
+            "Balance": "99999965",
+            "FirstNFTokenSequence": 21462115,
+            "Flags": 0,
+            "MintedNFTokens": 2,
+            "OwnerCount": 1,
+            "Sequence": 21462118
+          },
+          "LedgerEntryType": "AccountRoot",
+          "LedgerIndex": "8E6C19B44C33314CF6FE91A4D6124854005CEEB476E5272E69CF2CB9439B6399",
+          "PreviousFields": {
+            "Balance": "99999964",
+            "OwnerCount": 2
+          },
+          "PreviousTxnID": "672C2796C0B6965979ABEC311296E1E38DE5A0D1226256A7971199BE8FD88D66",
+          "PreviousTxnLgrSeq": 21462122
+        }
+      },
+      {
+        "ModifiedNode": {
+          "FinalFields": {
+            "Account": "r1Je44PCrwzB3EtUtTdJyjP2RMFRdo9PR",
+            "Balance": "99999987",
+            "Flags": 0,
+            "OwnerCount": 1,
+            "Sequence": 21462117
+          },
+          "LedgerEntryType": "AccountRoot",
+          "LedgerIndex": "B66F737C093D610A2D3A7D0464626C7F7FE720820723575C7FF398E779CE900C",
+          "PreviousFields": {
+            "Balance": "100000000",
+            "OwnerCount": 0,
+            "Sequence": 21462116
+          },
+          "PreviousTxnID": "672C2796C0B6965979ABEC311296E1E38DE5A0D1226256A7971199BE8FD88D66",
+          "PreviousTxnLgrSeq": 21462122
+        }
+      },
+      {
+        "DeletedNode": {
+          "FinalFields": {
+            "Flags": 2,
+            "NFTokenID": "00090000461CBACF3E94A7D54430D98A603CE98BFED0FB573B4929FE01477C64",
+            "PreviousTxnID": "672C2796C0B6965979ABEC311296E1E38DE5A0D1226256A7971199BE8FD88D66",
+            "PreviousTxnLgrSeq": 21462122,
+            "RootIndex": "F48A1D17395731588E6B6F691AD94474A7ACA8B6E7FEC0B9E3FF84C09649CE72"
+          },
+          "LedgerEntryType": "DirectoryNode",
+          "LedgerIndex": "F48A1D17395731588E6B6F691AD94474A7ACA8B6E7FEC0B9E3FF84C09649CE72"
+        }
+      }
+    ],
+    "TransactionIndex": 8,
+    "TransactionResult": "tesSUCCESS",
+    "nftoken_id": "00090000461CBACF3E94A7D54430D98A603CE98BFED0FB573B4929FE01477C64"
+  }
+}
