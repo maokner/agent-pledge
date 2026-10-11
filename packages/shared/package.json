@@ -1,0 +1,20 @@
+{
+  "name": "@agent-pledge/shared",
+  "version": "0.0.0",
+  "private": true,
+  "description": "DRAFT API and WebSocket contract shared by the server, board, claim page, voice agent and local agent (issue #17).",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "eslint . --max-warnings 0",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9",
+    "eslint": "^9",
+    "typescript": "^5",
+    "typescript-eslint": "^8"
+  }
+}
