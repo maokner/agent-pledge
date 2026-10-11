@@ -243,7 +243,11 @@ async function main(): Promise<void> {
     accept(client, c, destOffer),
   );
   await attempt("9. Sell offer with a zero token (IOU) Amount", "temBAD_AMOUNT", () =>
-    sellOffer(client, vault, destNft, tokenAmount(config, 0)),
+    sellOffer(client, vault, destNft, {
+      currency: config.XRPL_TOKEN_CURRENCY,
+      issuer: config.XRPL_TOKEN_ISSUER,
+      value: "0",
+    }),
   );
   await attempt("10. Vault burns an NFT that is already burned", "tecNO_ENTRY", () =>
     burn(client, vault, nftId, b.classicAddress),

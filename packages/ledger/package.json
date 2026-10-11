@@ -17,7 +17,8 @@
     "lint": "eslint .",
     "test": "vitest run --passWithNoTests",
     "setup": "tsx scripts/setup-wallets.ts",
-    "spike": "tsx scripts/spike-open-offer.ts"
+    "spike": "tsx scripts/spike-open-offer.ts",
+    "demo": "tsx scripts/demo.ts"
   },
   "dependencies": {
     "@agent-pledge/shared": "workspace:*",

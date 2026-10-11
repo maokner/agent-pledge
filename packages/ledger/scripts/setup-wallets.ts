@@ -87,7 +87,7 @@ async function waitForBalance(
 ): Promise<string> {
   const deadline = Date.now() + timeoutMs;
   for (;;) {
-    const balance = await getTokenBalance(client, address, config);
+    const balance = await getTokenBalance(client, config, address);
     if (Number(balance) > 0 || Date.now() > deadline) return balance;
     await new Promise((r) => setTimeout(r, 2_000));
   }
@@ -220,7 +220,7 @@ async function main(): Promise<void> {
   );
 
   const balances = await Promise.all(
-    [vault, agent, requester].map((x) => getTokenBalance(client, x.classicAddress, config)),
+    [vault, agent, requester].map((x) => getTokenBalance(client, config, x.classicAddress)),
   );
   const lines = [
     `# Agent Pledge testnet wallets, made ${new Date().toISOString()} (${mode}). Do not commit.`,
