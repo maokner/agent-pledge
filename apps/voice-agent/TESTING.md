@@ -13,8 +13,10 @@ Run these from `apps/voice-agent`:
 - [ ] `pnpm simulate` passes.
       It starts a mock server and sends the sample tool payloads.
       It also checks that a retry with the same `call_id` gets the same task and PIN.
-- [ ] `pnpm provision --dry-run` prints four requests: the secret, the two tools, and the agent.
+- [ ] `pnpm provision --dry-run` prints the five server checks and four requests: `POST` for the secret, the two tools, and the agent.
       With `ELEVENLABS_PHONE_NUMBER_ID` set, it prints a fifth request for the phone number.
+- [ ] `ELEVENLABS_AGENT_ID=agent_x pnpm provision --dry-run` prints the update path: `PATCH` for the two tools and the agent, and a line that keeps the secret.
+      With `--rotate-secret` it also prints `PATCH` for the secret and the warning that every agent in the workspace uses it.
 - [ ] When the real server is deployed: `VOICE_TOOL_SECRET=... pnpm simulate --url https://<server>` passes.
       This checks that the server matches the contract.
       It creates two real tasks, so run it before a rehearsal and not during one.
@@ -29,9 +31,14 @@ Use this setup before the real server exists.
 2. Open a public https tunnel to it, for example `cloudflared tunnel --url http://localhost:8787` or `ngrok http 8787`.
 3. Put the tunnel URL in `.env` as `PUBLIC_BASE_URL`.
 4. Run `pnpm provision`.
+   It first checks the mock server through the tunnel, so a wrong URL or secret stops it before anything changes.
    On the first run, copy the printed `ELEVENLABS_AGENT_ID` into `.env`.
 5. A quick tunnel gets a new URL each time it starts.
    When the URL changes, update `PUBLIC_BASE_URL` and run `pnpm provision` again.
+
+The workspace secret is shared by every agent in the ElevenLabs workspace, including the demo agent.
+`pnpm provision` keeps an existing secret, so use the team's `VOICE_TOOL_SECRET` for the mock server too.
+Do not pass `--rotate-secret` with your own value unless the whole team agrees, because then the deployed server rejects every demo call with 401.
 
 The mock server prints every request and response.
 Use `GET /mock/tasks` (with the `x-voice-secret` header) to see the stored tasks and their PINs.
@@ -40,6 +47,7 @@ Use `GET /mock/tasks` (with the `x-voice-secret` header) to see the stored tasks
 
 1. Set `PUBLIC_BASE_URL` to the deployed server and `VOICE_TOOL_SECRET` to the server's secret.
 2. Run `pnpm provision`.
+   If the server check passes but calls get 401, the stored workspace secret has another value: run `pnpm provision --rotate-secret`.
 3. Open the board next to the phone.
 
 ### Tests

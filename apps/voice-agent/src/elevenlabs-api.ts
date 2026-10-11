@@ -13,6 +13,10 @@ export interface ElevenLabsApiOptions {
   fetch?: typeof fetch;
 }
 
+function isNotFound(err: unknown): boolean {
+  return err instanceof ElevenLabsError && err.statusCode === 404;
+}
+
 export function createElevenLabsApi(options: ElevenLabsApiOptions): ProvisionApi {
   const client = new ElevenLabsClient({
     apiKey: options.apiKey,
@@ -51,7 +55,13 @@ export function createElevenLabsApi(options: ElevenLabsApiOptions): ProvisionApi
     },
 
     async getAgentTools(agentId) {
-      const agent = await ai.agents.get(agentId);
+      let agent: Awaited<ReturnType<typeof ai.agents.get>>;
+      try {
+        agent = await ai.agents.get(agentId);
+      } catch (err) {
+        if (isNotFound(err)) return null;
+        throw err;
+      }
       const toolIds = agent.conversationConfig.agent?.prompt?.toolIds ?? [];
       const byName = new Map<string, string>();
       for (const id of toolIds) {
@@ -60,11 +70,40 @@ export function createElevenLabsApi(options: ElevenLabsApiOptions): ProvisionApi
           if (tool.toolConfig.type === "webhook") byName.set(tool.toolConfig.name, tool.id);
         } catch (err) {
           // A tool deleted in the dashboard is still listed on the agent. Skip it; provisioning recreates it.
-          if (err instanceof ElevenLabsError && err.statusCode === 404) continue;
+          if (isNotFound(err)) continue;
           throw err;
         }
       }
       return byName;
+    },
+
+    async findUnusedToolIds(name) {
+      // `search` matches a name prefix, so keep only exact names. SDK 2.71.0 has no used_by_agent_id filter yet.
+      const candidates: string[] = [];
+      let cursor: string | undefined;
+      do {
+        const page = await ai.tools.list({
+          search: name,
+          types: "webhook",
+          pageSize: 100,
+          ...(cursor ? { cursor } : {}),
+        });
+        for (const tool of page.tools) {
+          if (tool.toolConfig.type === "webhook" && tool.toolConfig.name === name) {
+            candidates.push(tool.id);
+          }
+        }
+        cursor = page.hasMore ? (page.nextCursor ?? undefined) : undefined;
+      } while (cursor);
+      // Never take over a tool that an agent uses, for example a teammate's agent made with --create-new.
+      const unused: string[] = [];
+      for (const id of candidates) {
+        const dependents = await ai.tools.getDependentAgents(id, { pageSize: 1 });
+        if (dependents.agents.length === 0 && !dependents.hasMore && !dependents.branches?.length) {
+          unused.push(id);
+        }
+      }
+      return unused;
     },
 
     async createTool(body) {

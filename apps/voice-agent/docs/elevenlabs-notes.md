@@ -73,6 +73,14 @@ We store `VOICE_TOOL_SECRET` as a workspace secret named `agent_pledge_voice_too
 The tools send it as `"x-voice-secret": { "secret_id": "<id>" }`.
 Thus, the secret value is never in the tool config or in the git repo.
 `PATCH /v1/convai/secrets/{secret_id}` with `{ "type": "update", "name", "value" }` rotates it.
+A workspace secret is shared by every agent in the workspace, and the API never returns its value.
+So `pnpm provision` creates the secret only if it does not exist, and changes it only with `--rotate-secret`.
+
+### Finding tools again
+
+`GET /v1/convai/tools?search=<name>` returns tools whose names start with `<name>` (SDK: `tools.list({ search })`).
+`GET /v1/convai/tools/{tool_id}/dependent-agents` lists the agents that use a tool (SDK: `tools.getDependentAgents`).
+`pnpm provision` uses both to reuse a tool from a failed run: exact name, and no dependent agents.
 
 ### Call length
 
@@ -143,6 +151,6 @@ Check them in the first live session, and update this file.
    The voice is the API default voice until someone picks a clearer one (issue 11).
 9. **SDK and spec drift.**
    The spec lets `GET /v1/convai/tools` filter by `used_by_agent_id`, but SDK 2.71.0 does not have that parameter yet.
-   We find existing tools through the agent's `tool_ids` instead.
+   We find existing tools through the agent's `tool_ids`, and unused tools by name and `dependent-agents`.
    We import the SDK serializers from `@elevenlabs/elevenlabs-js/serialization/index.js`, which is not a documented entry point.
    If a later SDK version blocks that path, the typecheck fails, and the fix is to pin the version.
