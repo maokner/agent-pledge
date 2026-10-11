@@ -10,6 +10,7 @@ The board URL `https://agent-pledge.fly.dev/board` is an example; the real URL c
 | 02-no-price.md | The caller does not give a price, and asks about the task status. |
 | 03-not-a-seat.md | The caller asks for food delivery. |
 | 04-server-error.md | The server fails two times. |
+| 05-right-now.md | The caller says "right now", so the agent makes the time limit 2 minutes. |
 
 Format rules, which `test/transcripts.test.ts` checks:
 

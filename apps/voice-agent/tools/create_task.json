@@ -37,7 +37,7 @@
           },
           "time_limit_minutes": {
             "type": "integer",
-            "description": "How many minutes from now the seat must be saved, as a whole number that the caller said. Example: 10."
+            "description": "How many minutes from now the seat must be saved, as a whole number of at least 1, from the summary that the caller said yes to. Example: 10."
           },
           "price_usd": {
             "type": "number",

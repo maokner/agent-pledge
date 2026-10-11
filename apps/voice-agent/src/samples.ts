@@ -12,6 +12,7 @@ export const SAMPLE_CALL_IDS = {
   normal: "conv_sample_01",
   noPrice: "conv_sample_02",
   serverError: "conv_sample_04",
+  rightNow: "conv_sample_05",
 } as const;
 
 /** transcripts/01-normal-call.md */
@@ -42,4 +43,14 @@ export const SAMPLE_SERVER_ERROR_CALL: CreateTaskInput = {
   price_usd: 6,
   caller_phone: "+15105550147",
   call_id: SAMPLE_CALL_IDS.serverError,
+};
+
+/** transcripts/05-right-now.md: "right now" becomes 2 minutes, because the time limit must be a whole number of at least 1. */
+export const SAMPLE_RIGHT_NOW_CALL: CreateTaskInput = {
+  description: "Save one seat",
+  place: "the front table",
+  time_limit_minutes: 2,
+  price_usd: 4,
+  caller_phone: "+15105550171",
+  call_id: SAMPLE_CALL_IDS.rightNow,
 };

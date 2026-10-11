@@ -11,6 +11,7 @@ import {
   SAMPLE_CALLER_PHONE,
   SAMPLE_NORMAL_CALL,
   SAMPLE_NO_PRICE_CALL,
+  SAMPLE_RIGHT_NOW_CALL,
   SAMPLE_SERVER_ERROR_CALL,
 } from "../src/samples.js";
 import { packagePath } from "../src/paths.js";
@@ -39,7 +40,13 @@ function successfulPin(events: TranscriptEvent[]): string {
   return createTaskOutputSchema.parse(result.body).pin;
 }
 
-const FILES = ["01-normal-call.md", "02-no-price.md", "03-not-a-seat.md", "04-server-error.md"];
+const FILES = [
+  "01-normal-call.md",
+  "02-no-price.md",
+  "03-not-a-seat.md",
+  "04-server-error.md",
+  "05-right-now.md",
+];
 
 describe("every transcript", () => {
   it("is listed", () => {
@@ -170,5 +177,32 @@ describe("04 server error", () => {
         .every((e) => e.kind === "tool_result" && e.status >= 500),
     ).toBe(true);
     expect(agentLines(events).join(" ")).not.toMatch(/PIN|\b\d, \d, \d, \d\b/);
+  });
+});
+
+describe("05 right now", () => {
+  const events = load("05-right-now.md");
+
+  it("makes the time limit 2 minutes and sends the sample payload", () => {
+    expect(toolCalls(events, "create_task")).toEqual([SAMPLE_RIGHT_NOW_CALL]);
+    expect(SAMPLE_RIGHT_NOW_CALL.time_limit_minutes).toBe(2);
+  });
+
+  it("tells the caller about the new time before the summary", () => {
+    const told = events.findIndex(
+      (e) => e.kind === "agent" && e.text === "I will make that 2 minutes. Is that OK?",
+    );
+    const summary = events.findIndex((e) => e.kind === "agent" && e.text.startsWith("To confirm:"));
+    expect(told).toBeGreaterThan(0);
+    expect(summary).toBeGreaterThan(told);
+    expect((events[summary] as { text: string }).text).toContain("within 2 minutes");
+  });
+
+  it("says the PIN from the tool result two times", () => {
+    expect(
+      agentLines(events)
+        .join(" ")
+        .split(spoken(successfulPin(events))).length - 1,
+    ).toBe(2);
   });
 });

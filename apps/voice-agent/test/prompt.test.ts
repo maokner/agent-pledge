@@ -4,6 +4,16 @@ import { loadAssets } from "../src/assets.js";
 const { systemPrompt, firstMessage } = loadAssets();
 const REFUSAL = "Right now I can only save seats.";
 
+/** The text of a markdown section, from its heading to the next heading of the same or a higher level. */
+function section(markdown: string, heading: string): string {
+  const level = heading.split(" ")[0] as string;
+  const start = markdown.indexOf(`\n${heading}\n`);
+  if (start < 0) throw new Error(`no section ${heading}`);
+  const rest = markdown.slice(start + heading.length + 2);
+  const end = rest.search(new RegExp(`^#{1,${level.length}} `, "m"));
+  return end < 0 ? rest : rest.slice(0, end);
+}
+
 function count(haystack: string, needle: string): number {
   return haystack.split(needle).length - 1;
 }
@@ -29,6 +39,37 @@ describe("system prompt", () => {
       "Never make up a price, suggest a price, or use a default price.",
     );
     expect(systemPrompt).toContain('"What is the most you will pay, in dollars?"');
+  });
+
+  it("requires a whole time limit of at least 1 minute, rounded up, and tells the caller", () => {
+    expect(systemPrompt).toContain(
+      "3. The time limit: how many whole minutes from now the seat must be saved, at least 1 minute.",
+    );
+    expect(systemPrompt).toContain(
+      'If the caller says "right now", "as soon as possible", or "as fast as you can", use 2 minutes.',
+    );
+    expect(systemPrompt).toMatch(/round it up to the next whole minute/);
+    expect(systemPrompt).toMatch(/"a minute and a half" or "90 seconds" becomes 2 minutes/);
+    expect(systemPrompt).toContain('"I will make that 2 minutes. Is that OK?"');
+    expect(systemPrompt).toContain(
+      "- time_limit_minutes: the time limit from the summary, as a whole number of minutes, at least 1.",
+    );
+  });
+
+  it("re-asks an invalid value instead of saying that the service is down", () => {
+    const invalid = section(systemPrompt, "## Invalid input");
+    expect(invalid).toContain('If create_task returns the error "invalid_input"');
+    expect(invalid).toContain("Ask the caller for that value again");
+    expect(invalid).toContain("Then repeat all four values again and wait for a yes");
+    expect(invalid).toContain("do not say that the service is down");
+    expect(invalid).not.toContain("Do you want me to try again?");
+  });
+
+  it("retries any other error once, then apologizes", () => {
+    const other = section(systemPrompt, "## Any other error");
+    expect(other).toContain("If a tool returns any other error");
+    expect(other).toContain("call the tool one more time with the same values");
+    expect(other).toContain('"Sorry, it is still not working. Please call back in a few minutes."');
   });
 
   it("repeats the values and waits for a yes before create_task", () => {

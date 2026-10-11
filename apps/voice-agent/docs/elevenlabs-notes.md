@@ -121,7 +121,8 @@ Check them in the first live session, and update this file.
 6. **How a network failure looks to the agent.**
    With `passthrough`, an HTTP error body reaches the agent.
    When the server is down, the exact text the agent gets is not documented.
-   The prompt treats any error, timeout, or missing PIN the same way.
+   The prompt handles an `invalid_input` error by asking for the named value again.
+   It treats every other error, a timeout, and a missing PIN the same way: one retry, then an apology.
    A timeout does not mean that the server failed: it can still create the task after ElevenLabs stops waiting.
    That is why the server dedupes on `call_id`.
 7. **Digit readout.**

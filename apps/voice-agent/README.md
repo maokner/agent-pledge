@@ -14,7 +14,7 @@ Everything in this package works and is tested without an ElevenLabs API key.
 | `prompt/system-prompt.md` | The agent's system prompt (issue 12). |
 | `prompt/first-message.txt` | What the agent says when it answers. |
 | `tools/create_task.json`, `tools/task_status.json` | The two server tools, in the exact `POST /v1/convai/tools` format, with `${PUBLIC_BASE_URL}` and `${VOICE_TOOL_SECRET_ID}` placeholders (issue 13). |
-| `transcripts/` | Four sample calls: normal, no price, not a seat, and server error. Tests check them against the prompt rules and the samples. |
+| `transcripts/` | Sample calls: normal, no price, not a seat, server error, and "right now". Tests check them against the prompt rules and the samples. |
 | `scripts/provision.ts` | Creates or updates the agent (`pnpm provision`). |
 | `scripts/mock-server.ts` | A local stand-in for the server's tool endpoints (`pnpm mock-server`). |
 | `scripts/simulate.ts` | Sends the sample payloads to a server and checks the responses (`pnpm simulate`). |
@@ -93,7 +93,11 @@ The server (issue 19) must implement this contract.
 Notes for the server:
 
 - The types are in `packages/shared` (`CreateTaskInput`, `CreateTaskOutput`, `TaskStatusOutput`).
-- `time_limit_minutes` is a whole number and `price_usd` is a positive number.
+- `time_limit_minutes` is a whole number of at least 1, and `price_usd` is a positive number.
+  The agent rounds a time up ("right now" becomes 2 minutes), so a 400 should be rare.
+- For a value that is not valid, answer 400 with `"error": "invalid_input"` and name the field in `details`, for example `"time_limit_minutes: ..."`.
+  The agent then asks the caller for that value again.
+  For every other failure, use another code, so that the agent offers a retry instead.
 - `caller_phone` comes from the caller ID.
   It may be an empty string in a call without a phone line, such as a dashboard test.
 - `call_id` is the ElevenLabs conversation id, and the server must dedupe on it.

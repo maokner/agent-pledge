@@ -161,6 +161,7 @@ describe("create_task", () => {
     ["a zero price", { price_usd: 0 }, "price_usd"],
     ["a price as text", { price_usd: "5" }, "price_usd"],
     ["a fractional time limit", { time_limit_minutes: 2.5 }, "time_limit_minutes"],
+    ["a zero time limit (right now)", { time_limit_minutes: 0 }, "time_limit_minutes"],
     ["an empty place", { place: "  " }, "place"],
     ["an unknown field", { tip: 1 }, "Unrecognized key"],
   ])("rejects %s with 400", (_label, patch, expected) => {

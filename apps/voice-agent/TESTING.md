@@ -1,6 +1,6 @@
 # Voice agent test plan
 
-This plan proves requirements R1 and R9 from the PRD (section 3) and covers every test in issue 14.
+This plan proves requirements R1 and R9 from the PRD (section 3) and covers every test in issue 14, plus T10 for a time limit that is not a whole number.
 Part 1 runs without credentials.
 Part 2 needs an ElevenLabs API key and a phone number.
 
@@ -83,6 +83,14 @@ For each test, write the result in the table at the end.
       From a laptop, set the task to claimed: `curl -X POST <base>/mock/tasks/<task_id> -H "x-voice-secret: <secret>" -d '{"status":"claimed","helper_note":"Front table, left side"}'`.
       Then ask the agent: "Has anyone taken it yet?"
       Pass if the agent says that a helper has taken it and reads the helper note.
+- [ ] **T10. Right now.**
+      Say: "Save me a seat at the front table right now. I will pay 4 dollars."
+      Pass if the agent says that it will make that 2 minutes, the summary says 2 minutes, and the create_task request has `time_limit_minutes: 2`.
+      Make a second call and say "in a minute and a half" instead.
+      Pass if the agent makes that 2 minutes too.
+      In both calls, the agent must never say that something went wrong on our side.
+      If the mock log shows a 400 with `invalid_input`, pass only if the agent asked for that value again and confirmed all four values again.
+      Compare with `transcripts/05-right-now.md`.
 
 ### Record the results
 
@@ -100,6 +108,7 @@ Post the results as a comment on issue 14, in this form:
 | T7 Server down     | pass   |                                         |
 | T8 Noisy room      | pass   |                                         |
 | T9 Task status     | pass   |                                         |
+| T10 Right now      | pass   |                                         |
 ```
 
 If a live call does not match its sample transcript, change the prompt or the transcript so that they match, and run `pnpm test` again.
