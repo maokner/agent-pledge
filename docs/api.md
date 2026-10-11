@@ -66,6 +66,7 @@ Cross-origin front ends should prefer storing `helper_token` (for example in `lo
 `price_usd` may be a number or a string (`5`, `"5"`, `"5.00"`, `"$5"`); the server normalizes it.
 The server rejects non-seat-holds with 422 `not_seat_hold`. It generates a 4-digit PIN (stores only the hash), makes and funds a requester wallet, pays the price into the vault, mints the task NFT, creates the offer to the agent, broadcasts `task.created` and the `tx.*` events, and pushes `task.new` to the local agent.
 Response `CreateTaskResponse`: `{ task_id, pin, board_url, status, price, deadline }`. The PIN appears only here.
+Optional `call_id` (the ElevenLabs conversation id): a retry with the same `call_id` within 30 minutes returns the first response (same task, same PIN) instead of a new task. The server keeps this in memory, so a restart forgets it.
 
 **`GET /tools/task_status/:taskId`** (voice secret) → `TaskStatusResponse`: `{ task_id, status, helper_note, deadline, price }`.
 

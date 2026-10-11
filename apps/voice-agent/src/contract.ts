@@ -57,14 +57,17 @@ export const createTaskOutputSchema = z
     pin: z.string().regex(/^\d{4}$/, "pin must be exactly 4 digits"),
     board_url: z.url(),
   })
-  .strict() satisfies z.ZodType<CreateTaskOutput>;
+  // Not strict: the real server also returns status, price, and deadline (packages/shared
+  // CreateTaskResponse). Extra fields are harmless to the voice agent and are stripped here.
+  .strip() satisfies z.ZodType<CreateTaskOutput>;
 
 export const taskStatusOutputSchema = z
   .object({
     status: z.enum(TASK_STATUSES),
     helper_note: z.string().nullable(),
   })
-  .strict() satisfies z.ZodType<TaskStatusOutput>;
+  // Not strict, for the same reason (the server adds task_id, deadline, and price).
+  .strip() satisfies z.ZodType<TaskStatusOutput>;
 
 /** Error body returned by the server for every non-2xx tool response. */
 export const toolErrorSchema = z.object({

@@ -99,7 +99,41 @@ function parsePriceCents(input: number | string): number {
  * Inserts the task and its PIN, broadcasts task.created, and returns at once (the voice agent is
  * waiting). The ledger steps run in the background; task.new goes to the agent after the offer exists.
  */
+/** How long a call_id keeps returning its first task. Longer than any call, shorter than a demo day. */
+const CALL_DEDUPE_MS = 30 * 60_000;
+const callResults = new WeakMap<
+  object,
+  Map<string, { at: number; result: Promise<CreateTaskResponse> }>
+>();
+
+/**
+ * POST /tools/create_task. ElevenLabs can retry a tool call (for example after a timeout), so a
+ * repeated call_id returns the first call's response, with the same task and PIN, instead of
+ * making a second task. Kept in memory: a server restart forgets it, which only matters for a
+ * retry that spans the restart.
+ */
 export async function createTask(
+  app: FastifyInstance,
+  input: CreateTaskRequest,
+): Promise<CreateTaskResponse> {
+  const callId = input.call_id?.trim();
+  if (!callId) return createTaskOnce(app, input);
+
+  const byCall = callResults.get(app) ?? new Map();
+  callResults.set(app, byCall);
+  const now = Date.now();
+  for (const [id, entry] of byCall) if (now - entry.at > CALL_DEDUPE_MS) byCall.delete(id);
+
+  const seen = byCall.get(callId);
+  if (seen) return seen.result;
+  const result = createTaskOnce(app, input);
+  byCall.set(callId, { at: now, result });
+  // A failed call (for example not a seat hold) may be retried with fixed values.
+  result.catch(() => byCall.delete(callId));
+  return result;
+}
+
+async function createTaskOnce(
   app: FastifyInstance,
   input: CreateTaskRequest,
 ): Promise<CreateTaskResponse> {
