@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { cn } from "@/lib/cn";
 import { R3_BUDGET_MS, type LatencyStats, type LatencyTracker } from "@/lib/board/latency";
 
 const EMPTY: LatencyStats = { last: null, count: 0, worstTotalMs: null, overBudget: 0 };
@@ -10,6 +11,7 @@ const EMPTY: LatencyStats = { last: null, count: 0, worstTotalMs: null, overBudg
  * screen. After each commit that advanced `seq`, waits for the browser to
  * paint, then closes out the events up to `seq` in the tracker.
  *
+ * Shows `LAT 120 ms`, or `[SLOW] 2.4 s` in amber over the budget.
  * Hover for the split (server -> browser, browser -> screen). The same
  * numbers are on the element's data-* attributes for scripted checks.
  */
@@ -48,7 +50,7 @@ export function LatencyMeter({ latency, seq }: { latency: LatencyTracker; seq: n
 
   return (
     <span
-      className={`font-mono text-xs tabular-nums projector:text-base ${slow ? "font-semibold text-amber-700 dark:text-amber-300" : "text-zinc-500 dark:text-zinc-400 projector:text-zinc-700"}`}
+      className={cn("text-sm whitespace-nowrap tabular-nums projector:text-base", slow ? "font-bold text-term-amber" : "text-term-fg-dim")}
       title={title}
       aria-label={`Board updates take ${ms(last.totalMs)}`}
       data-testid="latency-meter"
@@ -58,6 +60,7 @@ export function LatencyMeter({ latency, seq }: { latency: LatencyTracker; seq: n
       data-over-budget={overBudget}
       data-count={count}
     >
+      <span aria-hidden>{slow ? "[SLOW] " : "LAT "}</span>
       {ms(last.totalMs)}
     </span>
   );

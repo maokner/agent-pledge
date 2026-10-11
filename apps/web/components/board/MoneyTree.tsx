@@ -1,5 +1,4 @@
-import { ExplorerLink } from "@/components/ui/ExplorerLink";
-import { Spinner } from "@/components/ui/Spinner";
+import { cn } from "@/lib/cn";
 import { explorerTxUrl, formatRlusd, formatSignedRlusd } from "@/lib/format";
 import {
   buildMoneyTree,
@@ -11,18 +10,23 @@ import {
   type MoneyRole,
 } from "@/lib/board/money-tree";
 import type { TaskView } from "@/lib/board/selectors";
+import { edgeTag } from "@/lib/board/terminal";
+import { GLOW, LINK, TONE_BORDER, TONE_TEXT } from "./term-style";
+import { ExplorerLink, SectionTitle } from "./term";
 
 /**
  * The money tree for one task (PRD 2.2, 2.3, 9.1). The shape comes from the
- * data (see lib/board/money-tree.ts); this component only draws it.
+ * data (see lib/board/money-tree.ts); this component only draws it, as a
+ * terminal tree: each edge is a line with its state as a tag (`[..]`
+ * pending, `[HELD]` in the vault, `[OK]` paid, `[RFND] ↩` returned).
  * Projector mode (#43) makes it bigger and leaves out the NFT IDs, which
  * nobody can read on a wall; the transactions and the normal view keep them.
  */
 export function MoneyTree({ view }: { view: TaskView }) {
   const root = buildMoneyTree(view);
   return (
-    <section aria-label="Money tree" className="rounded-lg border border-zinc-200 bg-zinc-50/60 p-3 dark:border-zinc-700 dark:bg-zinc-950/40 projector:border-2 projector:border-zinc-400 projector:bg-white projector:text-xl">
-      <h3 className="text-sm font-semibold tracking-wide text-zinc-600 uppercase dark:text-zinc-300 projector:text-xl projector:font-bold projector:text-zinc-800">Money tree</h3>
+    <section aria-label="Money tree" className="border border-dashed border-term-line p-3 projector:text-lg">
+      <SectionTitle className="projector:text-lg">Money tree</SectionTitle>
       <div className="mt-2 projector:mt-1">
         <TreeNode node={root} />
       </div>
@@ -34,8 +38,8 @@ export function MoneyTree({ view }: { view: TaskView }) {
 
 function TreeNode({ node }: { node: MoneyNode }) {
   return (
-    <div className="flex flex-col items-start">
-      <div className="flex flex-wrap items-center gap-2">
+    <div className="flex min-w-0 flex-col items-start">
+      <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
         <NodeBox node={node} />
         {node.receives.map((edge) => (
           <ReceivedChip key={edge.id} edge={edge} />
@@ -44,7 +48,7 @@ function TreeNode({ node }: { node: MoneyNode }) {
       {node.children.length > 0 && (
         <div className="flex flex-wrap gap-x-6">
           {node.children.map(({ edge, node: child }) => (
-            <div key={child.id} className="flex flex-col items-start">
+            <div key={child.id} className="flex min-w-0 flex-col items-start">
               <EdgeDown edge={edge} />
               <TreeNode node={child} />
             </div>
@@ -55,23 +59,28 @@ function TreeNode({ node }: { node: MoneyNode }) {
   );
 }
 
+/** The vault is the one solid block; NFTs are in angle brackets, parties in square ones. */
 const NODE_CLASS: Record<MoneyRole, string> = {
-  requester: "rounded-lg border-zinc-300 bg-white dark:border-zinc-600 dark:bg-zinc-900",
-  vault: "rounded-lg border-zinc-800 bg-zinc-800 text-white dark:border-zinc-300 dark:bg-zinc-200 dark:text-zinc-900 projector:border-zinc-950 projector:bg-zinc-950",
-  task_nft: "rounded-full border-indigo-300 bg-indigo-50 dark:border-indigo-700 dark:bg-indigo-950 projector:border-indigo-700",
-  agent: "rounded-lg border-zinc-300 bg-white dark:border-zinc-600 dark:bg-zinc-900",
-  subtask_nft: "rounded-full border-indigo-300 bg-indigo-50 dark:border-indigo-700 dark:bg-indigo-950 projector:border-indigo-700",
-  helper: "rounded-lg border-zinc-300 bg-white dark:border-zinc-600 dark:bg-zinc-900",
+  requester: "border-term-fg-dim",
+  vault: "border-term-fg bg-term-fg text-term-bg text-shadow-none",
+  task_nft: "border-dashed border-term-fg-dim",
+  agent: "border-term-fg-dim",
+  subtask_nft: "border-dashed border-term-fg-dim",
+  helper: "border-term-fg-dim",
 };
 
 function NodeBox({ node }: { node: MoneyNode }) {
+  const isNft = node.role === "task_nft" || node.role === "subtask_nft";
+  const isVault = node.role === "vault";
   return (
-    <div className={`inline-flex flex-wrap items-baseline gap-x-2 border px-3 py-1 projector:border-2 projector:py-0 ${NODE_CLASS[node.role]}`}>
-      <span className="font-semibold">{node.title}</span>
-      {node.detail && <span className="text-sm opacity-75 projector:text-lg projector:opacity-90">{node.detail}</span>}
-      {node.nftId && <ExplorerLink nft={node.nftId} className="text-xs projector:hidden" />}
+    <div className={cn("inline-flex min-w-0 flex-wrap items-baseline gap-x-2 border px-2", NODE_CLASS[node.role])}>
+      <span className={cn("font-bold uppercase", !isVault && GLOW)}>
+        {isNft ? `<${node.title}>` : node.title}
+      </span>
+      {node.detail && <span className={cn("text-sm projector:text-lg", !isVault && "text-term-fg-dim")}>{node.detail}</span>}
+      {node.nftId && <ExplorerLink nft={node.nftId} className="text-sm projector:hidden" />}
       {node.parentNftId && (
-        <span className="text-xs opacity-75 projector:hidden">
+        <span className="text-sm text-term-fg-dim projector:hidden">
           parent <ExplorerLink nft={node.parentNftId} />
         </span>
       )}
@@ -79,90 +88,65 @@ function NodeBox({ node }: { node: MoneyNode }) {
   );
 }
 
-const EDGE_CLASS: Record<EdgeState, { line: string; text: string }> = {
-  planned: {
-    line: "border-dashed border-zinc-300 dark:border-zinc-600 projector:border-zinc-500",
-    text: "text-zinc-400 dark:text-zinc-500 projector:text-zinc-600",
-  },
-  pending: { line: "border-amber-400 projector:border-amber-500", text: "text-amber-700 dark:text-amber-300 projector:text-amber-800" },
-  settled: { line: "border-sky-500 projector:border-sky-700", text: "text-sky-800 dark:text-sky-300 projector:text-sky-900" },
-  paid: { line: "border-emerald-500 projector:border-emerald-700", text: "text-emerald-700 dark:text-emerald-300 projector:text-emerald-800" },
-  returned: { line: "border-violet-500 projector:border-violet-700", text: "text-violet-700 dark:text-violet-300 projector:text-violet-800" },
-  failed: { line: "border-rose-500 projector:border-rose-700", text: "text-rose-700 dark:text-rose-300 projector:text-rose-800" },
+const EDGE_TITLE: Record<EdgeState, string> = {
+  planned: "Not on the ledger yet",
+  pending: "Pending: waiting for a validated ledger",
+  settled: "Validated. The money is held in the vault",
+  paid: "Validated",
+  returned: "Validated refund",
+  failed: "The ledger rejected this transaction",
 };
 
-function EdgeMark({ state }: { state: EdgeState }) {
-  if (state === "pending") return <Spinner className="size-3 projector:size-5 projector:border-[3px]" />;
-  const mark = { planned: "↓", settled: "↓", paid: "✓", returned: "↩", failed: "✕" }[state];
-  return <span aria-hidden>{mark}</span>;
-}
-
-/** A line from a node down to its child, with the amount on it. */
-function EdgeDown({ edge }: { edge: MoneyEdge }) {
-  const style = EDGE_CLASS[edge.state];
-  const label = (
+function EdgeLabel({ edge }: { edge: MoneyEdge }) {
+  const tag = edgeTag(edge.state);
+  return (
     <>
-      <EdgeMark state={edge.state} />
-      {edge.label}
+      <span className="font-bold">{tag.tag}</span>
+      {tag.word && <span aria-hidden>{tag.word}</span>}
+      <span>{edge.label}</span>
     </>
   );
+}
+
+/** A line from a node down to its child, with its state tag and the amount on it. */
+function EdgeDown({ edge }: { edge: MoneyEdge }) {
+  const tone = edgeTag(edge.state).tone;
   return (
-    <div className={`ml-5 border-l-4 py-1.5 pl-3 transition-colors duration-700 projector:border-l-[0.4rem] projector:py-0.5 ${style.line}`}>
-      <span className={`inline-flex items-center gap-1.5 text-sm font-semibold transition-colors duration-700 projector:text-xl projector:font-bold ${style.text}`} title={stateTitle(edge)}>
+    <div className={cn("ml-3 border-l-2 py-1 pl-2 projector:py-0.5", TONE_BORDER[tone])}>
+      <span className={cn("inline-flex flex-wrap items-baseline gap-x-1.5 text-sm projector:text-lg", TONE_TEXT[tone])} title={EDGE_TITLE[edge.state]}>
         {edge.txHash ? (
-          <a href={explorerTxUrl(edge.txHash)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 hover:underline">
-            {label}
+          <a href={explorerTxUrl(edge.txHash)} target="_blank" rel="noopener noreferrer" className={cn(LINK, "inline-flex flex-wrap items-baseline gap-x-1.5")}>
+            <EdgeLabel edge={edge} />
           </a>
         ) : (
-          label
+          <EdgeLabel edge={edge} />
         )}
       </span>
     </div>
   );
 }
 
-const CHIP_CLASS: Record<EdgeState, string> = {
-  planned: "border-zinc-300 text-zinc-500",
-  pending: "border-amber-400 bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-200",
-  settled: "border-sky-500 bg-sky-50 text-sky-800 dark:bg-sky-950 dark:text-sky-200",
-  paid: "border-emerald-500 bg-emerald-50 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200",
-  returned: "border-violet-500 bg-violet-50 text-violet-800 dark:bg-violet-950 dark:text-violet-200",
-  failed: "border-rose-500 bg-rose-50 text-rose-800 dark:bg-rose-950 dark:text-rose-200",
-};
-
-/** Money the vault sends back out to a node: a payout (green) or a refund (return color). */
+/** Money the vault sends back out to a node: a payout (`[OK]`) or a refund (`[RFND] ↩`). */
 function ReceivedChip({ edge }: { edge: MoneyEdge }) {
-  return (
-    <a
-      href={edge.txHash ? explorerTxUrl(edge.txHash) : undefined}
-      target="_blank"
-      rel="noopener noreferrer"
-      title={[edge.note, stateTitle(edge)].filter(Boolean).join(". ")}
-      className={`inline-flex items-center gap-1.5 rounded-full border-2 px-2.5 py-0.5 text-sm font-semibold motion-safe:animate-fade-in hover:underline projector:py-0 projector:text-xl projector:font-bold ${CHIP_CLASS[edge.state]}`}
-    >
-      <span aria-hidden>←</span>
-      <EdgeMark state={edge.state} />
-      {edge.label}
+  const tone = edgeTag(edge.state).tone;
+  const content = (
+    <>
+      <span aria-hidden>&lt;-</span>
+      <EdgeLabel edge={edge} />
       <span className="sr-only">from the vault</span>
-    </a>
+    </>
   );
-}
-
-function stateTitle(edge: MoneyEdge): string {
-  switch (edge.state) {
-    case "planned":
-      return "Not on the ledger yet";
-    case "pending":
-      return "Pending: waiting for a validated ledger";
-    case "settled":
-      return "Validated. The money is held in the vault";
-    case "paid":
-      return "Validated";
-    case "returned":
-      return "Validated refund";
-    case "failed":
-      return "The ledger rejected this transaction";
-  }
+  const className = cn("inline-flex flex-wrap items-baseline gap-x-1.5 border px-1 text-sm projector:text-lg", TONE_BORDER[tone], TONE_TEXT[tone]);
+  const title = [edge.note, EDGE_TITLE[edge.state]].filter(Boolean).join(". ");
+  return edge.txHash ? (
+    <a href={explorerTxUrl(edge.txHash)} target="_blank" rel="noopener noreferrer" title={title} className={cn(LINK, "no-underline", className)}>
+      {content}
+    </a>
+  ) : (
+    <span title={title} className={className}>
+      {content}
+    </span>
+  );
 }
 
 const PARTY_NAME = { requester: "Requester", agent: "Agent", helper: "Helper" } as const;
@@ -174,8 +158,8 @@ function MoneyResult({ view }: { view: TaskView }) {
     const plan = moneyPlan(view);
     if (!plan) return null;
     return (
-      <p className="mt-3 text-sm projector:mt-2 projector:text-xl">
-        <span className="font-semibold">Plan: </span>
+      <p className="mt-3 text-sm projector:mt-2 projector:text-lg">
+        <span className="font-bold text-term-fg-dim">PLAN: </span>
         {formatRlusd(plan.in)} in, {formatRlusd(plan.toHelper)} to the helper, {formatRlusd(plan.toAgent)} to the agent.
       </p>
     );
@@ -183,27 +167,16 @@ function MoneyResult({ view }: { view: TaskView }) {
 
   const rows = summarizeMoney(view);
   return (
-    <div className="mt-3 flex flex-wrap items-center gap-2 text-sm projector:mt-2 projector:text-xl">
-      <span className="font-semibold">Result:</span>
-      {view.task.status === "done" && (
-        <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 font-semibold text-emerald-900 dark:bg-emerald-950 dark:text-emerald-100">
-          Requester has a seat
-        </span>
-      )}
+    <div className="mt-3 flex flex-wrap items-baseline gap-x-3 gap-y-1 text-sm projector:mt-2 projector:text-lg">
+      <span className="font-bold text-term-fg-dim">RESULT:</span>
+      {view.task.status === "done" && <span className={cn("font-bold", TONE_TEXT.validated, GLOW)}>[OK] Requester has a seat</span>}
       {rows.map((row) => {
         const net = Number(row.net);
         // On success the requester bought a seat: show what they paid, not a red loss (PRD 2.2).
         const boughtSeat = row.party === "requester" && view.task.status === "done";
-        const tone =
-          boughtSeat
-            ? "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
-            : net > 0
-            ? "bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-100"
-            : net < 0
-              ? "bg-rose-100 text-rose-900 dark:bg-rose-950 dark:text-rose-100"
-              : "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200";
+        const tone = boughtSeat || net === 0 ? "text-term-fg-dim" : net > 0 ? "text-term-fg" : "text-term-red";
         return (
-          <span key={row.party} className={`rounded-full px-2.5 py-0.5 font-semibold tabular-nums ${tone}`} title={`Paid ${formatRlusd(row.paid)}, got ${formatRlusd(row.got)}`}>
+          <span key={row.party} className={cn("font-bold tabular-nums", tone)} title={`Paid ${formatRlusd(row.paid)}, got ${formatRlusd(row.got)}`}>
             {PARTY_NAME[row.party]} {boughtSeat ? `paid ${formatRlusd(row.paid)}` : formatSignedRlusd(row.net)}
           </span>
         );
@@ -213,18 +186,22 @@ function MoneyResult({ view }: { view: TaskView }) {
 }
 
 function Legend() {
-  const item = (cls: string, label: string) => (
-    <span className="inline-flex items-center gap-1">
-      <span className={`inline-block h-3 w-1 projector:h-4 projector:w-1.5 ${cls}`} />
-      {label}
-    </span>
-  );
+  const states: EdgeState[] = ["pending", "settled", "paid", "returned"];
+  const words: Record<string, string> = { pending: "pending", settled: "held in the vault", paid: "paid", returned: "returned" };
   return (
-    <p className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-zinc-500 dark:text-zinc-400 projector:mt-1 projector:text-base projector:text-zinc-700">
-      {item("bg-amber-400", "pending")}
-      {item("bg-sky-500", "held in the vault")}
-      {item("bg-emerald-500", "paid")}
-      {item("bg-violet-500", "returned")}
+    <p className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-term-fg-dim projector:mt-1 projector:text-base">
+      {states.map((state) => {
+        const tag = edgeTag(state);
+        return (
+          <span key={state}>
+            <span className={TONE_TEXT[tag.tone]}>
+              {tag.tag}
+              {tag.word ? ` ${tag.word}` : ""}
+            </span>{" "}
+            {words[state]}
+          </span>
+        );
+      })}
     </p>
   );
 }

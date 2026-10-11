@@ -14,12 +14,12 @@ pnpm dev:web            # against a server; see .env.example
 
 | Path | What |
 |---|---|
-| `components/board/*` | Board UI (#32 to #38, #43). `Board.tsx` wires `useBoard` to the cards, or to `ProjectorBoard` in projector mode. |
+| `components/board/*` | Board UI (#32 to #38, #43), in the agent design system's terminal style. `Board.tsx` wires `useBoard` to the cards, or to `ProjectorBoard` in projector mode. `term.tsx` has the board's own terminal pieces (panes, status tags, buttons, ASCII bars, money, countdown, explorer links, zoomable image). |
 | `components/claim/*` | Claim page UI (#39 to #42). `ClaimScreen.tsx` loads the claim and picks a view per state. |
 | `components/landing/*` | Landing page (`/`): the two role buttons and the "powered by" footer. |
-| `components/ui/*` | Shared pieces: status badges, money, explorer links, countdown. |
+| `components/ui/*` | Pieces for the human side: status badges, money, explorer links, countdown. |
 | `lib/api/*` | `getApiClient()`: HTTP client, or the fixture client in fixture mode. |
-| `lib/board/*` | Board state reducer, selectors, sync (reconnect and seq resync), transports, `useBoard`. |
+| `lib/board/*` | Board state reducer, selectors, sync (reconnect and seq resync), transports, `useBoard`. `terminal.ts`: status tags and ASCII bars; `arrivals.ts`: which tasks flash as new. |
 | `lib/backup-task/*`, `app/api/backup-task/route.ts` | The backup form's validation, browser client and server-side proxy to create_task (#38). |
 | `lib/fixtures/*` | Fixture data built from the PRD's seat-hold flow. |
 | `lib/format.ts`, `lib/labels.ts` | RLUSD amounts, explorer links, countdowns, enum labels. |
@@ -63,34 +63,37 @@ drops out 20 seconds after it is first loaded. Add `?fixtures=empty` to the page
 ## Projector mode (#43, PRD 9.1)
 
 The board laid out for a projector, readable from the back of the room. Open `/board?projector=1`, or click
-"Projector mode" in the board's header (shown on screens 1024 px and wider). The choice is remembered in
+`[ PROJECTOR MODE ]` in the board's header (shown on screens 1024 px and wider). The choice is remembered in
 `localStorage` (`agent-pledge:projector`), so the projector laptop stays in projector mode across reloads.
-Leave it with "Normal view" or `?projector=0`. Logic: `lib/board/projector.ts`, `lib/board/use-projector-mode.ts`.
+Leave it with `[ NORMAL VIEW ]` or `?projector=0`. Logic: `lib/board/projector.ts`, `lib/board/use-projector-mode.ts`.
 
 What changes:
 
-- **One screen, no scrolling.** The newest task fills a big card: the task's status, time left and price
+- **One screen, no scrolling.** The newest task fills a big window: the task's status, time left and price
   across the top; the money tree; the sub-task with its pay, status, **PIN tries left** and time left; the
   newest transactions (with a "Show all" toggle); the Yik Yak screenshot and the seat photo, shrunk to fit.
-  The agent log runs down the right side. Up to two other tasks show as small cards under the big one
-  (tasks still running first), with "+N more" after that. Click a small card to put it in the big card;
+  The agent log runs down the right side. Up to two other tasks show as small windows under the big one
+  (tasks still running first), with "+N more" after that. Click a small window to put it in the big one;
   "Follow newest" goes back.
 - **Sized to the screen.** On screens 1024 px and wider, `1rem` is `min(1.0417vw, 1.852vh)`: 20 px at
   1920x1080, 13.3 px at 1280x720. The same layout fills both, and text is the same size on the wall.
-- **Big type.** At 1080p the amounts and time left are 60 px, PIN tries left 45 px and the status badges
-  37.5 px bold capitals (3.5 to 5.5 % of the screen height). Nothing a judge reads is under 20 px (1.9 %):
-  the agent log and the transactions are 22.5 px. On a 3 m wide screen a 1080p pixel is about 1.6 mm, so
-  the status capitals are about 4 cm tall: about 14 arc minutes at 10 m, where 5 is the limit of
-  normal sight. NFT IDs are left out of the money tree, since nobody can read hex on a wall.
+- **Big type.** The sizes stay on the design system's scale (`text-sm` to `text-4xl`). At 1080p the
+  amounts, time left, PIN tries left and the big window's status tag are 45 px bold (4.2 % of the screen
+  height); the small windows' status tags are 30 px. Nothing a judge reads is under 20 px (1.9 %): the
+  agent log and the transactions are 22.5 px. On a 3 m wide screen a 1080p pixel is about 1.6 mm, so the
+  big status capitals are about 5 cm tall: about 17 arc minutes at 10 m, where 5 is the limit of normal
+  sight. NFT IDs are left out of the money tree, since nobody can read hex on a wall.
 - **Colors.** The board is dark terminal style in every mode, big-screen mode included: the demo screen
   shows black fine. Big-screen mode keeps the scanlines fainter and the phosphor glow subtle so large text
-  stays sharp. See `docs/design/agent-design-system.md`. Each status is also a text tag, never only a color.
+  stays sharp. See `docs/design/agent-design-system.md`. Each status is a text tag (`[OPEN]`, `[CLAIMED]`,
+  `[DONE]`, `[ERR] FAILED`; transactions `[..]`, `[OK]`, `[RFND] ↩`; money-tree edges `[HELD]` in the vault),
+  never only a color.
 
 Checked in a browser at 1920x1080 and 1280x720 with `/preview?layout=one|three|stops&projector=1` and the
 live fixture stream. **Still to do at rehearsal (#30):** on the real projector, open `/board?projector=1` in
 full screen (Chrome: View, Enter Full Screen) at the projector's native resolution, and walk to the back
-of the room: read the status, the amounts and the PIN tries left, and check that amber (pending) and
-sky (held in the vault) are still told apart on that projector.
+of the room: read the status, the amounts and the PIN tries left, and check that the scanlines don't
+hurt legibility and the green and amber tags are still told apart on that projector.
 
 ## Live updates (#35, PRD R3)
 
@@ -100,11 +103,14 @@ On a drop it reconnects with backoff (250 ms, doubling, capped at 4 s) from the 
 reconnects at once when the tab becomes visible again or the browser comes back online (a phone that slept).
 On a seq gap it reconnects at once. All of this is in `lib/board/sync.ts`.
 
-The header shows the connection: green "Live", amber while connecting, red "Offline, reconnecting" when
-the socket is down. Next to it, a small number is the last event's time from the server to the screen
+A task that arrives while the board is open flashes its title bar once as a short inverted green bar. The
+tasks already there on first load never flash, and nothing flashes under reduced motion (`lib/board/arrivals.ts`).
+
+The header shows the connection: `[OK] LIVE` in green, `[..] CONNECTING` in amber, `[ERR] OFFLINE, RECONNECTING`
+in red when the socket is down. Next to it, `LAT 120 ms` is the last event's time from the server to the screen
 (the event's `at` to the paint after React committed it). Hover it for the split: server to browser
 (which includes any clock difference between the server and the phone) and browser to screen, the worst
-of the last 20 events, and how many went over 2 s. It turns amber over 2 s. The element also carries
+of the last 20 events, and how many went over 2 s. Over 2 s it turns amber and reads `[SLOW]`. The element also carries
 `data-last-total-ms`, `data-worst-total-ms` and `data-over-budget` for scripted checks.
 
 **R3 check against a real server:** open the board on a phone, then create a task:
@@ -123,9 +129,9 @@ backup form (below) instead of `curl`. To check from the browser console:
 ## Agent log (#37)
 
 The right-hand panel shows `agent.log` lines in the order the server sent them, newest at the bottom, each
-with its time and a short tag for its task (the last 4 characters of the task ID; hover for the task's
+with its time, a level tag (`[INF]`, `[DEC]`, `[WRN]`, `[ERR]`) and a short tag for its task (the last 4 characters of the task ID; hover for the task's
 description). It follows new lines while scrolled to the bottom. Scrolling up pauses that and shows a
-"N new lines, jump to latest" button. The board keeps the last 200 lines (`AGENT_LOG_LIMIT`).
+`[ N NEW LINES, JUMP TO LATEST ]` button; the title bar reads `[FOLLOW]` or `[PAUSED]`. The board keeps the last 200 lines (`AGENT_LOG_LIMIT`).
 The local agent adds lines with `POST /agent/log`.
 
 ## Backup form (#38, PRD 11)
