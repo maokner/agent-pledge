@@ -16,6 +16,7 @@ pnpm dev:web            # against a server; see .env.example
 |---|---|
 | `components/board/*` | Board UI (#32 to #38, #43). `Board.tsx` wires `useBoard` to the cards, or to `ProjectorBoard` in projector mode. |
 | `components/claim/*` | Claim page UI (#39 to #42). `ClaimScreen.tsx` loads the claim and picks a view per state. |
+| `components/landing/*` | Landing page (`/`): the two role buttons and the "powered by" footer. |
 | `components/ui/*` | Shared pieces: status badges, money, explorer links, countdown. |
 | `lib/api/*` | `getApiClient()`: HTTP client, or the fixture client in fixture mode. |
 | `lib/board/*` | Board state reducer, selectors, sync (reconnect and seq resync), transports, `useBoard`. |
@@ -51,6 +52,13 @@ Claim codes for `/c/<code>` (the PIN is `4821`; state lives in memory, so reload
 | anything else | not found |
 
 Claiming takes about 5 seconds in fixture mode, like the real ledger.
+
+Open sub-tasks (`getApiClient().listOpenSubtasks()`, the DRAFT `GET /subtasks/open` for the `/human` list) are
+the codes that start open: `OPEN`, `RACE`, `FLAK` and `SOON`, each with its own pay, place and deadline, so
+every item opens a working claim page. One drops out once this tab claims it (or loses the `RACE`), and `SOON`
+drops out 20 seconds after it is first loaded. Add `?fixtures=empty` to the page URL (for example
+`/human?fixtures=empty`) to get an empty list and see the empty state. Show the list with
+`openSubtasksToShow(subtasks, now)` from `lib/api`: soonest deadline first, expired items removed.
 
 ## Projector mode (#43, PRD 9.1)
 

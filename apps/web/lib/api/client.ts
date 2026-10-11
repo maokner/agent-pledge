@@ -10,6 +10,7 @@ import type {
   ClaimView,
   CreateTaskRequest,
   CreateTaskResponse,
+  ListOpenSubtasksResponse,
   SubmitPinResponse,
   SubtaskId,
   TaskId,
@@ -35,6 +36,12 @@ export interface ApiClient {
   uploadPhoto(code: ClaimCode, photo: Blob, note: string, options?: UploadOptions): Promise<ClaimView>;
   /** POST /claim/:code/pin */
   submitPin(code: ClaimCode, pin: string): Promise<SubmitPinResponse>;
+
+  /**
+   * GET /subtasks/open. DRAFT (#17): new for the /human list, needs backend sign-off.
+   * Show the result with openSubtasksToShow() from ./open-subtasks.
+   */
+  listOpenSubtasks(): Promise<ListOpenSubtasksResponse>;
 }
 
 export interface UploadOptions {

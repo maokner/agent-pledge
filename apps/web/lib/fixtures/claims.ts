@@ -2,7 +2,13 @@
  * Fixture claim codes. Open /c/<code> in fixture mode to see each claim state.
  * Codes that also appear on the fixture board use that sub-task's data.
  */
-import { MAX_PIN_ATTEMPTS, type ClaimState, type ClaimView, type Subtask } from "@agent-pledge/shared";
+import {
+  MAX_PIN_ATTEMPTS,
+  type ClaimState,
+  type ClaimView,
+  type OpenSubtaskSummary,
+  type Subtask,
+} from "@agent-pledge/shared";
 import { buildFixtureSnapshot } from "./board";
 import { fakeHex } from "./factories";
 
@@ -30,20 +36,47 @@ export function isFixtureClaimCode(code: string): code is FixtureClaimCode {
   return Object.hasOwn(FIXTURE_CLAIM_CODES, code);
 }
 
+/** The codes that start open: what the /human list shows in fixture mode (OPEN, RACE, FLAK, SOON). */
+export const OPEN_FIXTURE_CLAIM_CODES = (Object.keys(FIXTURE_CLAIM_CODES) as FixtureClaimCode[]).filter(
+  (code) => FIXTURE_CLAIM_CODES[code] === "open",
+);
+
+/**
+ * What each code not on the fixture board asks for, so the /human list has
+ * different items. Codes not listed here use DEFAULT_DETAILS.
+ */
+const DEFAULT_DETAILS = { description: "Save a seat at the front table", place: "Main Stacks, front table", price: "4" };
+const FIXTURE_CLAIM_DETAILS: Partial<Record<FixtureClaimCode, typeof DEFAULT_DETAILS>> = {
+  RACE: { description: "Save two seats by the window", place: "Moffitt Library, 3rd floor", price: "6" },
+  FLAK: { description: "Save a seat near an outlet", place: "Doe Library, Heyns Reading Room", price: "3" },
+  SOON: { description: "Hold a spot in the coffee line", place: "Free Speech Movement Cafe", price: "2.5" },
+};
+
+/**
+ * A claim view as an item in the open sub-task list (DRAFT GET /subtasks/open).
+ * ClaimView has no created_at, so it is the deadline minus the time limit.
+ */
+export function toOpenSubtaskSummary(view: ClaimView): OpenSubtaskSummary {
+  const { description, place, price, time_limit_minutes, deadline_at } = view.subtask;
+  const created_at = new Date(Date.parse(deadline_at) - time_limit_minutes * 60_000).toISOString();
+  return { claim_code: view.code, price, description, place, time_limit_minutes, created_at, deadline_at };
+}
+
 export function buildFixtureClaim(code: string, now: number): ClaimView | null {
   if (!isFixtureClaimCode(code)) return null;
   const snapshot = buildFixtureSnapshot(now);
   const sub = snapshot.subtasks.find((s) => s.claim_code === code);
   const state = FIXTURE_CLAIM_CODES[code];
-  const price = sub?.price ?? "4";
+  const details = FIXTURE_CLAIM_DETAILS[code] ?? DEFAULT_DETAILS;
+  const price = sub?.price ?? details.price;
   const view: ClaimView = {
     code,
     state,
     subtask: sub
       ? pick(sub)
       : {
-          description: "Save a seat at the front table",
-          place: "Main Stacks, front table",
+          description: details.description,
+          place: details.place,
           time_limit_minutes: 10,
           deadline_at: new Date(now + 8 * 60_000).toISOString(),
           price,

@@ -4,6 +4,7 @@ import { createFixtureApiClient } from "./fixture-client";
 import { createHttpApiClient } from "./http-client";
 
 export { ApiError, errorMessage, type ApiClient, type UploadOptions } from "./client";
+export { openSubtasksToShow } from "./open-subtasks";
 
 let client: ApiClient | null = null;
 
