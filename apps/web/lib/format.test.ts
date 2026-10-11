@@ -3,7 +3,9 @@ import {
   explorerAccountUrl,
   explorerNftUrl,
   explorerTxUrl,
+  formatMinutes,
   formatRlusd,
+  formatSignedRlusd,
   formatTimeLeft,
   shortHash,
 } from "./format";
@@ -25,6 +27,27 @@ describe("formatRlusd", () => {
   it("shows a dash instead of $NaN for a malformed amount", () => {
     expect(formatRlusd("")).toBe("—");
     expect(formatRlusd("abc")).toBe("—");
+  });
+});
+
+describe("formatSignedRlusd", () => {
+  it("shows gains with a plus and losses with a minus sign", () => {
+    expect(formatSignedRlusd("1")).toBe("+$1.00");
+    expect(formatSignedRlusd("-1")).toBe("−$1.00");
+    expect(formatSignedRlusd("-4.5")).toBe("−$4.50");
+  });
+
+  it("shows zero with no sign", () => {
+    expect(formatSignedRlusd("0")).toBe("$0.00");
+  });
+});
+
+describe("formatMinutes", () => {
+  it("shows a time limit in minutes or hours", () => {
+    expect(formatMinutes(1)).toBe("1 min");
+    expect(formatMinutes(3)).toBe("3 min");
+    expect(formatMinutes(90)).toBe("1 h 30 min");
+    expect(formatMinutes(120)).toBe("2 h");
   });
 });
 
