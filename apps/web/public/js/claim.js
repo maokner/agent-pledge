@@ -61,7 +61,10 @@ async function api(path, { method = "GET", body, json } = {}) {
       cache: "no-store",
     });
   } catch (_e) {
-    throw new ApiError(0, { error: "network", message: "No connection. Check your signal and try again." });
+    throw new ApiError(0, {
+      error: "network",
+      message: "No connection. Check your signal and try again.",
+    });
   }
   const data = await res.json().catch(() => null);
   if (!res.ok) throw new ApiError(res.status, data);
@@ -117,7 +120,8 @@ function summary(c) {
 /** "Photo and note sent" banner on the PIN step. */
 function sentLine(c) {
   if (!c.photo && !c.helper_note) return "";
-  const what = c.photo && c.helper_note ? "Photo and note sent" : c.photo ? "Photo sent" : "Note sent";
+  const what =
+    c.photo && c.helper_note ? "Photo and note sent" : c.photo ? "Photo sent" : "Note sent";
   const note = c.helper_note ? `: &ldquo;${esc(c.helper_note)}&rdquo;` : "";
   return `<div class="done-photo">&#10003; ${what}${note}</div>`;
 }
@@ -138,7 +142,12 @@ const waiting = (title, text) => `<div class="state">
 const VIEWS = {
   loading: () => waiting("Loading", ""),
   notfound: () =>
-    stateBlock("?", "icon-warn", "Link not found", `There is no task with the code ${esc(CODE)}. Check the link in the post.`),
+    stateBlock(
+      "?",
+      "icon-warn",
+      "Link not found",
+      `There is no task with the code ${esc(CODE)}. Check the link in the post.`,
+    ),
   error: () =>
     stateBlock(
       "!",
@@ -151,10 +160,24 @@ const VIEWS = {
     <button class="btn btn-primary" data-action="claim">Claim this</button>
     <p class="lead" style="margin-top:16px;text-align:center">First tap wins. No sign-up, no wallet needed.</p>`,
   claiming: () =>
-    waiting("Reserving it for you on the XRP Ledger", "This takes about 5 to 10 seconds. Keep this page open."),
+    waiting(
+      "Reserving it for you on the XRP Ledger",
+      "This takes about 5 to 10 seconds. Keep this page open.",
+    ),
   taken: () =>
-    stateBlock("&#10007;", "icon-bad", "Already claimed by someone else", "Someone tapped first. Keep an eye on Yik Yak for the next one."),
-  expired: () => stateBlock("&#8987;", "icon-bad", "This one expired", "The time limit passed. No one was charged."),
+    stateBlock(
+      "&#10007;",
+      "icon-bad",
+      "Already claimed by someone else",
+      "Someone tapped first. Keep an eye on Yik Yak for the next one.",
+    ),
+  expired: () =>
+    stateBlock(
+      "&#8987;",
+      "icon-bad",
+      "This one expired",
+      "The time limit passed. The requester got their money back.",
+    ),
   photo: (c) => `${summary(c)}
     <div class="step">
       <h2 class="step-title">It is yours. Go do it.</h2>
@@ -181,7 +204,12 @@ const VIEWS = {
     </div>`,
   paying: () => waiting("Paying you on the XRP Ledger", "This takes about 5 to 10 seconds."),
   locked: () =>
-    stateBlock("&#128274;", "icon-bad", "Locked", "Three wrong PINs. This task is locked and cannot be paid."),
+    stateBlock(
+      "&#128274;",
+      "icon-bad",
+      "Locked",
+      "Three wrong PINs. This task is locked and cannot be paid.",
+    ),
   paid: (c) => {
     const p = payout || c.payout;
     const link = p?.explorer_url
@@ -255,6 +283,8 @@ async function doClaim() {
     store(TOKEN_KEY, r.helper_token);
     setClaim(r.claim);
   } catch (err) {
+    // A second tab of the same helper: the stored token decides whether it is ours.
+    if (err.code === "already_claimed" && load(TOKEN_KEY)) return refresh();
     fail(err);
   }
 }
@@ -316,7 +346,8 @@ async function sendPhoto() {
     if (err.status === 409) return refresh();
     if (err.status === 410 || err.status === 404) return fail(err);
     show("photo");
-    document.getElementById("photo-msg").innerHTML = `<p class="msg msg-bad">${esc(err.message)}</p>`;
+    document.getElementById("photo-msg").innerHTML =
+      `<p class="msg msg-bad">${esc(err.message)}</p>`;
   }
 }
 

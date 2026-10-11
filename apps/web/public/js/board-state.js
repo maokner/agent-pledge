@@ -1,7 +1,8 @@
 // Pure state updates for the board: apply /ws/board events to a BoardState.
 // Clients upsert by ID (docs/api.md section 4). Every function returns a new state object.
 
-const byCreatedDesc = (a, b) => (a.created_at < b.created_at ? 1 : a.created_at > b.created_at ? -1 : 0);
+const byCreatedDesc = (a, b) =>
+  a.created_at < b.created_at ? 1 : a.created_at > b.created_at ? -1 : 0;
 const byCreatedAsc = (a, b) => -byCreatedDesc(a, b);
 
 function upsert(list, item, key, order) {

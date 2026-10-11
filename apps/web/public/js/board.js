@@ -57,7 +57,8 @@ const REFUND_KINDS = new Set(["refund_requester", "refund_agent"]);
 const badge = (status) => `<span class="badge badge-${esc(status)}">${esc(status)}</span>`;
 
 function countdown(task) {
-  if (task.status === "done") return `<span class="when when-done">Done ${clockTime(task.done_at ?? task.paid_at ?? task.created_at)}</span>`;
+  if (task.status === "done")
+    return `<span class="when when-done">Done ${clockTime(task.done_at ?? task.paid_at ?? task.created_at)}</span>`;
   if (task.status === "failed") return "";
   return `<span class="when countdown num" data-deadline="${esc(task.deadline)}">${formatCountdown(msLeft(task.deadline))}</span>`;
 }
@@ -65,7 +66,11 @@ function countdown(task) {
 function holder(task) {
   const sub = task.subtasks.find((s) => s.helper_address);
   if (task.status === "failed") return esc(task.fail_reason || "Failed");
-  if (task.status === "done") return `Done. Helper ${esc(shortAddr(sub?.helper_address))} saved it.`;
+  if (task.status === "done")
+    return `Done. Helper ${esc(shortAddr(sub?.helper_address))} saved it.`;
+  if (sub && sub.status === "done") {
+    return `Helper <span class="mono">${esc(shortAddr(sub.helper_address))}</span> paid. Agent redeeming.`;
+  }
   if (sub && sub.status === "claimed") {
     return `Helper <span class="mono">${esc(shortAddr(sub.helper_address))}</span> is on it`;
   }
@@ -127,7 +132,9 @@ function renderSubtask(task, s) {
   const helper = s.helper_address
     ? `<div class="sub-meta">Helper <span class="mono">${esc(shortAddr(s.helper_address))}</span></div>`
     : "";
-  const note = s.helper_note ? `<div class="sub-note">&ldquo;${esc(s.helper_note)}&rdquo;</div>` : "";
+  const note = s.helper_note
+    ? `<div class="sub-note">&ldquo;${esc(s.helper_note)}&rdquo;</div>`
+    : "";
   const link =
     s.status === "open"
       ? `<a class="claim-link mono" href="${esc(s.claim_url)}" target="_blank" rel="noopener">${esc(s.claim_url.replace(/^https?:\/\//, ""))}</a>`
@@ -155,7 +162,9 @@ function renderMedia(task) {
   if (!items.length) return "";
   return `<div class="media">${items
     .map(
-      (it) => `<figure class="thumb" data-full="${esc(mediaSrc(it.m))}" data-caption="${esc(it.caption || it.label)}">
+      (
+        it,
+      ) => `<figure class="thumb" data-full="${esc(mediaSrc(it.m))}" data-caption="${esc(it.caption || it.label)}">
         <img src="${esc(mediaSrc(it.m))}" alt="${esc(it.label)}" loading="lazy" />
         <figcaption>${esc(it.label)}</figcaption>
       </figure>`,
@@ -242,8 +251,10 @@ function render() {
     : `<div class="empty">No tasks yet. Call the Agent Pledge number to make one.</div>`;
   renderLog();
   const addr = [];
-  if (state.vault_address) addr.push(`Vault <span class="mono">${esc(shortAddr(state.vault_address))}</span>`);
-  if (state.agent_address) addr.push(`Agent <span class="mono">${esc(shortAddr(state.agent_address))}</span>`);
+  if (state.vault_address)
+    addr.push(`Vault <span class="mono">${esc(shortAddr(state.vault_address))}</span>`);
+  if (state.agent_address)
+    addr.push(`Agent <span class="mono">${esc(shortAddr(state.agent_address))}</span>`);
   $addresses.innerHTML = addr.join(" &middot; ");
   if (FOCUS_TASK && !focused) {
     const el = document.getElementById(FOCUS_TASK);

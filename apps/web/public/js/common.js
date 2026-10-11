@@ -44,7 +44,8 @@ export function esc(value) {
 }
 
 /** "rUEpnDKWQTpX7YU82Mo8ZiigDEARHJYS9p" -> "rUEp...HJYS9p". */
-export const shortAddr = (a) => (a && a.length > 12 ? `${a.slice(0, 4)}...${a.slice(-6)}` : a || "");
+export const shortAddr = (a) =>
+  a && a.length > 12 ? `${a.slice(0, 4)}...${a.slice(-6)}` : a || "";
 
 /** "14:03:07" in local time. */
 export function clockTime(iso) {

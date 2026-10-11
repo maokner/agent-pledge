@@ -459,6 +459,9 @@ pnpm lint && pnpm typecheck && pnpm test
 pnpm db:reset     # wipe the database before a rehearsal
 ```
 
+- The server also serves the board at `http://localhost:3001/` and the claim page at `http://localhost:3001/c/<CODE>` (static files in `apps/web/public`, no build step).
+  Set `PUBLIC_BASE_URL` to the same public URL as `PUBLIC_API_URL` so claim links point at this server.
+- `http://localhost:3001/?demo=1` renders the board from the bundled fixture in `apps/web/public/fixtures`, without live data.
 - `LEDGER_MODE=fake` (default) uses an in-memory ledger. `LEDGER_MODE=xrpl` uses `packages/ledger` on XRPL testnet.
 - Set `DATABASE_URL=postgres://…` to use real Postgres. Migrations run at startup.
 - Docker: `docker build -f apps/server/Dockerfile -t agent-pledge-server .` from the repo root.

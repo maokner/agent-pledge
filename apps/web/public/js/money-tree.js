@@ -39,13 +39,7 @@ export function moneyTree(task) {
     rows.push({ from, to, what, cents: amountOf(tx, expected), state: edgeState(tx), tx, refund });
 
   add("Requester", "Vault", "pays the price", findTx(task, "task_funding"), price);
-  add(
-    "Local agent",
-    "Vault",
-    "pledges, gets the task NFT",
-    findTx(task, "task_claim"),
-    pledge,
-  );
+  add("Local agent", "Vault", "pledges, gets the task NFT", findTx(task, "task_claim"), pledge);
   if (subs.length === 0) {
     rows.push({
       from: "Local agent",
@@ -58,7 +52,13 @@ export function moneyTree(task) {
     });
   }
   for (const s of subs) {
-    add("Local agent", "Vault", "funds the sub-task", findTx(task, "subtask_funding", s.id), toCents(s.price));
+    add(
+      "Local agent",
+      "Vault",
+      "funds the sub-task",
+      findTx(task, "subtask_funding", s.id),
+      toCents(s.price),
+    );
   }
 
   if (failed) {
@@ -77,7 +77,13 @@ export function moneyTree(task) {
         to: "Helper",
         what: payout ? "pays the helper" : claim ? "sub-task NFT to the helper" : "pays the helper",
         cents: payout ? amountOf(payout, toCents(s.price)) : toCents(s.price),
-        state: payout ? edgeState(payout) : claim ? (edgeState(claim) === "ok" ? "half" : edgeState(claim)) : "todo",
+        state: payout
+          ? edgeState(payout)
+          : claim
+            ? edgeState(claim) === "ok"
+              ? "half"
+              : edgeState(claim)
+            : "todo",
         tx,
         refund: false,
       });
@@ -93,14 +99,21 @@ export function moneyTree(task) {
         refund: false,
       });
     }
-    add("Vault", "Local agent", "reward + pledge back", findTx(task, "agent_payout"), price + pledge);
+    add(
+      "Vault",
+      "Local agent",
+      "reward + pledge back",
+      findTx(task, "agent_payout"),
+      price + pledge,
+    );
   }
 
   const done = task.status === "done" || task.paid_at != null;
   let result;
   if (failed) {
     const claimed = !!findTx(task, "task_claim") || task.claimed_at != null;
-    const back = refundReq?.amount != null ? toCents(refundReq.amount) : price + (claimed ? pledge : 0);
+    const back =
+      refundReq?.amount != null ? toCents(refundReq.amount) : price + (claimed ? pledge : 0);
     result = {
       final: true,
       requester: { cents: back - price, text: claimed ? "Refunded + pledge" : "Refunded" },
