@@ -11,7 +11,16 @@ Refs are `branch:path:line`. `fe` = `frontend`, `be` = `origin/backend-all`, `cv
 
 ## Status (2026-10-11)
 
-The frontend side is done. `apps/web/lib/backend/` adapts the real server's shapes, mirrored from `origin/backend-all` at 52c72be, into the web app's own types. It was checked end to end against the real server with `LEDGER_MODE=fake`: a task created, the claim, photo, a wrong PIN, the right PIN, the payout, a deadline failure and a server restart. Everything in "Frontend work" below is done. What's left is the open questions for the backend person; until they're answered, the client works around them, as described in `packages/shared/CONTRACT.md` under "The real server".
+The frontend side is done. `apps/web/lib/backend/` adapts the real server's shapes, mirrored from `origin/backend-all` at 52c72be, into the web app's own types. It was checked end to end against the real server with `LEDGER_MODE=fake`: a task created, the claim, photo, a wrong PIN, the right PIN, the payout, a deadline failure and a server restart. Everything in "Frontend work" below is done. What's left is the open questions for the backend person; until they're answered, the client works around them, as described in `apps/web/lib/contract/CONTRACT.md` (formerly `packages/shared/CONTRACT.md`) under "The real server".
+
+## Merged (2026-10-11)
+
+The `frontend` branch is merged with the backend on the `integration` branch.
+`packages/shared` is the backend's zod package; the frontend's DRAFT types moved to `apps/web/lib/contract`.
+`apps/web/lib/backend/types.ts` now takes the server's types from `@agent-pledge/shared`.
+The Next.js app replaces the server's static pages, and the server reverse-proxies every non-API path to it (`WEB_UPSTREAM_URL`), so the pages, the API and `/ws/board` share one origin.
+Workspace: pnpm 10.33.0, Node 22, and `sharp` is built (open question 8).
+The tables below are the state before the merge.
 
 ## Summary
 

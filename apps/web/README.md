@@ -3,29 +3,38 @@
 Next.js (App Router), TypeScript, Tailwind. Routes: `/` (landing), `/board` (board), `/human` (open sub-tasks) and `/c/[code]` (claim page).
 Pages live in route groups that set each surface's design tokens: `app/(landing)`, `app/(human)` and
 `app/(agent)`. See `docs/design/DIRECTION.md`.
-Types come from `@agent-pledge/shared` (draft contract, see `packages/shared/CONTRACT.md`).
+The web app's own model lives in `lib/contract` (imported as `@/lib/contract`; the former DRAFT contract, see `lib/contract/CONTRACT.md`).
+The server's wire types come from `@agent-pledge/shared` (`packages/shared`, documented in `docs/api.md`).
 
 ```sh
 pnpm dev:web:fixtures   # from the repo root: fixture data, no server needed
-pnpm dev:web            # against the server at http://localhost:3001; see .env.example
+pnpm dev                # the server on http://localhost:3001
+pnpm dev:web            # this app on http://localhost:3000; open http://localhost:3001/board
 ```
 
 ## Against the real server
 
-The server lives on the `backend-all` branch (`apps/server`, contract in its `docs/api.md`). Its shapes differ
-from the DRAFT types here, so one adapter, `lib/backend/`, maps them: the HTTP client (`lib/api/http-client.ts`)
-and the board socket (`lib/board/websocket-transport.ts`) speak the server's shapes and hand the rest of the app
-the DRAFT types. Fixture mode never touches it. `lib/backend/types.ts` mirrors the server's types; replace it
-with imports of the server's `@agent-pledge/shared` once the branches merge.
+The server (`apps/server`, contract in `docs/api.md`) speaks its own shapes, so one adapter, `lib/backend/`, maps them to the types here.
+The HTTP client (`lib/api/http-client.ts`) and the board socket (`lib/board/websocket-transport.ts`) speak the server's shapes and hand the rest of the app the `lib/contract` types.
+Fixture mode never touches it.
+`lib/backend/types.ts` takes the server's types from `@agent-pledge/shared` (types only, so no zod reaches the browser).
 
-To run both locally:
+### One origin (default)
 
-1. Server (on a `backend-all` checkout): `LEDGER_MODE=fake PORT=3001 CORS_ORIGINS=http://localhost:3000
-   PUBLIC_BASE_URL=http://localhost:3000 pnpm dev`. `CORS_ORIGINS` must list this app's origin (comma-separated,
-   credentials allowed); `PUBLIC_BASE_URL` is this app, so claim links (`/c/<CODE>`) and board links
-   (`/?task=<id>`, which `/` redirects to `/board?task=<id>`) land here.
-2. This app: `pnpm dev:web` with `NEXT_PUBLIC_FIXTURES` unset. `NEXT_PUBLIC_API_URL` defaults to
-   `http://localhost:3001`.
+The server reverse-proxies every path that is not an API route to this app (`WEB_UPSTREAM_URL`, default `http://localhost:3000`).
+So open the pages on the server's port: `http://localhost:3001/board`, `http://localhost:3001/c/<CODE>`.
+`NEXT_PUBLIC_API_URL` defaults to empty, which means the page's own origin, for HTTP calls and for `/ws/board`.
+This is how the demo runs: one cloudflared tunnel points at the server, and phones open claim links from Yik Yak on that one URL (`pnpm demo:local`, see `docs/demo-local.md`).
+`next dev` hot reload also works through the proxy (`/_next/hmr`).
+
+### Separate origins
+
+To open this app on its own origin (`http://localhost:3000`):
+
+1. Server: `CORS_ORIGINS=http://localhost:3000 PUBLIC_BASE_URL=http://localhost:3000 pnpm dev`.
+   `CORS_ORIGINS` must list this app's origin (comma-separated, credentials allowed).
+   `PUBLIC_BASE_URL` is this app, so claim links (`/c/<CODE>`) and board links (`/?task=<id>`, which `/` redirects to `/board?task=<id>`) land here.
+2. This app: `NEXT_PUBLIC_API_URL=http://localhost:3001 pnpm dev:web` (or set it in `.env.local`), with `NEXT_PUBLIC_FIXTURES` unset.
 
 What the adapter covers, and what it works around until the server changes:
 
@@ -190,12 +199,13 @@ operator passcode (header `x-backup-passcode`), validates the form, and calls th
 | Variable | What |
 |---|---|
 | `BACKUP_FORM_PASSCODE` | What the operator types into the form. The route returns 503 until it is set. |
-| `AGENT_PLEDGE_SERVER_URL` | The server's base URL from the web server. Defaults to `NEXT_PUBLIC_API_URL` if absolute. |
+| `AGENT_PLEDGE_SERVER_URL` | The server's base URL from the web server. Defaults to `NEXT_PUBLIC_API_URL` if absolute, else `http://localhost:3001`. |
 | `AGENT_PLEDGE_VOICE_SECRET` | The voice agent's shared secret. |
 | `BACKUP_FORM_CALLER_PHONE` | `caller_phone` when the form leaves it empty. Optional: without it the task has no phone. |
 
-This needs the web app to run as a Next.js server (not a static export), and on a shared host `/api/*` must
-route to Next.js. The form remembers the passcode for the browser tab (sessionStorage).
+This needs the web app to run as a Next.js server (not a static export).
+Behind the server's proxy, `/api/*` goes to Next.js (the server has no `/api` routes).
+The form remembers the passcode for the browser tab (sessionStorage).
 
 In fixture mode the route answers from the fixture client (PIN `4821`) and needs no passcode unless
 `BACKUP_FORM_PASSCODE` is set. The page then adds the task to the simulated stream, which runs it
