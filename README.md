@@ -29,7 +29,8 @@ Each task is an NFT, so only one person can do a task at a time.
 10. [Build order](#10-build-order)
 11. [Risks](#11-risks)
 12. [Features for later](#12-features-for-later)
-13. [Decision log](#13-decision-log)
+13. [Tracks](#13-tracks)
+14. [Decision log](#14-decision-log)
 
 ---
 
@@ -412,7 +413,23 @@ Each feature has a short description.
 - **Vault security.** The vault uses a multi-signature `SignerList` and a disabled master key.
 - **Helper credentials.** The platform gives an XRPL Credential to verified helpers.
 
-## 13. Decision log
+## 13. Tracks
+
+We enter one general track and three sponsor tracks.
+
+| Track | Why Agent Pledge fits |
+|---|---|
+| **Most Creative** (general) | An AI agent hires a person. The agent is the contractor, and the person is the subcontractor. |
+| **Best Use of Ripple** | RLUSD payments, task NFTs for the claim lock and the payout swap, and memos for a public audit trail, all in one product. |
+| **YZi Labs** | The local agent has its own wallet, locks a pledge before it works, and each payment is on the ledger. A person gives the task by voice. |
+| **Best Use of ElevenLabs** (bonus) | The voice agent takes the task on a phone call, confirms it, and says the PIN. |
+
+YZi Labs accepts any chain, but its setup steps use BSC Testnet.
+Ask at the YZi Labs table if they judge an XRPL project the same.
+
+We enter Context.dev only if we build food delivery (see [section 12](#12-features-for-later)).
+
+## 14. Decision log
 
 | Date | Decision | Reason |
 |---|---|---|
@@ -422,3 +439,5 @@ Each feature has a short description.
 | 2026-10-11 | The local agent runs on our laptop and posts on Yik Yak from our logged-in browser. | Yik Yak has no public API for posts. Our own browser session makes the post real and visible to the judges. |
 | 2026-10-11 | The proof is a PIN from the requester to the helper. | It is simple, and the helper cannot fake it. |
 | 2026-10-11 | Other features wait until the base demo works. | A small demo that works is better than a large demo that does not work. |
+| 2026-10-11 | Our general track is Most Creative. | The main idea is creative: an AI agent hires a person. |
+| 2026-10-11 | We also enter the YZi Labs track. | It accepts any chain. It asks for agents with wallets that people can trust, and for voice-first agents. |
