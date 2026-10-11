@@ -29,6 +29,17 @@ describe("createHttpApiClient", () => {
     expect(error).toMatchObject({ status: 409, code: "already_claimed", message: "Someone else claimed this first." });
   });
 
+  it("lists open sub-tasks from the draft GET /subtasks/open", async () => {
+    const body = { server_time: "2026-10-11T19:00:00.000Z", subtasks: [{ claim_code: "7Q2K", price: "4" }] };
+    const fetch = respond(200, body);
+    const api = createHttpApiClient({ baseUrl: "https://pledge.example", fetch });
+
+    const list = await api.listOpenSubtasks();
+
+    expect(fetch).toHaveBeenCalledWith("https://pledge.example/subtasks/open", expect.objectContaining({ method: "GET" }));
+    expect(list).toEqual(body);
+  });
+
   it("reports a non-JSON error as internal", async () => {
     const fetch = vi.fn<typeof globalThis.fetch>(async () => new Response("Bad gateway", { status: 502 }));
     const api = createHttpApiClient({ baseUrl: "", fetch });

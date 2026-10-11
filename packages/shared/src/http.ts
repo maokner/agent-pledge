@@ -268,6 +268,41 @@ export interface SubmitPinResponse {
 }
 
 // ---------------------------------------------------------------------------
+// Open sub-tasks for the human list page (/human). Public, no auth.
+//
+// DRAFT, NEW in the restyle, for the backend person (#17): no endpoint listed
+// open sub-tasks before. It needs sign-off. See "Open sub-tasks" in
+// ../CONTRACT.md for how the list stays fresh and the open questions.
+// ---------------------------------------------------------------------------
+
+/**
+ * One open sub-task as the human list shows it. Each item links to its claim
+ * page, `/c/<claim_code>`. No crypto fields: the human side never shows them.
+ */
+export interface OpenSubtaskSummary {
+  claim_code: ClaimCode;
+  /** What the helper gets. Example: "4.5". */
+  price: RlusdAmount;
+  /** What to do, for example "Save a seat at the big table". */
+  description: string;
+  place: string;
+  time_limit_minutes: number;
+  created_at: IsoDateTime;
+  deadline_at: IsoDateTime;
+}
+
+/**
+ * GET /subtasks/open (DRAFT).
+ * Sub-tasks a helper could claim right now: status "open" and deadline_at
+ * after server_time. Order is not guaranteed; clients sort.
+ */
+export interface ListOpenSubtasksResponse {
+  /** Server clock, so countdowns are right even if the phone clock is off. */
+  server_time: IsoDateTime;
+  subtasks: OpenSubtaskSummary[];
+}
+
+// ---------------------------------------------------------------------------
 // Board (PRD 9.1). Public, no auth.
 // ---------------------------------------------------------------------------
 
@@ -316,6 +351,9 @@ export const apiPaths = {
   claimSubtask: (code: ClaimCode) => `/claim/${enc(code)}/claim`,
   claimPhoto: (code: ClaimCode) => `/claim/${enc(code)}/photo`,
   claimPin: (code: ClaimCode) => `/claim/${enc(code)}/pin`,
+
+  /** DRAFT (#17). Not under /claim/, where it would collide with /claim/:code. */
+  openSubtasks: () => "/subtasks/open",
 
   boardState: () => "/board/state",
   taskJson: (id: TaskId | SubtaskId) => `/tasks/${enc(id)}.json`,

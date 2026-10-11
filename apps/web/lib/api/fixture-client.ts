@@ -4,10 +4,12 @@
  * The PIN is FIXTURE_PIN ("4821"). Reload to reset.
  * Claims take about one ledger close, uploads report progress, and the
  * RACE, FLAK and SOON codes act out a lost race, a bad signal and a deadline.
+ * listOpenSubtasks() lists the codes that start open; `?fixtures=empty` on the
+ * page URL lists none.
  */
 import { type ClaimView, type SubmitPinResponse } from "@agent-pledge/shared";
 import { buildFixtureSnapshot } from "../fixtures/board";
-import { buildFixtureClaim, FIXTURE_PIN } from "../fixtures/claims";
+import { buildFixtureClaim, FIXTURE_PIN, OPEN_FIXTURE_CLAIM_CODES, toOpenSubtaskSummary } from "../fixtures/claims";
 import { fakeHex } from "../fixtures/factories";
 import { ApiError, type ApiClient, type UploadOptions } from "./client";
 
@@ -17,7 +19,24 @@ const UPLOAD_MS = 1500;
 const UPLOAD_TICKS = 10;
 const PAYOUT_MS = 4000; // about one XRPL ledger close
 
-export function createFixtureApiClient(now: () => number = Date.now): ApiClient {
+export interface FixtureApiClientOptions {
+  /**
+   * True to list no open sub-tasks, for the /human empty state.
+   * Default: the page URL has `?fixtures=empty` (for example `/human?fixtures=empty`).
+   */
+  emptyOpenSubtasks?: () => boolean;
+}
+
+/** `?fixtures=empty` on the page URL asks for the /human empty state in fixture mode. */
+function emptyStateInUrl(): boolean {
+  if (typeof window === "undefined") return false;
+  return new URLSearchParams(window.location.search).get("fixtures") === "empty";
+}
+
+export function createFixtureApiClient(
+  now: () => number = Date.now,
+  { emptyOpenSubtasks = emptyStateInUrl }: FixtureApiClientOptions = {},
+): ApiClient {
   const claims = new Map<string, ClaimView>();
   const payingSince = new Map<string, number>();
   /** "FLAK:claim", "FLAK:photo": the one-time failures that already happened. */
@@ -125,6 +144,15 @@ export function createFixtureApiClient(now: () => number = Date.now): ApiClient 
       const left = view.pin_attempts_left - 1;
       const claim = save({ ...view, pin_attempts_left: left, state: left <= 0 ? "locked" : view.state });
       return delay<SubmitPinResponse>({ result: left <= 0 ? "locked" : "wrong", claim });
+    },
+    /** The open fixture codes (OPEN, RACE, FLAK, SOON) still open on this phone: claimed, lost and expired ones drop out. */
+    listOpenSubtasks: async () => {
+      const server_time = new Date(now()).toISOString();
+      if (emptyOpenSubtasks()) return delay({ server_time, subtasks: [] });
+      const subtasks = OPEN_FIXTURE_CLAIM_CODES.map(load)
+        .filter((view) => view.state === "open")
+        .map(toOpenSubtaskSummary);
+      return delay({ server_time, subtasks });
     },
   };
 }

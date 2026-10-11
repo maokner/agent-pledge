@@ -4,6 +4,7 @@ import {
   type BoardSnapshot,
   type ClaimView,
   type CreateTaskResponse,
+  type ListOpenSubtasksResponse,
   type SubmitPinRequest,
   type SubmitPinResponse,
   type TaskNftData,
@@ -55,6 +56,7 @@ export function createHttpApiClient({
     },
     submitPin: (code, pin) =>
       request<SubmitPinResponse>("POST", apiPaths.claimPin(code), { pin } satisfies SubmitPinRequest),
+    listOpenSubtasks: () => request<ListOpenSubtasksResponse>("GET", apiPaths.openSubtasks()),
   };
 }
 
