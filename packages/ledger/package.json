@@ -1,0 +1,21 @@
+{
+  "name": "@agent-pledge/ledger",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "XRPL ledger module. Owned by the crypto teammate (issues #3-#10).",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@agent-pledge/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.18.0"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "@agent-pledge/local-agent",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "The local agent that runs on our laptop (issue #27). Skeleton only.",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@agent-pledge/shared": "workspace:*",
+    "tsx": "^4.20.6"
+  },
+  "devDependencies": {
+    "@types/node": "^22.18.0"
+  }
+}

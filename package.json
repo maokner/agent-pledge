@@ -1,0 +1,30 @@
+{
+  "name": "agent-pledge",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.12.1",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @agent-pledge/server dev",
+    "start": "pnpm --filter @agent-pledge/server start",
+    "lint": "eslint . && prettier --check .",
+    "format": "prettier --write .",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "test": "pnpm -r --if-present test",
+    "db:generate": "pnpm --filter @agent-pledge/server db:generate",
+    "db:migrate": "pnpm --filter @agent-pledge/server db:migrate",
+    "db:seed": "pnpm --filter @agent-pledge/server db:seed",
+    "db:reset": "pnpm --filter @agent-pledge/server db:reset"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "eslint": "^9.39.1",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^16.5.0",
+    "prettier": "^3.6.2",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.46.0"
+  }
+}
