@@ -31,6 +31,7 @@ Each task is an NFT, so only one person can do a task at a time.
 12. [Features for later](#12-features-for-later)
 13. [Tracks](#13-tracks)
 14. [Decision log](#14-decision-log)
+15. [Run it locally](#15-run-it-locally)
 
 ---
 
@@ -441,3 +442,23 @@ We enter Context.dev only if we build food delivery (see [section 12](#12-featur
 | 2026-10-11 | Other features wait until the base demo works. | A small demo that works is better than a large demo that does not work. |
 | 2026-10-11 | Our general track is Most Creative. | The main idea is creative: an AI agent hires a person. |
 | 2026-10-11 | We also enter the YZi Labs track. | It accepts any chain. It asks for agents with wallets that people can trust, and for voice-first agents. |
+| 2026-10-11 | Database: Drizzle ORM with the Postgres dialect everywhere. node-postgres in production; PGlite (embedded Postgres in WASM) for local development and tests. This replaces "SQLite for local development". | Two SQL dialects would need two schemas. One schema and one migration folder run on every host, and tests need no database server. Drizzle is light and type-safe, with plain SQL migrations. |
+| 2026-10-11 | Media bytes (photos, Yik Yak screenshots) live in Postgres (`bytea`). | Works on any host and in PGlite, with no volume or bucket to set up. |
+| 2026-10-11 | The local agent signs its own transactions on the laptop (claim, sub-task funding, redeem offer) and sends the hash; the server verifies it with `verifyTx` and does the vault steps. | The server never holds the agent's key (PRD 4). With `LEDGER_MODE=fake` the server can do the agent's step, so the flow is testable without XRPL. See `docs/api.md`. |
+
+## 15. Run it locally
+
+Needs Node 22+ and pnpm 10. The API contract is in [`docs/api.md`](docs/api.md).
+
+```sh
+pnpm install
+cp apps/server/.env.example apps/server/.env   # optional: every value has a dev default
+pnpm db:seed      # one demo task per status (stop `pnpm dev` first: PGlite allows one process)
+pnpm dev          # server on http://localhost:3001 (GET /health), fake ledger, PGlite in apps/server/.data
+pnpm lint && pnpm typecheck && pnpm test
+pnpm db:reset     # wipe the database before a rehearsal
+```
+
+- `LEDGER_MODE=fake` (default) uses an in-memory ledger. `LEDGER_MODE=xrpl` uses `packages/ledger` on XRPL testnet.
+- Set `DATABASE_URL=postgres://…` to use real Postgres. Migrations run at startup.
+- Docker: `docker build -f apps/server/Dockerfile -t agent-pledge-server .` from the repo root.
