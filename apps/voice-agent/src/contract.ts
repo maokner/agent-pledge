@@ -44,7 +44,7 @@ export const createTaskInputSchema = z
       .positive()
       .max(24 * 60),
     price_usd: z.number().positive().max(10_000),
-    // The caller ID is empty in dashboard test calls, which have no phone line.
+    // Filled from system__caller_id. It may be empty in a call with no phone line, such as a dashboard test.
     caller_phone: z.string().max(64),
   })
   .strict() satisfies z.ZodType<CreateTaskInput>;

@@ -85,7 +85,7 @@ Then say: "Give this PIN to the helper when you meet them."
 ## Step 8: Give the board address
 
 Tell the caller where to watch the task, using the board_url field of the create_task result.
-Say the address without "https://", and say "dot" for each period and "slash" for each slash.
+Say the address without "https://", and say "dot" for each period, "dash" for each hyphen, and "slash" for each slash.
 Then ask if they need anything else.
 If they do not, say "Thanks, goodbye." and end the call.
 
