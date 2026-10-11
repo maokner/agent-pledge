@@ -3,14 +3,14 @@ import { cn } from "@/lib/cn";
 import { LiveDot } from "./LiveDot";
 
 /**
- * A pill label: JetBrains Mono 12px, uppercase, wide tracking.
+ * A pill label: Inter 12px semibold, uppercase, wide tracking.
  *
  * - tone: `accent` (default), `neutral`, `success`, `warning`, `danger`,
  *   `inverted` (on a slate block).
  * - size: `md` px-5 py-2 (default), `sm` px-3 py-1.
  */
 export const badgeVariants = cva(
-  "inline-flex w-fit items-center gap-2 rounded-full border font-mono text-xs font-medium uppercase leading-none tracking-[0.15em]",
+  "inline-flex w-fit items-center gap-2 rounded-full border font-sans text-xs font-semibold uppercase leading-none tracking-[0.14em]",
   {
     variants: {
       tone: {
