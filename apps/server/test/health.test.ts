@@ -34,6 +34,11 @@ describe("app", () => {
     expect([404, 501]).toContain(a.statusCode);
   });
 
+  it("routes /tasks/:id.json with the id param", async () => {
+    const res = await t.app.inject({ method: "GET", url: "/tasks/sub_abc.json" });
+    expect(res.statusCode).not.toBe(404);
+  });
+
   it("records the system wallets", async () => {
     const rows = await t.db.query.wallets.findMany();
     expect(rows.map((r) => r.role).sort()).toEqual(["agent", "vault"]);
