@@ -166,6 +166,59 @@ describe("applyBoardMessage events", () => {
   });
 });
 
+describe("applyBoardMessage with the real server's extra events", () => {
+  const atSeq5 = applyBoardMessage(initialBoardState, {
+    type: "board.snapshot",
+    snapshot: snapshot({ seq: 5, tasks: [makeTask({ id: "tsk_a" })] }),
+  });
+
+  it("ignores an unknown event type but still advances seq, so the next event is not a gap", () => {
+    const unknown = { type: "tx.unknown", seq: 6, at: "2026-10-11T19:00:00.000Z", data: { hash: "H" } } as unknown as BoardEvent;
+
+    const state = applyBoardMessage(atSeq5, unknown);
+    const next = applyBoardMessage(state, event(7, { type: "agent.log", data: { line: makeLogLine({ id: "l7" }) } }));
+
+    expect(state.seq).toBe(6);
+    expect(state.tasks).toEqual(atSeq5.tasks);
+    expect(next.needsResync).toBe(false);
+    expect(next.agentLog.map((l) => l.id)).toEqual(["l7"]);
+  });
+
+  it("applies tx.failed as an upsert of the failed transaction", () => {
+    const pending = makeTx({ hash: "PAY", status: "pending" });
+    const withPending = applyBoardMessage(atSeq5, event(6, { type: "tx.pending", data: { tx: pending } }));
+
+    const state = applyBoardMessage(
+      withPending,
+      event(7, { type: "tx.failed", data: { tx: { ...pending, status: "failed", error: "tecUNFUNDED_PAYMENT" } } }),
+    );
+
+    expect(state.txs.PAY?.status).toBe("failed");
+    expect(state.txs.PAY?.error).toBe("tecUNFUNDED_PAYMENT");
+  });
+
+  it("applies subtask.paid as an upsert of the sub-task", () => {
+    const sub = makeSubtask({ id: "sub_a", task_id: "tsk_a", status: "done" });
+
+    const state = applyBoardMessage(atSeq5, event(6, { type: "subtask.paid", data: { subtask: sub } }));
+
+    expect(state.subtasks.sub_a?.status).toBe("done");
+  });
+
+  it("upserts the sub-tasks and transactions that come with a task event", () => {
+    const sub = makeSubtask({ id: "sub_a", task_id: "tsk_a" });
+    const tx = makeTx({ hash: "MINT", task_id: "tsk_a" });
+
+    const state = applyBoardMessage(
+      atSeq5,
+      event(6, { type: "task.created", data: { task: makeTask({ id: "tsk_a", subtask_ids: ["sub_a"] }), subtasks: [sub], txs: [tx] } }),
+    );
+
+    expect(state.subtasks.sub_a).toEqual(sub);
+    expect(state.txs.MINT).toEqual(tx);
+  });
+});
+
 describe("agent log", () => {
   it("appends lines and keeps only the most recent AGENT_LOG_LIMIT", () => {
     let state = initialBoardState;

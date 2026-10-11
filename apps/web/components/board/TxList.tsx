@@ -82,7 +82,7 @@ function TxRow({ tx, names }: { tx: LedgerTx; names: Map<string, string> }) {
         </span>
         <span className="ml-auto flex items-baseline gap-3">
           {tx.amount && <Money amount={tx.amount} className="font-bold" />}
-          <ViewTxLink hash={tx.hash} className="projector:text-base" />
+          <ViewTxLink hash={tx.hash} href={tx.explorer_url} className="projector:text-base" />
         </span>
       </div>
     </li>

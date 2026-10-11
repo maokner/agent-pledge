@@ -61,10 +61,11 @@ export function applyBoardMessage(state: BoardState, message: BoardServerMessage
   switch (message.type) {
     case "task.created":
     case "task.claimed":
-      return withTasks(next, [message.data.task]);
+      return withTxs(withSubtasks(withTasks(next, [message.data.task]), message.data.subtasks ?? []), message.data.txs ?? []);
     case "subtask.created":
       return withSubtasks(withTasks(next, [message.data.task]), [message.data.subtask]);
     case "subtask.claimed":
+    case "subtask.paid":
     case "photo.added":
     case "yikyak.posted":
     case "pin.failed":
@@ -72,8 +73,9 @@ export function applyBoardMessage(state: BoardState, message: BoardServerMessage
       return withSubtasks(next, [message.data.subtask]);
     case "task.paid":
     case "task.failed":
-      return withSubtasks(withTasks(next, [message.data.task]), message.data.subtasks);
+      return withTxs(withSubtasks(withTasks(next, [message.data.task]), message.data.subtasks), message.data.txs ?? []);
     case "tx.pending":
+    case "tx.failed":
       return withTxs(next, [message.data.tx]);
     case "tx.validated": {
       const { tx, task, subtask } = message.data;
@@ -81,6 +83,10 @@ export function applyBoardMessage(state: BoardState, message: BoardServerMessage
     }
     case "agent.log":
       return { ...next, agentLog: [...state.agentLog, message.data.line].slice(-AGENT_LOG_LIMIT) };
+    default:
+      // A type this board does not know (a newer server, or one the adapter could not map):
+      // skip it, but count its seq, or the next event would look like a gap and force a resync.
+      return next;
   }
 }
 
@@ -95,6 +101,7 @@ function withSubtasks(state: BoardState, subtasks: Subtask[]): BoardState {
 }
 
 function withTxs(state: BoardState, txs: LedgerTx[]): BoardState {
+  if (txs.length === 0) return state;
   return { ...state, txs: { ...state.txs, ...byKey(txs, (tx) => tx.hash) } };
 }
 

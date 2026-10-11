@@ -273,15 +273,17 @@ type Target = { tx: string } | { account: string } | { nft: string };
 
 /**
  * A link to the XRPL explorer. Shows a shortened hash, address or NFT ID,
- * or `label` in its place (the full value stays in the tooltip).
+ * or `label` in its place (the full value stays in the tooltip). `href` is the
+ * server's own explorer link, when it sent one.
  */
-export function ExplorerLink(props: Target & { className?: string; label?: string }) {
-  const [href, value] =
+export function ExplorerLink(props: Target & { className?: string; label?: string; href?: string | null }) {
+  const [built, value] =
     "tx" in props
       ? [explorerTxUrl(props.tx), props.tx]
       : "account" in props
         ? [explorerAccountUrl(props.account), props.account]
         : [explorerNftUrl(props.nft), props.nft];
+  const href = props.href ?? built;
   return (
     <a href={href} target="_blank" rel="noopener noreferrer" title={value} className={cn(LINK, props.className)}>
       {props.label ?? shortHash(value)}
@@ -290,10 +292,10 @@ export function ExplorerLink(props: Target & { className?: string; label?: strin
 }
 
 /** `[ VIEW TX ]`: a bracketed link to a transaction on the explorer. */
-export function ViewTxLink({ hash, className }: { hash: string; className?: string }) {
+export function ViewTxLink({ hash, href, className }: { hash: string; href?: string | null; className?: string }) {
   return (
     <a
-      href={explorerTxUrl(hash)}
+      href={href ?? explorerTxUrl(hash)}
       target="_blank"
       rel="noopener noreferrer"
       title={hash}

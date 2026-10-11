@@ -1,7 +1,6 @@
 import {
   apiPaths,
   type ApiErrorBody,
-  type BoardSnapshot,
   type ClaimView,
   type CreateTaskResponse,
   type ListOpenSubtasksResponse,
@@ -9,6 +8,8 @@ import {
   type SubmitPinResponse,
   type TaskNftData,
 } from "@agent-pledge/shared";
+import { boardSnapshotFromBackend } from "../backend";
+import type { BackendBoardState } from "../backend/types";
 import { ApiError, type ApiClient, type UploadOptions } from "./client";
 
 export interface HttpApiClientOptions {
@@ -41,7 +42,7 @@ export function createHttpApiClient({
   }
 
   return {
-    getBoardState: () => request<BoardSnapshot>("GET", apiPaths.boardState()),
+    getBoardState: async () => boardSnapshotFromBackend(await request<BackendBoardState>("GET", apiPaths.boardState())),
     getTaskJson: (id) => request<TaskNftData>("GET", apiPaths.taskJson(id)),
     createTask: (body) => request<CreateTaskResponse>("POST", apiPaths.createTask(), body),
     getClaim: (code) => request<ClaimView>("GET", apiPaths.claim(code)),

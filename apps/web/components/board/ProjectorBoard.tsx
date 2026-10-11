@@ -6,7 +6,7 @@ import { taskTag } from "@/lib/board/agent-log";
 import { projectorFocus } from "@/lib/board/projector";
 import type { TaskView } from "@/lib/board/selectors";
 import { cn } from "@/lib/cn";
-import { FAILURE_REASON_LABEL } from "@/lib/labels";
+import { failureText } from "@/lib/labels";
 import { AgentLog } from "./AgentLog";
 import { BoardHeader } from "./BoardHeader";
 import { ProjectorTaskCard } from "./ProjectorTaskCard";
@@ -105,7 +105,7 @@ function TaskTile({ view, arrived, onSelect }: { view: TaskView; arrived: boolea
     <button
       type="button"
       onClick={onSelect}
-      title={`Show this task in the big window${task.failure_reason ? `. Failed: ${FAILURE_REASON_LABEL[task.failure_reason]}` : ""}`}
+      title={`Show this task in the big window${failureText(task) ? `. Failed: ${failureText(task)}` : ""}`}
       className={cn(
         "group flex min-w-0 flex-1 basis-0 flex-col border text-left outline-none hover:border-term-fg focus-visible:border-term-fg",
         WORK_BORDER[task.status],

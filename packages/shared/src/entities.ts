@@ -47,6 +47,14 @@ export interface Task {
   /** Sub-tasks in creation order. Usually one; a re-post makes a new one (PRD 5.3). */
   subtask_ids: SubtaskId[];
   failure_reason: FailureReason | null;
+  /**
+   * The server's own words for why the task failed, for example "No helper claimed
+   * the sub-task in time". Set by the real server (free text); `failure_reason` is
+   * the closest enum value, or null when none fits.
+   */
+  fail_reason?: string | null;
+  /** Explorer link for `nft_id`, as the server builds it. */
+  nft_explorer_url?: string | null;
 }
 
 /** A smaller job that the local agent gives to a helper (PRD 1, 5.3). */
@@ -81,6 +89,8 @@ export interface Subtask {
   /** True after three wrong PINs. */
   pin_locked: boolean;
   failure_reason: FailureReason | null;
+  /** Explorer link for `nft_id`, as the server builds it. */
+  nft_explorer_url?: string | null;
 }
 
 /** The helper's seat photo and note (PRD 9.2 step 5). */
@@ -90,6 +100,9 @@ export interface Photo {
   /** Example: "Front table, left side". */
   note: string | null;
   added_at: IsoDateTime;
+  /** Pixel size after the server re-encoded it (at most 1280 px wide). */
+  width?: number | null;
+  height?: number | null;
 }
 
 /** A Yik Yak post made by the local agent's browser agent (PRD 8). */
@@ -102,6 +115,8 @@ export interface YikYakPost {
 
 /** What a ledger transaction does in the demo flow (PRD 5.4). */
 export type TxKind =
+  | "wallet_setup" // faucet + RLUSD trust line for a new requester or helper wallet
+  | "requester_funding" // Payment demo treasury -> requester, so the requester can pay
   | "task_escrow" // Payment requester -> vault, task price
   | "task_nft_mint" // NFTokenMint by the vault
   | "task_nft_offer" // NFTokenCreateOffer by the vault, Amount = pledge, Destination = agent
@@ -123,7 +138,8 @@ export type XrplTxType =
   | "NFTokenMint"
   | "NFTokenCreateOffer"
   | "NFTokenAcceptOffer"
-  | "NFTokenBurn";
+  | "NFTokenBurn"
+  | "TrustSet";
 
 /**
  * - pending: submitted, not yet in a validated ledger (show "pending", PRD 11)
@@ -153,6 +169,12 @@ export interface LedgerTx {
   ledger_index: number | null;
   submitted_at: IsoDateTime;
   validated_at: IsoDateTime | null;
+  /** Explorer link, as the server builds it. Falls back to the web app's own when missing. */
+  explorer_url?: string;
+  /** What `amount` is in. Null for mints, burns and offers without an amount. */
+  currency?: "RLUSD" | "XRP" | null;
+  /** Why it failed, in the server's words. */
+  error?: string | null;
 }
 
 export type AgentLogLevel = "info" | "decision" | "warning" | "error";

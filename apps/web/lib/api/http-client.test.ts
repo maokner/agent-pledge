@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { backendBoardState, backendLogEntry, backendSubtask, backendTask, backendTx } from "../backend/test-payloads";
 import { ApiError } from "./client";
 import { createHttpApiClient } from "./http-client";
 
@@ -38,6 +39,21 @@ describe("createHttpApiClient", () => {
 
     expect(fetch).toHaveBeenCalledWith("https://pledge.example/subtasks/open", expect.objectContaining({ method: "GET" }));
     expect(list).toEqual(body);
+  });
+
+  it("flattens the server's nested GET /board/state into the board's snapshot", async () => {
+    const task = backendTask({ subtasks: [backendSubtask()], transactions: [backendTx()] });
+    const fetch = respond(200, backendBoardState({ seq: 1760205600007, tasks: [task], agent_log: [backendLogEntry({ id: 2 }), backendLogEntry({ id: 1 })] }));
+    const api = createHttpApiClient({ baseUrl: "http://localhost:3001", fetch });
+
+    const board = await api.getBoardState();
+
+    expect(fetch).toHaveBeenCalledWith("http://localhost:3001/board/state", expect.objectContaining({ method: "GET" }));
+    expect(board.seq).toBe(1760205600007);
+    expect(board.tasks.map((t) => t.id)).toEqual([task.id]);
+    expect(board.subtasks.map((s) => s.description)).toEqual(["Save me a seat at the front table"]);
+    expect(board.txs.map((tx) => tx.kind)).toEqual(["task_escrow"]);
+    expect(board.agent_log.map((l) => l.id)).toEqual(["1", "2"]);
   });
 
   it("reports a non-JSON error as internal", async () => {

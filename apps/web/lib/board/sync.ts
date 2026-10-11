@@ -76,8 +76,10 @@ export function createBoardSync(transport: BoardTransport, options: BoardSyncOpt
         attempt = 0;
         set({ status: "open" });
       },
-      onMessage: (message: BoardServerMessage) => {
+      onMessage: (wire: unknown) => {
         const receivedAt = now();
+        const message = transport.decode ? transport.decode(wire, snapshot.state) : (wire as BoardServerMessage);
+        if (!message) return;
         const state = applyBoardMessage(snapshot.state, message);
         if (state === snapshot.state) return;
         if (message.type !== "board.snapshot" && state.seq === message.seq) {

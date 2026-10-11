@@ -20,9 +20,9 @@ export function selectAgentLog(state: BoardState): AgentLogEntry[] {
   }));
 }
 
-/** A short, stable label for a task: the last 4 characters of its ID without the prefix. */
+/** A short, stable label for a task: the last 4 characters of its ID without the prefix (`task_` from the server, `tsk_` in the draft). */
 export function taskTag(taskId: TaskId): string {
-  return taskId.replace(/^tsk_/, "").slice(-4).toUpperCase();
+  return taskId.replace(/^(?:tsk|task)_/, "").slice(-4).toUpperCase();
 }
 
 /** How far from the bottom still counts as "at the bottom", for rounding and touch scrolling. */
