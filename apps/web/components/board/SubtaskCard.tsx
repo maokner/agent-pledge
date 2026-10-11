@@ -1,75 +1,119 @@
-/* eslint-disable @next/next/no-img-element -- photos and screenshots come from the API server, not this app */
-import type { Subtask } from "@agent-pledge/shared";
+import type { LedgerTx, Subtask } from "@agent-pledge/shared";
 import { Countdown } from "@/components/ui/Countdown";
 import { ExplorerLink } from "@/components/ui/ExplorerLink";
 import { Money } from "@/components/ui/Money";
-import { WorkStatusBadge } from "@/components/ui/StatusBadge";
+import { ZoomableImage } from "@/components/ui/ZoomableImage";
+import { subtaskHolder } from "@/lib/board/selectors";
+import { formatMinutes } from "@/lib/format";
+import { FAILURE_REASON_LABEL } from "@/lib/labels";
+import { Fact, Facts } from "./Facts";
+import { LiveStatusBadge, StatusGlow } from "./LiveStatus";
+import { WORK_STATUS_STYLE } from "./status-style";
+import { TxList } from "./TxList";
 
-/** One sub-task: status, claim link, Yik Yak screenshot, helper photo and PIN attempts. */
-export function SubtaskCard({ subtask }: { subtask: Subtask }) {
+/**
+ * One sub-task, nested under its task (PRD 9.1): pay, time limit, status,
+ * holder, the Yik Yak screenshot (step 9), the helper's photo (step 11), and
+ * its own ledger transactions.
+ */
+export function SubtaskCard({ subtask, txs, names }: { subtask: Subtask; txs: LedgerTx[]; names: Map<string, string> }) {
   const active = subtask.status === "open" || subtask.status === "claimed";
   return (
-    <section className="rounded-lg border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-950">
-      <header className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-lg font-semibold">
-          Sub-task: {subtask.description}, <Money amount={subtask.price} />
-        </h3>
-        <WorkStatusBadge status={subtask.status} />
+    <section
+      aria-label={`Sub-task: ${subtask.description}`}
+      className={`@container relative rounded-lg border border-l-8 border-zinc-200 p-4 dark:border-zinc-700 ${WORK_STATUS_STYLE[subtask.status].card}`}
+    >
+      <StatusGlow status={subtask.status} />
+      <header className="flex flex-wrap items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="text-xs font-semibold tracking-wide text-zinc-500 uppercase dark:text-zinc-400">Sub-task for a helper</p>
+          <h3 className="text-lg font-semibold">{subtask.description}</h3>
+        </div>
+        <div className="flex items-center gap-3">
+          <Money amount={subtask.price} className="text-2xl font-bold" />
+          <LiveStatusBadge status={subtask.status} />
+        </div>
       </header>
 
-      <dl className="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-sm text-zinc-600 dark:text-zinc-300">
-        <div>
-          <dt className="inline">Claim link: </dt>
-          <dd className="inline font-mono">/c/{subtask.claim_code}</dd>
-        </div>
+      <Facts>
+        <Fact label="Pay">
+          <Money amount={subtask.price} />
+        </Fact>
+        <Fact label="Time limit">{formatMinutes(subtask.time_limit_minutes)}</Fact>
         {active && (
-          <div>
-            <dt className="inline">Time left: </dt>
-            <dd className="inline">
-              <Countdown deadline={subtask.deadline_at} />
-            </dd>
-          </div>
+          <Fact label="Time left">
+            <Countdown deadline={subtask.deadline_at} className="font-semibold" />
+          </Fact>
         )}
+        <Fact label="Held by">{subtaskHolder(subtask)}</Fact>
+        <Fact label="Claim link">
+          <a href={subtask.claim_url} className="font-mono underline decoration-dotted underline-offset-2" target="_blank" rel="noopener noreferrer">
+            /c/{subtask.claim_code}
+          </a>
+        </Fact>
         {subtask.nft_id && (
-          <div>
-            <dt className="inline">Sub-task NFT: </dt>
-            <dd className="inline">
-              <ExplorerLink nft={subtask.nft_id} />
-            </dd>
-          </div>
+          <Fact label="Sub-task NFT">
+            <ExplorerLink nft={subtask.nft_id} />
+          </Fact>
         )}
-        {subtask.helper_address && (
-          <div>
-            <dt className="inline">Helper: </dt>
-            <dd className="inline">
-              <ExplorerLink account={subtask.helper_address} />
-            </dd>
-          </div>
+        {subtask.parent_nft_id && (
+          <Fact label="Parent NFT">
+            <ExplorerLink nft={subtask.parent_nft_id} />
+          </Fact>
         )}
         {subtask.status === "claimed" && (
-          <div>
-            <dt className="inline">PIN tries left: </dt>
-            <dd className="inline">{subtask.pin_locked ? "Locked" : subtask.pin_attempts_left}</dd>
-          </div>
+          <Fact label="PIN tries left">
+            {subtask.pin_locked ? <span className="font-semibold text-rose-700 dark:text-rose-300">Locked</span> : subtask.pin_attempts_left}
+          </Fact>
         )}
-      </dl>
+      </Facts>
 
-      {(subtask.yikyak_post || subtask.photo) && (
-        <div className="mt-3 grid gap-4 sm:grid-cols-2">
-          {subtask.yikyak_post && (
-            <figure>
-              <img src={subtask.yikyak_post.screenshot_url} alt="Screenshot of the Yik Yak post" className="w-full rounded border border-zinc-200 dark:border-zinc-700" />
-              <figcaption className="mt-1 text-sm">{subtask.yikyak_post.text}</figcaption>
-            </figure>
-          )}
-          {subtask.photo && (
-            <figure>
-              <img src={subtask.photo.url} alt="The helper's photo of the saved seat" className="w-full rounded border border-zinc-200 dark:border-zinc-700" />
-              {subtask.photo.note && <figcaption className="mt-1 text-sm font-medium">Seat saved: {subtask.photo.note}</figcaption>}
-            </figure>
-          )}
-        </div>
+      {subtask.status === "failed" && subtask.failure_reason && (
+        <p className="mt-3 rounded-md bg-rose-600 px-3 py-2 font-semibold text-white">{FAILURE_REASON_LABEL[subtask.failure_reason]}</p>
       )}
+
+      <SubtaskMedia subtask={subtask} />
+
+      <TxList txs={txs} names={names} title="Sub-task transactions" />
     </section>
+  );
+}
+
+/** The Yik Yak screenshot and the helper's seat photo (demo steps 9 and 11), or what we are waiting for. */
+function SubtaskMedia({ subtask }: { subtask: Subtask }) {
+  const { yikyak_post: post, photo } = subtask;
+  const waitingForPost = !post && subtask.status === "open";
+  const waitingForPhoto = !photo && subtask.status === "claimed";
+  if (!post && !photo && !waitingForPost && !waitingForPhoto) return null;
+
+  return (
+    <div className="mt-3 grid gap-4 @2xl:grid-cols-2">
+      {post ? (
+        <figure key={post.screenshot_url} className="motion-safe:animate-fade-in">
+          <figcaption className="mb-1 text-sm font-semibold text-zinc-600 dark:text-zinc-300">The Yik Yak post</figcaption>
+          <ZoomableImage src={post.screenshot_url} alt={`Screenshot of the Yik Yak post: ${post.text}`} />
+          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">{post.text}</p>
+        </figure>
+      ) : (
+        waitingForPost && <Waiting>Waiting for the Yik Yak post…</Waiting>
+      )}
+      {photo ? (
+        <figure key={photo.url} className="motion-safe:animate-fade-in">
+          <figcaption className="mb-1 text-sm font-semibold text-zinc-600 dark:text-zinc-300">The helper&apos;s photo</figcaption>
+          <ZoomableImage src={photo.url} alt={photo.note ? `The saved seat: ${photo.note}` : "The helper's photo of the saved seat"} />
+          <p className="mt-1 text-xl font-bold">Seat saved{photo.note ? `: ${photo.note}` : ""}</p>
+        </figure>
+      ) : (
+        waitingForPhoto && <Waiting>Waiting for the helper&apos;s photo…</Waiting>
+      )}
+    </div>
+  );
+}
+
+function Waiting({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="flex min-h-24 items-center justify-center rounded-lg border-2 border-dashed border-zinc-300 p-4 text-center text-zinc-500 dark:border-zinc-600 dark:text-zinc-400">
+      {children}
+    </p>
   );
 }

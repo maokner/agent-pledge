@@ -26,6 +26,9 @@ The board starts from a history with a task and a sub-task in every status, then
 live run every few seconds (success and failure alternate). The header has buttons that drop the
 connection and skip an event, to exercise reconnect and resync.
 
+`/preview?layout=one|three|stops` (fixture mode only) shows static boards with one task and one sub-task,
+three tasks, or one task at each point in the flow, to check the card layout without waiting for the stream.
+
 Claim codes for `/c/<code>` (the PIN is `4821`; state lives in memory, so reload to reset):
 
 | Code | Starts as |

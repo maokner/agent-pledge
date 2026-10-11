@@ -1,68 +1,85 @@
-import type { TaskView } from "@/lib/board/selectors";
+import { selectPartyNames, splitTxs, taskHolder, type TaskView } from "@/lib/board/selectors";
 import { Countdown } from "@/components/ui/Countdown";
 import { ExplorerLink } from "@/components/ui/ExplorerLink";
 import { Money } from "@/components/ui/Money";
-import { WorkStatusBadge } from "@/components/ui/StatusBadge";
+import { formatMinutes, formatRlusd } from "@/lib/format";
+import { FAILURE_REASON_LABEL } from "@/lib/labels";
+import { Fact, Facts } from "./Facts";
+import { LiveStatusBadge, StatusGlow } from "./LiveStatus";
 import { MoneyTree } from "./MoneyTree";
+import { WORK_STATUS_STYLE } from "./status-style";
 import { SubtaskCard } from "./SubtaskCard";
 import { TxList } from "./TxList";
 
-/** One task card: the task, its money tree, its sub-tasks and its ledger transactions. */
+/**
+ * One task card (PRD 9.1): the task and its status, its money tree and its
+ * own transactions, and its sub-tasks nested inside.
+ */
 export function TaskCard({ view }: { view: TaskView }) {
-  const { task, subtasks, txs } = view;
+  const { task, subtasks } = view;
   const active = task.status === "open" || task.status === "claimed";
+  const names = selectPartyNames(view);
+  const txs = splitTxs(view);
 
   return (
-    <article className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
+    <article
+      aria-label={`Task: ${task.description}`}
+      className={`@container relative rounded-xl border border-l-8 border-zinc-200 p-4 shadow-sm sm:p-5 dark:border-zinc-700 ${WORK_STATUS_STYLE[task.status].card}`}
+    >
+      <StatusGlow status={task.status} />
       <header className="flex flex-wrap items-start justify-between gap-3">
-        <div>
+        <div className="min-w-0">
           <h2 className="text-2xl font-semibold">{task.description}</h2>
           <p className="text-lg text-zinc-600 dark:text-zinc-300">{task.place}</p>
         </div>
         <div className="flex items-center gap-3">
-          <Money amount={task.price} className="text-2xl font-bold" />
-          <WorkStatusBadge status={task.status} />
+          <Money amount={task.price} className="text-3xl font-bold" />
+          <LiveStatusBadge status={task.status} size="lg" />
         </div>
       </header>
 
-      <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-sm text-zinc-600 dark:text-zinc-300">
-        <div>
-          <dt className="inline">Time left: </dt>
-          <dd className="inline">{active ? <Countdown deadline={task.deadline_at} /> : "—"}</dd>
-        </div>
-        <div>
-          <dt className="inline">Pledge: </dt>
-          <dd className="inline">
-            <Money amount={task.pledge} />
-          </dd>
-        </div>
+      <Facts>
+        <Fact label="Time limit">{formatMinutes(task.time_limit_minutes)}</Fact>
+        <Fact label="Time left">
+          {active ? <Countdown deadline={task.deadline_at} className="text-xl font-bold" /> : <span className="text-zinc-500">Finished</span>}
+        </Fact>
+        <Fact label="Held by">{taskHolder(task)}</Fact>
+        <Fact label="Pledge">
+          <Money amount={task.pledge} />
+        </Fact>
         {task.nft_id && (
-          <div>
-            <dt className="inline">Task NFT: </dt>
-            <dd className="inline">
-              <ExplorerLink nft={task.nft_id} />
-            </dd>
-          </div>
+          <Fact label="Task NFT">
+            <ExplorerLink nft={task.nft_id} />
+          </Fact>
         )}
-        {task.failure_reason && (
-          <div>
-            <dt className="inline">Failed: </dt>
-            <dd className="inline">{task.failure_reason.replaceAll("_", " ")}</dd>
-          </div>
-        )}
-      </dl>
+      </Facts>
 
-      <MoneyTree task={task} subtasks={subtasks} />
-
-      {subtasks.length > 0 && (
-        <div className="mt-4 flex flex-col gap-3">
-          {subtasks.map((subtask) => (
-            <SubtaskCard key={subtask.id} subtask={subtask} />
-          ))}
-        </div>
+      {task.status === "failed" && (
+        <p role="status" className="mt-3 rounded-md bg-rose-600 px-4 py-3 text-lg font-bold text-white">
+          Failed{task.failure_reason ? `: ${FAILURE_REASON_LABEL[task.failure_reason]}.` : "."}{" "}
+          <span className="font-semibold">
+            The requester gets {formatRlusd(task.price)} back plus the agent&apos;s {formatRlusd(task.pledge)} pledge.
+          </span>
+        </p>
       )}
 
-      <TxList txs={txs} />
+      <div className="mt-4 grid gap-4 @3xl:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
+        <div className="min-w-0">
+          <MoneyTree view={view} />
+          <TxList txs={txs.task} names={names} title="Task transactions" />
+        </div>
+        <div className="flex min-w-0 flex-col gap-3">
+          {subtasks.length === 0 ? (
+            <p className="rounded-lg border-2 border-dashed border-zinc-300 p-4 text-center text-zinc-500 dark:border-zinc-600 dark:text-zinc-400">
+              {task.status === "open" ? "The local agent has not claimed this task yet." : "No sub-task yet."}
+            </p>
+          ) : (
+            subtasks.map((subtask) => (
+              <SubtaskCard key={subtask.id} subtask={subtask} txs={txs.bySubtask.get(subtask.id) ?? []} names={names} />
+            ))
+          )}
+        </div>
+      </div>
     </article>
   );
 }
