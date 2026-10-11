@@ -31,10 +31,16 @@ export interface ApiClient {
   getClaim(code: ClaimCode): Promise<ClaimView>;
   /** POST /claim/:code/claim. Throws ApiError "already_claimed" if another phone won. */
   claimSubtask(code: ClaimCode): Promise<ClaimView>;
-  /** POST /claim/:code/photo (multipart) */
-  uploadPhoto(code: ClaimCode, photo: Blob, note: string): Promise<ClaimView>;
+  /** POST /claim/:code/photo (multipart). Reports upload progress; aborts with an "AbortError". */
+  uploadPhoto(code: ClaimCode, photo: Blob, note: string, options?: UploadOptions): Promise<ClaimView>;
   /** POST /claim/:code/pin */
   submitPin(code: ClaimCode, pin: string): Promise<SubmitPinResponse>;
+}
+
+export interface UploadOptions {
+  /** Called with the fraction sent so far, from 0 to 1. */
+  onProgress?: (fraction: number) => void;
+  signal?: AbortSignal;
 }
 
 /** A non-2xx response, with the contract's error code. */

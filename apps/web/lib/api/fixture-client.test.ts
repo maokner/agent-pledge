@@ -14,7 +14,7 @@ async function settle<T>(promise: Promise<T>): Promise<T> {
     (value) => ({ value }),
     (error: unknown) => ({ error }),
   );
-  await vi.advanceTimersByTimeAsync(1000);
+  await vi.advanceTimersByTimeAsync(10_000);
   const outcome = await result;
   if ("error" in outcome) throw outcome.error;
   return outcome.value;
@@ -60,5 +60,74 @@ describe("fixture API client", () => {
   it("refuses a claim that someone else already has", async () => {
     const api = createFixtureApiClient();
     await expect(settle(api.claimSubtask("TAKN"))).rejects.toMatchObject({ status: 409, code: "already_claimed" });
+  });
+
+  it("takes about one ledger close to claim, so the page shows its claiming state", async () => {
+    const api = createFixtureApiClient();
+    let done = false;
+    void api.claimSubtask("OPEN").then(() => (done = true));
+
+    await vi.advanceTimersByTimeAsync(3000);
+    expect(done).toBe(false);
+    await vi.advanceTimersByTimeAsync(3000);
+    expect(done).toBe(true);
+  });
+
+  it("RACE: another phone wins while this one taps Claim", async () => {
+    const api = createFixtureApiClient();
+    expect((await settle(api.getClaim("RACE"))).state).toBe("open");
+    await expect(settle(api.claimSubtask("RACE"))).rejects.toMatchObject({ status: 409, code: "already_claimed" });
+    expect((await settle(api.getClaim("RACE"))).state).toBe("already_claimed");
+  });
+
+  it("FLAK: the first claim response is lost but the claim went through", async () => {
+    const api = createFixtureApiClient();
+    await expect(settle(api.claimSubtask("FLAK"))).rejects.toBeInstanceOf(TypeError);
+    expect((await settle(api.getClaim("FLAK"))).state).toBe("claimed_by_you");
+  });
+
+  it("FLAK: the first photo upload fails part way, the retry works", async () => {
+    const api = createFixtureApiClient();
+    await settle(api.claimSubtask("FLAK")).catch(() => undefined);
+    const progress: number[] = [];
+
+    await expect(settle(api.uploadPhoto("FLAK", new Blob(["x"]), "", { onProgress: (p) => progress.push(p) }))).rejects.toBeInstanceOf(TypeError);
+    expect(Math.max(...progress)).toBeLessThan(1);
+
+    expect((await settle(api.uploadPhoto("FLAK", new Blob(["x"]), "Left side"))).photo?.note).toBe("Left side");
+  });
+
+  it("reports upload progress up to 1 and can be cancelled", async () => {
+    const api = createFixtureApiClient();
+    await settle(api.claimSubtask("MINE"));
+    const progress: number[] = [];
+    await settle(api.uploadPhoto("MINE", new Blob(["x"]), "", { onProgress: (p) => progress.push(p) }));
+    expect(progress.at(-1)).toBe(1);
+    expect(progress).toEqual([...progress].sort((a, b) => a - b));
+
+    const controller = new AbortController();
+    const upload = settle(api.uploadPhoto("MINE", new Blob(["x"]), "", { signal: controller.signal }));
+    controller.abort();
+    await expect(upload).rejects.toMatchObject({ name: "AbortError" });
+  });
+
+  it("SOON: an open sub-task expires when its deadline passes", async () => {
+    const api = createFixtureApiClient();
+    expect((await settle(api.getClaim("SOON"))).state).toBe("open");
+    await vi.advanceTimersByTimeAsync(30_000);
+    expect((await settle(api.getClaim("SOON"))).state).toBe("expired");
+    await expect(settle(api.claimSubtask("SOON"))).rejects.toMatchObject({ status: 410, code: "expired" });
+  });
+
+  it("PAID points at the helper payout transaction shown on the board", async () => {
+    const api = createFixtureApiClient();
+    const board = await settle(api.getBoardState());
+    const sub = board.subtasks.find((s) => s.claim_code === "PAID");
+    const payoutTx = board.txs.find((tx) => tx.kind === "helper_payout" && tx.subtask_id === sub?.id);
+
+    const claim = await settle(api.getClaim("PAID"));
+
+    expect(payoutTx).toBeDefined();
+    expect(claim.payout).toEqual({ amount: sub?.price, tx_hash: payoutTx?.hash, status: "validated" });
   });
 });

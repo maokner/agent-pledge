@@ -42,7 +42,12 @@ Claim codes for `/c/<code>` (the PIN is `4821`; state lives in memory, so reload
 | `LOCK` | locked |
 | `PAYG` | paying, then paid after about 4 seconds |
 | `PAID` | paid |
+| `RACE` | open, but tapping Claim loses to another phone ("Already claimed") |
+| `FLAK` | open, on a bad signal: the first claim response is lost (the claim went through) and the first photo upload fails part way |
+| `SOON` | open with 20 seconds left, then expired |
 | anything else | not found |
+
+Claiming takes about 5 seconds in fixture mode, like the real ledger.
 
 ## Live updates (#35, PRD R3)
 

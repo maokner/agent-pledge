@@ -19,6 +19,9 @@ export const FIXTURE_CLAIM_CODES = {
   LOCK: "locked",
   PAYG: "paying", // turns into "paid" a few seconds after the first load
   PAID: "paid", // tsk_paid's sub-task
+  RACE: "open", // tapping Claim loses to another phone (409)
+  FLAK: "open", // bad signal: the first claim response is lost (the claim went through), the first photo upload fails
+  SOON: "open", // 20 seconds left, then expired
 } as const satisfies Record<string, ClaimState>;
 
 export type FixtureClaimCode = keyof typeof FIXTURE_CLAIM_CODES;
@@ -52,6 +55,8 @@ export function buildFixtureClaim(code: string, now: number): ClaimView | null {
   };
 
   switch (code) {
+    case "SOON":
+      return { ...view, subtask: { ...view.subtask, time_limit_minutes: 3, deadline_at: new Date(now + 20_000).toISOString() } };
     case "LOCK":
       return {
         ...view,
