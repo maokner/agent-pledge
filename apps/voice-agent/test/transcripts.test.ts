@@ -128,8 +128,8 @@ describe("every transcript", () => {
         kind: "agent",
         text: "Sure thing, gotcha covered.",
       });
-      const before = events.slice(0, i).filter((x) => x.kind === "agent");
-      for (const turn of before) expect(turn.text).not.toMatch(/To confirm|Is that right/);
+      const before = events.slice(0, i).flatMap((x) => (x.kind === "agent" ? [x.text] : []));
+      for (const text of before) expect(text).not.toMatch(/To confirm|Is that right/);
     });
   });
 });
