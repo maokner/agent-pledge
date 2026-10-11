@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import { loadAssets } from "../src/assets.js";
 
 const { systemPrompt, firstMessage } = loadAssets();
-const REFUSAL = "Right now I can only save seats.";
+const REFUSAL =
+  "I can look into that, but right now the only thing I can lock in is saving a seat.";
 
 /** The text of a markdown section, from its heading to the next heading of the same or a higher level. */
 function section(markdown: string, heading: string): string {
@@ -24,7 +25,7 @@ describe("system prompt", () => {
   });
 
   it("limits the base demo to seat holds", () => {
-    expect(systemPrompt).toMatch(/only job you can take is saving a seat/);
+    expect(systemPrompt).toMatch(/one job you can lock in on the ledger today is saving a seat/);
     expect(systemPrompt).toMatch(/Do not create a task that is not a seat hold/);
   });
 
@@ -42,7 +43,7 @@ describe("system prompt", () => {
     expect(systemPrompt).toContain(
       "If the caller asks for a seat hold and also for an add-on, say exactly the same sentence, then offer to do only the seat hold.",
     );
-    expect(systemPrompt).toContain(`"${REFUSAL} Do you want me to save just the seat?"`);
+    expect(systemPrompt).toContain(`"${REFUSAL} Want me to grab just the seat?"`);
   });
 
   it("keeps add-ons out of the description", () => {
@@ -157,7 +158,7 @@ describe("first message", () => {
   it("is short, says who is calling, and asks what the caller needs", () => {
     expect(firstMessage.split(/\s+/).length).toBeLessThanOrEqual(20);
     expect(firstMessage.split(/(?<=[.?!])\s+/)).toHaveLength(2);
-    expect(firstMessage).toContain("Agent Pledge");
+    expect(firstMessage).toContain("Pledge");
     expect(firstMessage.endsWith("?")).toBe(true);
     expect(firstMessage).not.toContain("\n");
   });

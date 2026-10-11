@@ -3,8 +3,8 @@
 The caller gives the task, the place, the time limit, and the price in one sentence.
 This is steps 1 to 6 of the base demo in the PRD (section 2.1).
 
-**Agent:** Hi, this is Agent Pledge, and I can save you a seat.
-What do you need?
+**Agent:** Hey, what's up?
+I'm your Pledge, I can do anything you want, so what do you need?
 
 **Caller:** Save me a seat at the front table in the next 3 minutes.
 I will pay 5 dollars.

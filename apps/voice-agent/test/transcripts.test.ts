@@ -20,7 +20,8 @@ import {
 import { packagePath } from "../src/paths.js";
 import { parseTranscript, type TranscriptEvent } from "./transcript-parser.js";
 
-const REFUSAL = "Right now I can only save seats.";
+const REFUSAL =
+  "I can look into that, but right now the only thing I can lock in is saving a seat.";
 const { firstMessage } = loadAssets();
 
 const load = (file: string) => parseTranscript(readText("transcripts", file));
@@ -45,7 +46,7 @@ function successfulPin(events: TranscriptEvent[]): string {
 
 const YES = /^(yes|yeah|correct|that's right)\b/i;
 const RETRY_OFFER = "Sorry, something went wrong on our side. Do you want me to try again?";
-const MAX_TURN_WORDS = 20;
+const MAX_TURN_WORDS = 30;
 
 const sentences = (text: string) => text.split(/(?<=[.?!])\s+/).filter((t) => t.length > 0);
 const words = (text: string) => text.split(/\s+/).length;

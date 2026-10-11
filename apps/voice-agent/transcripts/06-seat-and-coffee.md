@@ -3,13 +3,13 @@
 The caller asks for a seat hold and also for a coffee.
 The coffee is an add-on, so the agent says the exact refusal sentence, offers only the seat hold, and keeps the coffee out of the task.
 
-**Agent:** Hi, this is Agent Pledge, and I can save you a seat.
-What do you need?
+**Agent:** Hey, what's up?
+I'm your Pledge, I can do anything you want, so what do you need?
 
 **Caller:** Save me a seat at the Free Speech Movement Cafe and grab me a coffee.
 10 minutes, 6 dollars.
 
-**Agent:** Right now I can only save seats.
+**Agent:** I can look into that, but right now the only thing I can lock in is saving a seat.
 Do you want me to save just the seat?
 
 **Caller:** OK, just the seat.
