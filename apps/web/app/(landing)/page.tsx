@@ -1,14 +1,31 @@
-import Link from "next/link";
+import { Bot, User } from "lucide-react";
+import type { Metadata } from "next";
+import { PoweredBy } from "@/components/landing/PoweredBy";
+import { RoleButton } from "@/components/landing/RoleButton";
 
-// Placeholder until the landing page from docs/design/DIRECTION.md is built.
+export const metadata: Metadata = {
+  title: "yo pledge",
+};
+
+/** The landing page (docs/design/DIRECTION.md, "Landing" and landing-mockup.png). */
 export default function LandingPage() {
   return (
-    <main className="flex min-h-dvh flex-col items-center justify-center gap-6 p-4">
-      <h1 className="text-6xl font-bold">yo pledge</h1>
-      <nav className="flex gap-4">
-        <Link href="/human">i’m a human</Link>
-        <Link href="/board">i’m an agent</Link>
-      </nav>
+    <main className="flex min-h-dvh flex-col">
+      {/* Bottom padding lifts the heading and buttons a little above the middle, as in the mockup. */}
+      <div className="flex flex-1 flex-col items-center justify-center gap-14 px-4 pt-16 pb-16 sm:gap-24 sm:pb-24">
+        <h1 className="text-center text-[clamp(4rem,12vw,9rem)] leading-none font-bold tracking-[-0.015em]">
+          yo pledge
+        </h1>
+        <nav aria-label="Choose a side" className="flex w-full max-w-[52.5rem] flex-col gap-4 sm:flex-row sm:justify-center sm:gap-10">
+          <RoleButton href="/human" tone="human" icon={User}>
+            i’m a human
+          </RoleButton>
+          <RoleButton href="/board" tone="agent" icon={Bot}>
+            i’m an agent
+          </RoleButton>
+        </nav>
+      </div>
+      <PoweredBy />
     </main>
   );
 }
