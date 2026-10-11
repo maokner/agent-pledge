@@ -1,568 +1,377 @@
 # Agent Pledge
 
-**Call in a task. Agents bid on it, put money on the line, and get paid only when the job is provably done.**
+**Call an AI agent with a task. It finds a person to do the task, and the money moves only when the work is done.**
 
-You phone in a request like "save me a seat in Main Stacks, $5", "get me a burrito, up to $15", or "my build is broken, fix it for up to $20".
-AI agents and humans compete to take the job, and every bidder pledges a stake that goes to you if they fail.
-Money moves on the XRP Ledger in RLUSD, and the winner gets paid the moment the work is proven, with a spoken PIN for a delivery or a passing test run for a bug fix.
+You call a phone number and say: "Save me a seat in Main Stacks in the next 10 minutes. I will pay $5."
+The agent posts the job on Yik Yak: "I will pay $4 to the first person who saves a seat in Main Stacks."
+A student saves the seat, you give them a PIN, the student gets $4, and the agent keeps $1.
+
+All money moves on the XRP Ledger (XRPL) in RLUSD.
+Each task is an NFT, so only one person can do a task at a time.
 
 > Status: hackathon build, October 2026.
-> This README is the product requirements document (PRD) and the source of truth for scope.
+> This README is the product requirements document (PRD).
+> The base demo comes first. We add other features only after the base demo works.
 
 ---
 
-## Table of contents
+## Contents
 
-1. [The problem](#1-the-problem)
-2. [What we are building](#2-what-we-are-building)
-3. [Scope: two task types, both real](#3-scope-two-task-types-both-real)
-4. [Users](#4-users)
-5. [Core concepts](#5-core-concepts)
-6. [End-to-end flows](#6-end-to-end-flows)
-7. [Auction rules](#7-auction-rules)
-8. [On-ledger design (XRPL + RLUSD)](#8-on-ledger-design-xrpl--rlusd)
-9. [Sponsor integrations](#9-sponsor-integrations)
-10. [House agents](#10-house-agents)
-11. [Agent protocol](#11-agent-protocol)
-12. [System architecture](#12-system-architecture)
-13. [Demo plan](#13-demo-plan)
-14. [Build plan and priorities](#14-build-plan-and-priorities)
-15. [Risks and open questions](#15-risks-and-open-questions)
-16. [Tracks we are targeting](#16-tracks-we-are-targeting)
-17. [Decision log](#17-decision-log)
+1. [Words we use](#1-words-we-use)
+2. [The base demo](#2-the-base-demo)
+3. [Demo requirements](#3-demo-requirements)
+4. [How the parts connect](#4-how-the-parts-connect)
+5. [Money and NFT escrow on XRPL](#5-money-and-nft-escrow-on-xrpl)
+6. [The voice agent](#6-the-voice-agent)
+7. [The local agent](#7-the-local-agent)
+8. [The Yik Yak post](#8-the-yik-yak-post)
+9. [The board and the claim page](#9-the-board-and-the-claim-page)
+10. [Build order](#10-build-order)
+11. [Risks](#11-risks)
+12. [Features for later](#12-features-for-later)
+13. [Decision log](#13-decision-log)
 
 ---
 
-## 1. The problem
+## 1. Words we use
 
-AI agents can now do real work, but there is no market where they compete for it on price and reliability.
-Agents also hit the edge of the physical world quickly: an agent can order food, but it cannot carry it.
-And when you hire a stranger, human or agent, you have no guarantee they will deliver.
+We use one word for one thing in this document and in the code.
 
-Agent Pledge is a task market where:
+| Word | Meaning |
+|---|---|
+| **Requester** | The person who calls and pays for a task. |
+| **Voice agent** | The ElevenLabs phone agent. It talks to the requester. |
+| **Local agent** | The Agent Pledge AI program. It runs on our laptop and does the work: it makes tasks, claims tasks, and posts on Yik Yak. |
+| **Helper** | The person who does the physical work, for example a student who saves the seat. |
+| **Task** | A job from the requester, for example "save a seat, $5". |
+| **Sub-task** | A smaller job that the local agent gives to a helper, for example "save a seat, $4". |
+| **Board** | The public web page that shows all tasks, sub-tasks, and money movements live. |
+| **Claim page** | The web page where a helper claims a sub-task and enters the PIN. |
+| **Vault** | The XRPL account that holds the money in escrow. |
+| **Task NFT** | An XRPL NFT for one task or sub-task. The holder of the NFT has the only right to do the task. |
+| **Pledge** | Money that the local agent locks when it claims a task. The requester gets the pledge if the local agent fails. |
+| **PIN** | A 4-digit code. The voice agent gives it to the requester. The requester gives it to the helper when they meet. |
 
-- Anyone can post a task by voice with a hard spending cap.
-- Agents and humans bid on the same board.
-- An agent that cannot finish a job alone hires a human (or another agent) for the part it cannot do.
-- Every bidder backs their bid with a stake, so failing costs them money and makes the requester whole.
-- Payment releases only on proof of completion, settled on the XRP Ledger.
+## 2. The base demo
 
-## 2. What we are building
+This is the full demo, step by step.
+Every part of the build supports these steps.
 
-A working marketplace with:
+### 2.1 The story
 
-- **Voice intake.** Call a phone number, describe the task, state your cap.
-- **A live task board.** Tasks, bids, stakes and awards stream in real time.
-- **Pledged auctions.** Lowest price wins among bidders who posted the required stake.
-- **Sub-tasks.** A winning agent can post child tasks and fund them from its own wallet, which builds a visible money tree.
-- **Task NFTs.** Each task is an NFT on XRPL. Holding it is the exclusive right to do the job, and it is redeemed for payment.
-- **Proof of completion.** A delivery PIN for food, and a rerun of the failing command for bug fixes.
-- **Competing agents.** Three or four house agents with different strategies, plus an SDK so anyone can plug in their own.
-- **Public profit and loss.** Every agent's earnings, costs, stakes won and lost, all derived from ledger transactions.
+| Step | What happens | What the judges see |
+|---|---|---|
+| 1 | A judge calls the Agent Pledge phone number. | The call on speaker. |
+| 2 | The judge says: "Save me a seat at the front table in the next 3 minutes. I will pay $5." | |
+| 3 | The voice agent repeats the task, the time limit, and the price. The judge says "yes". | |
+| 4 | The voice agent sends the task to the local agent. The local agent puts the task on the board. | A new task card on the board. |
+| 5 | The vault takes $5 from the requester wallet (money escrow). The vault makes the task NFT. | Two ledger transactions on the board, with explorer links. |
+| 6 | The voice agent tells the judge the PIN: "Your PIN is 4821." | |
+| 7 | The local agent claims the task. It pays a $1 pledge and gets the task NFT in one transaction (NFT escrow). | The task card changes to "claimed". |
+| 8 | The local agent makes a sub-task for $4. It pays the $4 into the vault. The vault makes the sub-task NFT. | A money tree: $5 in, $4 to the helper, $1 to the agent. |
+| 9 | The local agent writes a Yik Yak post. It opens the browser on our laptop and posts from our Yik Yak account. | The projected laptop: the agent types the post and posts it. |
+| 10 | A person in the room sees the post and opens the claim link. They claim the sub-task. | The sub-task card changes to "claimed". |
+| 11 | The helper saves a seat and adds a photo. | The photo and "Seat saved: front table, left side" on the board. |
+| 12 | The judge walks to the seat and says the PIN. The helper types the PIN on the claim page. | |
+| 13 | The vault pays the helper $4. The vault pays the local agent $5 plus its $1 pledge back. | The money tree turns green. Each payment has an explorer link. |
+| 14 | The board shows the result: requester has a seat, helper earned $4, agent earned $1. | |
 
-## 3. Scope: three task types on two proof primitives
+For the 2-minute video, we film the same demo in Main Stacks at a busy time.
 
-"Tasks can be anything" demos as an empty shell, and judges check for hard-coded behavior.
-We build exactly three task types, and all of them complete for real.
-They rest on only two proof primitives, so each new type is cheap to add and still has objective proof:
+### 2.2 The money in the demo
 
-- **In-person handoff.** The requester holds a PIN; the human who did the job gets it face to face and enters it.
-- **Command rerun.** The verifier reruns a command and checks that it now passes.
+```mermaid
+flowchart TD
+  R["Requester pays $5.00 into the vault"] --> T["Task NFT: save a seat, $5.00"]
+  T -->|local agent claims, pledge $1.00| A["Local agent"]
+  A -->|funds sub-task with $4.00| S["Sub-task NFT: save a seat, $4.00"]
+  S -->|helper claims| H["Helper gets $4.00"]
+  A --> M["Local agent keeps $1.00"]
+```
 
-| Task type | Example | Who can do it | Proof of completion |
+| Who | Pays | Gets | Result |
 |---|---|---|---|
-| `seat_hold` | "During finals, save me a seat in Main Stacks within 10 minutes, $5" | An agent recruits; a human who is already in the library holds the seat | Requester walks up and gives the seat-holder a PIN; seat-holder enters it |
-| `food_delivery` | "A burrito from somewhere nearby to Room 210, up to $15" | An agent orchestrates; a human runner carries | Requester gives the runner a PIN at the door; runner enters it |
-| `bug_fix` | "`npm test` fails on github.com/me/site, fix it, up to $20" | An agent (or a human developer) | Verifier reruns the command on a clean checkout with the patch applied and it exits 0 |
+| Requester | $5.00 | A seat | Gets the seat |
+| Local agent | $1.00 pledge + $4.00 sub-task | $5.00 reward + $1.00 pledge back | +$1.00 |
+| Helper | $0.00 | $4.00 | +$4.00 |
 
-### More use cases on the same primitives
+### 2.3 If something goes wrong
 
-These are not in the hackathon build, but each one is a new task template on an existing proof primitive, not new infrastructure:
-
-- **Hold my place in line:** office hours, a popular food truck, ticket release at the box office (in-person handoff).
-- **Grab it for me:** pick up a package from the mailroom, print and bring a document to the exam room (in-person handoff).
-- **Return it for me:** drop library books or a rental scooter (in-person handoff swapped for a photo at a fixed drop point, P2).
-- **Make it pass:** fix a failing CI job, bump a broken dependency, make a lint command pass (command rerun).
-
-### Non-goals for the hackathon
-
-- Any task type beyond the three above.
-- Real-money mainnet payments.
-- Disputes beyond the automatic proof rules.
-- Agents paying restaurants in stablecoins (restaurants do not accept them; see the delivery flow for how we handle this).
-- A general reputation system (stakes do this job for now).
-
-## 4. Users
-
-| User | What they want | How they use Agent Pledge |
-|---|---|---|
-| **Requester** | Get something done without managing who does it | Calls the voice line or uses the web form, sets a cap, receives a PIN or a passing build |
-| **Agent developer** | Earn money from an agent they built | Connects an agent to the WebSocket API, bids, fulfills, redeems task NFTs |
-| **Human runner** | Earn money for physical tasks, often from where they already are | Opens the runner page on a phone (or taps a broadcast link), claims sub-tasks like holding a seat or carrying food, and gets paid when the requester gives them the PIN |
-
-## 5. Core concepts
-
-- **Task.** A request with a type, details, a cap (max price), a deadline, and a minimum pledge. Every task has an XRPL NFT.
-- **Bid.** A signed offer from an agent: price, pledge, and estimated completion time.
-- **Pledge.** A stake in RLUSD the winning bidder locks when they take the task. It is returned on success and paid to the requester on failure.
-- **Task NFT.** Minted by the platform vault when a task is posted. Whoever holds it has the exclusive right to do the task. Once the task is proven complete, the holder swaps it back to the vault for the reward plus their pledge in one atomic transaction.
-- **Sub-task.** A child task posted by the holder of a parent task, funded from the holder's wallet. It carries a reference to the parent NFT.
-- **Proof.** Type-specific evidence that releases payment: a PIN or a passing command.
-- **Money tree.** The visual of a task's funds splitting down through its sub-tasks.
-
-### Example money tree
-
-```mermaid
-flowchart TD
-  R["Requester cap: $15.00"] -->|winning bid| A["Agent 'Thrifty' wins at $13.50"]
-  R -->|refund of unused cap| RR["$1.50 back to requester"]
-  A -->|sub-task| H["Human runner: $13.00 total"]
-  H --> F["$9.00 food reimbursement (paid at counter)"]
-  H --> FEE["$4.00 runner fee"]
-  A --> M["$0.50 agent margin"]
-```
-
-## 6. End-to-end flows
-
-### 6.1 Seat hold (the headline demo)
-
-It is finals week and Main Stacks is full.
-You will pay $5 for a seat, someone already in the library would happily hold one for $4, and neither of you knows the other exists.
-An agent finds that person, takes the $1 spread, and everyone wins.
-
-1. **Request.** A requester calls the voice line: "Save me a seat in Main Stacks in the next 10 minutes, I'll pay $5."
-   The voice agent confirms the location, the 10-minute fill window, how long to hold the seat (default 30 minutes), and the cap.
-2. **Fund and mint.** The cap moves to the vault and the task NFT is minted, as in every flow.
-3. **Bids.** Errand agents price the job from the fill history of past `seat_hold` sub-tasks at that location (what reward got claimed, and how fast).
-   The winner bids $5.00.
-4. **Award.** The winner takes the task by accepting the NFT offer (pledge locked).
-   The requester gets a 4-digit PIN by voice and on their task page.
-5. **Recruit.** The agent posts a `seat_hold` sub-task: "$4 to save a seat in Main Stacks for the next 10 minutes."
-   It funds the $4 from its own wallet, sets instant claim with a $0.50 pledge, and broadcasts it (see [6.4](#64-recruiting-humans)).
-6. **Claim.** A student already in the library taps the link and claims.
-   The claim is an atomic NFT accept, so only one person gets it.
-7. **Seat saved.** The seat-holder posts the floor, a short description, and a photo of the seat.
-   The requester's page updates live: "Seat saved: 3rd floor, window table, green backpack on the chair."
-8. **Handoff and proof.** The requester walks up and says the PIN, and the seat-holder enters it.
-9. **Settlement.** The seat-holder redeems $4.00 plus their pledge.
-   The agent redeems $5.00 plus its pledge and nets $1.00.
-10. **Failure and retry.**
-    - Nobody claims within 5 minutes: the agent can repost at a higher reward (for example $4.50), trading margin for reliability. That decision shows up in its P&L.
-    - Nobody claims within the fill window: the task fails, the requester is refunded, and the agent's pledge goes to the requester.
-    - The seat-holder claims and then leaves (no PIN by the hold deadline, no seat photo): their pledge goes to the agent, and the agent's pledge goes to the requester.
-    - The requester never shows up: if the seat-holder posted a seat photo inside the fill window, they are paid when the hold period ends. The requester asked for the seat, so the requester carries that risk.
-
-```mermaid
-flowchart TD
-  R["Requester cap: $5.00"] -->|winning bid| A["Agent wins at $5.00"]
-  A -->|sub-task, instant claim| H["Student in the library: $4.00"]
-  A --> M["$1.00 agent margin"]
-```
-
-### 6.2 Food delivery
-
-1. **Request.** A requester calls the ElevenLabs voice line: "I want a burrito delivered to Room 210, up to $15."
-   The voice agent confirms the details and the cap aloud, then calls our `post_task` tool.
-2. **Fund and mint.** The backend moves the cap in RLUSD from the requester's wallet to the vault and mints the task NFT.
-   The task appears on the board.
-3. **Price discovery.** House agents use Context.dev to find nearby restaurants and current menu prices, estimate food cost plus runner cost, and decide whether and how much to bid.
-4. **Auction.** Bids stream onto the board for the auction window (20 seconds in the demo).
-   The lowest price among bidders meeting the minimum pledge wins.
-5. **Award.** The vault refunds the unused part of the cap to the requester.
-   The winner accepts an NFT offer that costs exactly their pledge, which takes the task and locks the stake in a single atomic transaction.
-6. **The agent places the order.** The winning agent phones the restaurant with an ElevenLabs outbound voice call and places a pickup order under the order number.
-   The agent says it is an automated assistant ordering on a customer's behalf.
-   The call transcript is attached to the task.
-7. **The agent hires a runner.** The agent posts a sub-task: "Pick up order #4821 at Taqueria X, pay at the counter (about $9, reimbursed), deliver to Room 210. Fee: $4."
-   It funds the sub-task from its own wallet.
-8. **Runner claims.** A runner taps "Claim" on their phone.
-   Claiming means accepting an open NFT offer priced at the runner's (small) pledge.
-   The ledger guarantees exactly one runner can win it, even if two tap at the same moment.
-9. **Pickup.** The runner pays at the counter and enters the receipt total, with a photo for audit.
-   Reimbursement is capped at the food budget in the sub-task.
-10. **Handoff and proof.** At award time, the requester was given a 4-digit PIN (spoken on the call and shown on their task page).
-    The runner asks for it on delivery and enters it.
-11. **Settlement.** A correct PIN completes the sub-task and the parent task.
-    The runner redeems their NFT for reimbursement plus fee plus pledge.
-    The agent redeems its NFT for the winning bid plus its pledge, which nets its margin.
-12. **Failure.** If the deadline passes without a valid PIN, the vault burns the NFTs, refunds the requester, and pays slashed pledges to whoever was let down (the runner's pledge to the agent, the agent's pledge to the requester).
-
-```mermaid
-sequenceDiagram
-  participant Req as Requester (phone)
-  participant V as Voice agent (ElevenLabs)
-  participant S as Agent Pledge server
-  participant L as XRPL testnet
-  participant Ag as Winning agent
-  participant Rest as Restaurant
-  participant Run as Human runner
-
-  Req->>V: "Burrito to Room 210, up to $15"
-  V->>S: post_task(food_delivery, cap=15)
-  S->>L: Payment requester->vault 15 RLUSD
-  S->>L: NFTokenMint (task NFT)
-  S-->>Ag: task.posted (WebSocket)
-  Ag->>S: bid(13.50, pledge=3)
-  S->>L: Payment vault->requester 1.50 RLUSD (unused cap)
-  S->>L: NFTokenCreateOffer sell, Amount=3 RLUSD, Destination=agent
-  Ag->>L: NFTokenAcceptOffer (agent holds NFT, pledge locked)
-  S-->>Req: PIN 4821
-  Ag->>Rest: outbound call, pickup order
-  Ag->>S: subtask.post(runner, 13.00)
-  Run->>L: NFTokenAcceptOffer (claims sub-task, pays $1 pledge)
-  Run->>Rest: pays ~$9 at counter
-  Run->>Req: delivers burrito
-  Req->>Run: "4821"
-  Run->>S: proof.submit(pin=4821)
-  S->>L: vault accepts runner's NFT sell offer (pays $14) then burns NFT
-  S->>L: vault accepts agent's NFT sell offer (pays $16.50) then burns NFT
-```
-
-### 6.3 Bug fix
-
-1. **Request.** "My site's build is broken. Repo is github.com/me/site, run `npm run build`. Up to $20."
-   The voice agent or web form collects the repo URL, the command, and the cap.
-2. **Reproduce.** The verifier clones the repo at the current commit and runs the command in a sandbox.
-   It must fail.
-   If it passes, the task is rejected before any money moves, because there is nothing to fix.
-3. **Auction and award.** Same as delivery.
-   Bug-fix agents (for example the Claude-powered house agent) estimate difficulty from the repo and error output before bidding.
-4. **Fix.** The winning agent works on its own machine and submits a patch (a unified diff) against the pinned commit.
-5. **Verify.** The verifier applies the patch to a clean checkout and reruns the command.
-   - The command must exit 0.
-   - The patch must not modify, delete, or skip files that are part of the check (for example test files or the build script), which blocks the "delete the test" cheat.
-   - The patch must apply cleanly and stay under a size limit.
-6. **Settlement.** On a pass, the agent redeems its NFT.
-   The requester gets the patch, and optionally a pull request opened on their repo.
-7. **Failure.** If no passing patch arrives before the deadline, the pledge goes to the requester.
-
-### 6.4 Recruiting humans
-
-When an agent needs a human, it writes a short post and broadcasts its sub-task where nearby people will see it.
-Every broadcast carries a claim link (and a QR code) to the sub-task's page on the runner app.
-
-| Channel | How | Hackathon status |
-|---|---|---|
-| Agent Pledge runner app | Push to runners who opted in and whose shared location is inside the task's geofence (for example the library) | P0 |
-| Campus Discord or GroupMe | Bot or webhook posts to a channel the community opted into | P1 |
-| SMS | Text to opted-in runners near the task | P1 |
-| Yik Yak | The agent posts as the user, from the user's own logged-in Yik Yak on their computer, by driving the app with computer use (see below) | P0 for the demo |
-
-The agent writes the post itself and picks channels by location and urgency.
-For a 10-minute window it goes wide right away; for a 2-hour window it starts with the runner app only.
-
-#### Posting to Yik Yak through the user's own account
-
-Yik Yak has no public posting API, so the agent posts the way a person would: from the user's computer, using the user's existing login.
-
-- A **broadcaster** process runs on the user's laptop and connects to the server like any other agent.
-- When the agent wants to broadcast, the server sends `broadcast.request { channel: "yikyak", message, claim_url }` to the broadcaster.
-- The broadcaster drives Yik Yak with Claude computer use: open the app, start a new yak, type the message with the claim link, post, and take a screenshot as a receipt.
-- The receipt screenshot is attached to the sub-task, so the board shows the real post.
-- Which Yik Yak client to drive:
-  - The website, if Yik Yak currently offers one (verify on day one), driven in the browser.
-  - Otherwise the Yik Yak iPhone app running natively on an Apple silicon Mac, driven with computer use.
-- Yik Yak feeds are local, so the laptop must be on campus (or near the venue) for the yak to reach the right people.
-- The user turns this on per account and can switch it off at any time. Posts are rate-limited (for example at most one every 10 minutes) to keep the account in good standing.
-
-In the demo, the broadcaster runs on a projected laptop, so the judges watch the agent write and post the yak live.
-
-### 6.5 Sub-tasks all the way down
-
-Any task holder can post sub-tasks, and sub-task holders can post their own, so chains can be agent to human, agent to agent, or longer.
-
-- **Agent to human:** an errand agent hires a seat-holder or a runner (6.1, 6.2).
-- **Agent to agent:** Premium wins a $20 bug fix, has no coding ability of its own, and subcontracts it to Patch for $15.
-- **Agent to agent to human:** a general concierge agent wins a seat-hold request in a building it does not cover and subcontracts to a campus errand agent, which hires a student.
-
-Rules that keep chains honest:
-
-- A parent must fully fund each child from its own wallet when posting it. No funding, no sub-task.
-- The total reward of a parent's children must be at most the parent's price, so nobody can promise money they will not receive. (Children's pledges come from the child's holder, not the parent.)
-- Maximum depth is 3.
-- A child that fails pays its pledge to the parent holder, who can repost it (with a new reward) until the parent's deadline.
-- If the parent fails, its unclaimed children are cancelled and refunded to it.
-- The money tree on the board draws the whole chain, with a ledger link on every edge.
-
-## 7. Auction rules
-
-- Every task has a `cap` (the max the requester will pay) and a `min_pledge` (default 20% of the cap, minimum $1).
-- A bid is valid if `price <= cap`, `pledge >= min_pledge`, the bidder's wallet holds at least the pledge, and the bid is signed by the bidder's XRPL key.
-- The auction runs for a fixed window (20 seconds in the demo, configurable).
-- **The winner is the lowest price among valid bids.**
-  Ties go to the larger pledge, then to the earlier bid.
-- If the winner does not accept the NFT offer within 15 seconds, the offer is cancelled and the next-best bid wins.
-- Sub-tasks can use either an auction or **instant claim** (first to accept the open NFT offer wins).
-  Runner and seat-holder sub-tasks use instant claim.
-
-Why pledges instead of plain lowest-bid: a pure lowest-price auction rewards lowballers who then fail.
-A pledge makes a cheap bid a promise backed by money, and failure compensates the requester directly.
-
-## 8. On-ledger design (XRPL + RLUSD)
-
-### 8.1 Network and asset
-
-- Network: XRPL Testnet (`wss://s.altnet.rippletest.net:51233`).
-- Asset: RLUSD, testnet issuer `rQhWct2fv4Vc4KRjRgMrxa8xPN9Zx9iLKV`, currency code `524C555344000000000000000000000000000000`.
-- Every participant (requester, agent, runner, vault) has a trust line to RLUSD.
-
-### 8.2 Why a vault account and not native escrow
-
-XRPL's Token Escrow amendment (XLS-85) is enabled on testnet and mainnet, so `EscrowCreate` can lock trust-line tokens.
-However, the issuer has to opt in with the `allowTrustLineLocking` flag, and as of 2026-10-11 the RLUSD issuer has it **off** on both testnet and mainnet (we checked `account_info` on both).
-So RLUSD cannot be put in a native escrow today.
-
-Our design:
-
-- A single **vault** account holds task funds and pledges.
-- Every state change is a ledger transaction carrying a memo with the task ID, so the full history can be audited on a block explorer.
-- The two moves that matter most, claiming a task and getting paid, are **atomic NFT swaps** that the ledger enforces, not the server alone.
-- Hardening (P2): the vault's master key is disabled and it signs through a `SignerList` (2-of-3: coordinator, verifier, arbiter).
-- Migration path: if RLUSD enables `allowTrustLineLocking`, each task's funds move into a native conditional escrow, and the verifier releases it by revealing the fulfillment.
-
-### 8.3 Task NFT lifecycle
-
-Task NFTs are minted by the vault with flags `tfBurnable | tfTransferable`, `TransferFee = 0`, `NFTokenTaxon` = task type, and a `URI` pointing to the task's JSON metadata (including the parent NFT ID for sub-tasks).
-
-| Step | Transaction(s) | Effect |
-|---|---|---|
-| Post | `Payment` requester -> vault (cap, RLUSD) | Funds the task |
-| | `NFTokenMint` by vault | Creates the task NFT |
-| Award (auction) | `Payment` vault -> requester (cap minus winning price) | Refunds the unused cap |
-| | `NFTokenCreateOffer` (sell, `Amount` = pledge in RLUSD, `Destination` = winner) | Only the winner can take it |
-| Claim | `NFTokenAcceptOffer` by winner | **Atomic:** the winner pays the pledge and receives the NFT in one transaction. Holding the NFT is the lock. |
-| Claim (instant) | `NFTokenCreateOffer` (sell, `Amount` = pledge, no `Destination`) then `NFTokenAcceptOffer` by the first claimer | The ledger serializes transactions, so a second claimer's accept fails because the offer is already consumed. No double assignment. |
-| Complete | Verifier marks the task proven (server state plus a memo transaction) | Unlocks redemption |
-| Redeem | Holder `NFTokenCreateOffer` (sell, `Amount` = reward + pledge, `Destination` = vault), then vault `NFTokenAcceptOffer` | **Atomic delivery-versus-payment:** the NFT returns to the vault and the holder is paid in one transaction |
-| | `NFTokenBurn` by vault | Retires the task |
-| Fail | `NFTokenBurn` by vault (issuer can burn because of `tfBurnable`) | Revokes the claim |
-| | `Payment` vault -> requester (refund + slashed pledge) | Makes the requester whole |
-
-Because the task NFT is transferable, a holder could in principle sell a completed-but-unredeemed task to someone else (invoice factoring).
-That is out of scope for the hackathon, but the design allows it.
-
-### 8.4 Wallets for humans
-
-For the hackathon, requesters and runners get custodial testnet wallets created by the platform and linked to their phone number or session.
-Agents bring their own keys.
-Stretch: Xaman wallet sign-in for humans.
-
-### 8.5 Stretch: credentials
-
-Use XRPL Credentials (XLS-70) so the platform issues a `verified_runner` credential to runners who completed onboarding.
-Tasks can require it.
-This adds a third XRPL primitive (payments, NFTs, credentials) to one coherent product.
-
-## 9. Sponsor integrations
-
-Every sponsor tool does a real job in the product.
-
-| Sponsor | Job in Agent Pledge |
+| Problem | Result |
 |---|---|
-| **XRPL / RLUSD** | All money movement, task NFTs as claim locks and payout receipts, pledges, refunds, slashing, and the public P&L |
-| **ElevenLabs** | (1) Inbound voice agent that takes requests and calls our `post_task` tool. (2) Outbound call from the winning agent to the restaurant to place a pickup order. (3) Speaking the delivery PIN to the requester. |
-| **Context.dev** | Restaurant discovery and live menu prices near the delivery address, so agents price their bids from real data instead of guesses |
-| **Claude (Agent SDK)** | The reasoning inside the house agents, and the bug-fix agent's coding work |
+| No helper claims the sub-task in time. | The vault returns the $5 to the requester. The requester also gets the agent's $1 pledge. The vault returns the $4 sub-task money to the agent. |
+| A helper claims the sub-task but does not save a seat (no PIN before the time limit). | The same result as above. The board shows the task as "failed". |
+| Two people tap "claim" at the same time. | The XRPL accepts only the first claim. The second person sees "Already claimed". |
 
-## 10. House agents
+We show one failure on the board during the demo, so the judges see that the pledge is real.
 
-We run several agents with different economics so the auction is a real contest.
-All of them use the same public agent protocol as third-party agents, with no privileged access.
+## 3. Demo requirements
 
-| Agent | Task types | Strategy |
+The demo works only when all of these requirements are true.
+Each requirement has a test that we can do before the demo.
+
+| ID | Requirement | Test |
 |---|---|---|
-| **Thrifty** | Seat hold, delivery | Low margin (~5%), only bids when its cost estimate is confident, minimum pledge |
-| **Hustler** | Seat hold, delivery | Bids close to estimated cost to win volume; posts sub-tasks at a low reward and raises it only if nobody claims |
-| **Premium** | Seat hold, delivery, bug fix | Higher margin, larger pledge than required, posts generous sub-task rewards so they fill instantly. Has no coding ability, so it subcontracts bug fixes to Patch. |
-| **Patch** | Bug fix | Claude-powered coder; estimates difficulty from the error log and repo size before bidding |
+| R1 | **Voice agent.** A person can call a phone number. The voice agent gets the task, the place, the time limit, and the price. It confirms them aloud and tells the caller the PIN. | Call the number. Make a task. Hear the PIN. |
+| R2 | **Local agent.** An AI agent runs on our laptop. It receives the task from the voice agent and makes the task, the claim, and the sub-task without a person. | Make a call with no person at the laptop. The sub-task appears on the board. |
+| R3 | **Board online.** A public URL shows all tasks, sub-tasks, NFTs, payments, and the money tree. It updates in less than 2 seconds after each change. | Open the board on a phone. Make a task. See it appear. |
+| R4 | **Money escrow.** The requester's money goes into the vault before work starts. The vault pays out only after the PIN is correct. The vault returns the money if the task fails. | Do one success and one failure. Check every payment on the XRPL testnet explorer. |
+| R5 | **NFT escrow.** Each task and sub-task is an NFT. A claim gives the NFT to one claimer only. The payout swaps the NFT for the money in one transaction. | Tap "claim" on two phones at the same time. Only one claim succeeds. |
+| R6 | **Yik Yak post.** The local agent posts the sub-task on Yik Yak from our logged-in browser on our laptop. It saves a screenshot of the post. | Make a task. See the post on Yik Yak on a phone. See the screenshot on the board. |
+| R7 | **Claim page.** A helper can open the link from the Yik Yak post, claim the sub-task, add a photo, and enter the PIN. The helper does not need a crypto wallet. | Do the full claim on a phone that has never used Agent Pledge. |
+| R8 | **PIN proof.** The vault pays only when the PIN is correct. Three wrong PINs lock the sub-task. | Enter a wrong PIN. No payment. Enter the correct PIN. Payment. |
+| R9 | **Nothing hard-coded.** The task text, the place, the price, the time limit, and the Yik Yak post come from the call. They are not fixed in the code. | Make two calls with different tasks and prices. Both work. |
 
-Each errand agent estimates:
-
-- Delivery: `cost = food price (Context.dev) + runner fee (distance-based) + call cost`
-- Seat hold: `cost = the reward that gets claimed within the fill window`, learned from the fill history of past `seat_hold` sub-tasks at that location (with a starting prior of 70% of the cap)
-
-`bid = cost x (1 + margin)`, capped at the task cap, and placed only if `confidence >= risk threshold`.
-
-### Public profit and loss
-
-Every agent has a public page that shows:
-
-- Revenue (redeemed rewards), costs (sub-task funding), and net margin.
-- Pledges posted, returned, and slashed.
-- Win rate and bid history.
-
-All of it is computed from ledger transactions filtered by memo, so it cannot drift from what actually happened on-chain.
-
-### Bring your own agent
-
-The agent SDK lets anyone connect an agent from their own machine.
-The pitch for attendees: if you have spare Claude usage, run a bug-fix agent locally and let it earn on the board.
-
-## 11. Agent protocol
-
-Agents connect over WebSocket to `/agents/ws`.
-An agent's identity is its XRPL address, and every message it sends is signed with that address's key.
-
-### Server to agent
-
-| Message | Payload |
-|---|---|
-| `task.posted` | `id, type, details, cap, min_pledge, deadline, auction_ends_at, parent_id?, nft_id` |
-| `bid.placed` | `task_id, bidder, price, pledge` (public, so agents can react) |
-| `task.awarded` | `task_id, winner, price, offer_id` (the NFT offer to accept) |
-| `subtask.claimed` | `task_id, parent_id, claimer` |
-| `subtask.status` | `task_id, note, photo_url?` (for example "Seat saved: 3rd floor, window table") |
-| `broadcast.request` | `task_id, channel, message, claim_url` (sent to a broadcaster such as the Yik Yak laptop; it replies with `broadcast.receipt { task_id, screenshot_url }`) |
-| `task.completed` | `task_id, redeem_amount` |
-| `task.failed` | `task_id, reason` |
-
-### Agent to server
-
-| Message | Payload |
-|---|---|
-| `hello` | `address, name, capabilities, signature` |
-| `bid` | `task_id, price, pledge, eta_minutes, signature` |
-| `subtask.post` | `parent_id, type, details, reward, min_pledge, deadline, claim_mode, geofence?, broadcast: { channels, message }` |
-| `subtask.repost` | `task_id, new_reward` (cancels the unclaimed offer and reposts at the new reward) |
-| `proof.submit` | `task_id, proof` (PIN, or a patch for bug fixes) |
-| `call.transcript` | `task_id, transcript` (optional attachment) |
-
-## 12. System architecture
+## 4. How the parts connect
 
 ```mermaid
 flowchart LR
-  Phone["Requester phone"] --> EL["ElevenLabs voice agent"]
-  EL -->|tool call| API["API server (Node / TypeScript)"]
-  Web["Web app: board, money tree, P&L, runner page"] <-->|WebSocket| API
-  Agents["House agents + third-party agents"] <-->|WebSocket, signed| API
-  API --> DB[("Postgres")]
-  API --> Ledger["Ledger service (xrpl.js)"]
-  Ledger <--> XRPL["XRPL Testnet"]
-  API --> Verifier["Verifier (Docker sandbox)"]
-  Agents --> CTX["Context.dev"]
-  Agents --> ELOut["ElevenLabs outbound calls"]
-  API <-->|broadcast.request| BC["Broadcaster on user's laptop (computer use)"]
-  BC --> YY["Yik Yak (user's own login)"]
+  Phone["Requester's phone"] --> VA["Voice agent (ElevenLabs)"]
+  VA -->|tool call over HTTPS| SRV["Server (public)"]
+  SRV <-->|WebSocket| LA["Local agent (our laptop)"]
+  LA --> BR["Our browser, logged in to Yik Yak"]
+  SRV <--> XRPL["XRPL Testnet"]
+  SRV <-->|WebSocket| BOARD["Board (public web page)"]
+  SRV <--> CLAIM["Claim page (helper's phone)"]
+  DB[("Database")] <--> SRV
 ```
 
-Suggested stack:
+- The **server** is public. It receives tool calls from the voice agent, sends ledger transactions, and sends live updates to the board.
+- The **local agent** connects to the server with an outgoing WebSocket. Thus, our laptop does not need a public address.
+- The **server** sends each voice-agent tool call to the local agent. The local agent decides what to do and calls the server API.
+- Only the server holds the vault key. The local agent holds its own wallet key.
 
-- **Monorepo** in TypeScript (pnpm workspaces).
-- `apps/web`: Next.js. Live board, money tree visual, agent P&L pages, mobile runner page, requester task page with PIN.
-- `apps/server`: Node with Fastify and `ws`. Task state machine, auction engine, ElevenLabs tool webhooks.
-- `packages/ledger`: xrpl.js wrapper for every transaction in section 8.3, with memos and retry on `tec`/`tel` results.
-- `packages/agent-sdk`: WebSocket client, message signing, helpers for accepting offers and redeeming NFTs.
-- `agents/*`: the four house agents.
-- `services/verifier`: clones the repo, runs the command in Docker with CPU, memory, and time limits and no network after dependency install, then applies the patch and reruns.
-- Postgres for tasks, bids, and the ledger transaction index (SQLite is fine for local development).
+Recommended stack:
 
-### Task state machine
-
-`posted -> auctioning -> awarded -> claimed -> in_progress -> proven -> redeemed`
-
-Any non-terminal state can move to `failed` on deadline or verification failure.
-`awarded -> auctioning` happens when a winner does not accept the offer in time.
-
-## 13. Demo plan
-
-The seat hold is the live centerpiece: it needs no restaurant, finishes in minutes, and every judge has wanted a seat during finals.
-If we are not near Main Stacks, the judge asks for a seat somewhere in the venue instead ("save me a seat at the front table"), and the flow is identical.
-
-### Live (in-person judging)
-
-1. A judge calls the number: "Save me a seat at the front table in the next 3 minutes, I'll pay $5."
-2. The task appears on the board, and bids from Thrifty, Hustler, and Premium arrive within seconds.
-3. The winner takes it at $5.00. The money tree draws itself, and each edge links to its testnet transaction.
-4. The agent writes its recruiting post ("$4 to save a seat at the front table, next 3 minutes, claim here") and posts it to Yik Yak from a teammate's projected laptop, through that teammate's own login. The judges watch it type and post the yak, and it shows up on phones in the room.
-5. Someone in the room (ideally another attendee, not a teammate) claims it, puts a bag on a chair, and posts the photo. The judge's task page updates live.
-6. The judge walks over and says the PIN. Both NFTs redeem on screen: $4.00 to the seat-holder, $1.00 margin to the agent.
-7. Switch to the bug fix: post a broken repo, watch Premium win it and subcontract to Patch, see the verifier go red, then green. This shows an agent-to-agent chain.
-8. End on the P&L page: who earned what, and Hustler losing a pledge on an earlier task where it lowballed the reward and nobody claimed.
-
-### Filmed for the video
-
-- The real Main Stacks seat hold during a busy hour.
-- The full food delivery run, including the agent's call to the restaurant.
-
-### 2-minute video outline
-
-- 0:00 to 0:15. The problem and the one-sentence pitch.
-- 0:15 to 0:50. Main Stacks: the call, bids, the recruiting post, a student claims, PIN handoff, $4 and $1 land on-chain.
-- 0:50 to 1:15. Food delivery: the agent calling the restaurant (real audio), runner pickup, PIN at the door.
-- 1:15 to 1:40. Bug fix: Premium subcontracts to Patch, red to green, payout up the chain.
-- 1:40 to 2:00. Money trees, P&L page, testnet explorer, and the claim that nothing is hard-coded.
-
-## 14. Build plan and priorities
-
-### P0: the demo does not work without these
-
-- [ ] Ledger service: wallets, RLUSD trust lines, funding, payments with memos, mint, offers, accept, burn.
-- [ ] Task state machine and auction engine with pledge rules.
-- [ ] WebSocket agent protocol and SDK, including sub-task posting with the funding rules from 6.5.
-- [ ] Live board web page with the money tree (renders chains of any depth up to 3).
-- [ ] Mobile runner page: claim link, geofenced push, status and photo updates, PIN entry.
-- [ ] Seat-hold task: Thrifty agent, recruiting post, instant-claim sub-task, PIN proof.
-- [ ] Yik Yak broadcaster on the user's laptop: computer use posts the yak through the user's login and returns a screenshot receipt.
-- [ ] Bug-fix task: verifier (reproduce failure, apply patch, rerun, cheat checks) and the Patch agent.
-- [ ] Food delivery task: Context.dev pricing, runner sub-task with receipt reimbursement.
-- [ ] ElevenLabs inbound voice agent calling `post_task`.
-
-### P1: makes it win
-
-- [ ] ElevenLabs outbound restaurant call from the winning agent.
-- [ ] Hustler and Premium agents, so the auction is contested.
-- [ ] Agent-to-agent subcontracting: Premium hands bug fixes to Patch.
-- [ ] Repost at a higher reward when a sub-task goes unclaimed.
-- [ ] Broadcast to a campus Discord channel and SMS.
-- [ ] Seat-hold pricing learned from fill history.
-- [ ] Public P&L pages from the ledger index.
-- [ ] Failure path demo: a task that times out and pays the slashed pledge to the requester.
-- [ ] Explorer links on every money-tree edge.
-- [ ] Deployed live link.
-
-### P2: if time allows
-
-- [ ] Vault `SignerList` multisig with the master key disabled.
-- [ ] XRPL Credentials for verified runners.
-- [ ] Pull request auto-opened for successful bug fixes.
-- [ ] Xaman sign-in for humans.
-- [ ] Packaged "run your own agent" CLI for attendees.
-
-## 15. Risks and open questions
-
-| Risk | Mitigation |
+| Part | Stack |
 |---|---|
-| Getting testnet RLUSD into our wallets | Ask the Ripple team at their table first thing. Fallback: issue our own test stablecoin from a team account with `allowTrustLineLocking` on, which also lets us demo native Token Escrow. |
-| Restaurant hangs up on an AI caller | Call during a quiet hour, pick a restaurant that takes phone orders, and have the agent disclose it is automated. Fallback: the runner orders at the counter, and the call is shown from a recorded run. |
-| ElevenLabs telephony setup takes too long | Set up the phone number and outbound calling in the first hours. Fallback: browser-based voice widget for intake. |
-| Verifier runs untrusted code | Docker with resource limits, no network after install, a fresh container per run, and an allowlist of public GitHub repos for the demo. |
-| Yik Yak has no usable desktop client, or flags the automated account | Verify the client on day one (website, or the iPhone app on an Apple silicon Mac). Rate-limit posts. Keep a recorded run of the yak being posted as the video fallback. |
-| Testnet latency (~4 seconds per ledger close) | Submit independent transactions in parallel and show pending states in the UI. |
-| Agents fail to bid when Context.dev data is missing | Agents decline to bid rather than guess, and the board shows "no valid bids" honestly. |
+| Server | Node.js, TypeScript, Fastify, `ws`, xrpl.js |
+| Database | Postgres (SQLite for local development) |
+| Board and claim page | Next.js |
+| Voice agent | ElevenLabs Agents with a phone number (Twilio) and server tools |
+| Local agent | TypeScript with the Claude Agent SDK |
+| Yik Yak post | A browser agent on our laptop (Claude in Chrome, or Playwright with our Chrome profile) |
+| Hosting | Server and board on one public host (for example Fly.io or Render) |
 
-Open questions:
+## 5. Money and NFT escrow on XRPL
 
-- Does the hackathon platform require the repo to be public at submission? (Yes, so this private repo must be flipped to public before submitting.)
-- Is judging in person, and is there a restaurant within a 10-minute walk?
-- Who on the team owns voice, ledger, agents, and web?
+### 5.1 Network and money
 
-## 16. Tracks we are targeting
+- Network: XRPL Testnet (`wss://s.altnet.rippletest.net:51233`).
+- Money: RLUSD. Testnet issuer: `rQhWct2fv4Vc4KRjRgMrxa8xPN9Zx9iLKV`. Currency code: `524C555344000000000000000000000000000000`.
+- Each wallet (requester, local agent, helper, vault) has a trust line to RLUSD.
+- The server makes wallets for the requester and for each helper. Thus, the requester and the helper do not need a crypto wallet.
 
-- **Best Use of Ripple (primary).** Payments, NFTs as concurrency locks and atomic payout receipts, pledges, refunds and slashing in RLUSD, all combined in one product. Credentials if time allows.
-- **Best Use of ElevenLabs (bonus).** Inbound task intake, outbound restaurant ordering, and spoken PINs.
-- **Best Use of Context.dev (bonus).** Live restaurant and menu data driving agent pricing.
-- **Most Technically Impressive (general).** A real multi-party market with on-ledger settlement, verified completion, chains of agents subcontracting to agents and humans, and agents making economic decisions (pricing, reposting, choosing pledges).
+### 5.2 Why the vault holds the money
 
-## 17. Decision log
+XRPL has native escrow for tokens (the Token Escrow amendment, XLS-85).
+But the token issuer must allow it with the `allowTrustLineLocking` flag.
+On 2026-10-11, the RLUSD issuer has this flag **off** on testnet and on mainnet. We checked with `account_info`.
+Thus, we cannot put RLUSD in native escrow.
 
-| Date | Decision | Why |
+Our solution:
+
+- The vault account holds the money for each task.
+- Each vault transaction has a memo with the task ID. Anyone can audit the full history on the XRPL explorer.
+- The claim and the payout are NFT swaps. The XRPL makes each swap complete fully or not at all.
+- If the RLUSD issuer sets `allowTrustLineLocking` later, we can move each task's money into native escrow.
+
+### 5.3 Ledger transactions in the demo
+
+The vault makes each task NFT with the flags `tfBurnable` and `tfTransferable`.
+The NFT `URI` points to the task data on the server.
+
+| Demo step | Transaction | Result |
 |---|---|---|
-| 2026-10-11 | XRPL + RLUSD as the payment rail (not AUSD on Base) | Native NFTs give on-ledger claim locks and atomic payouts with no smart contracts to write. Targets the Ripple track. |
-| 2026-10-11 | Only two task types: food delivery and bug fix | A general marketplace demos as an empty shell. Both types complete for real and have objective proof. |
-| 2026-10-11 | Add `seat_hold` as a third type and make it the live demo | It reuses the in-person PIN proof, needs no restaurant, finishes in minutes, and shows the agent-hires-a-human spread ($5 in, $4 out, $1 margin) in its simplest form. |
-| 2026-10-11 | Sub-tasks can chain up to depth 3, agent to agent or agent to human, and each child must be fully funded by its parent | Lets agents specialize and subcontract while guaranteeing every promised reward is backed by money. |
-| 2026-10-11 | The agent posts to Yik Yak itself, through the user's own login on the user's computer, using computer use | Yik Yak has no public posting API. Driving the user's own app keeps it real, needs no credentials on our server, and makes a strong live visual. |
-| 2026-10-11 | Pledged auctions: lowest price among bidders who post the required stake | Plain lowest-bid invites lowballing and failure. Pledges make the name literal and compensate requesters. |
-| 2026-10-11 | Agent orders by phone, human runner pays at the counter and is reimbursed | Restaurants do not take stablecoins. This keeps the whole flow real. |
-| 2026-10-11 | Vault custody instead of native escrow for RLUSD | The RLUSD issuer has `allowTrustLineLocking` off on testnet and mainnet, so native Token Escrow of RLUSD is not possible today. |
-| 2026-10-11 | Proofs: spoken PIN for delivery, command rerun for bug fix | Objective, automatic, and hard to fake. |
+| 5. Money escrow | `Payment` requester to vault, 5 RLUSD | The vault holds the requester's money. |
+| 5. Task NFT | `NFTokenMint` by the vault | The task NFT exists. The vault owns it. |
+| 7. Offer | `NFTokenCreateOffer` by the vault: sell, `Amount` = 1 RLUSD (the pledge), `Destination` = local agent | Only the local agent can take the task. |
+| 7. Claim | `NFTokenAcceptOffer` by the local agent | In one transaction, the local agent pays the pledge and gets the task NFT. |
+| 8. Sub-task money | `Payment` local agent to vault, 4 RLUSD | The vault holds the helper's money. |
+| 8. Sub-task NFT | `NFTokenMint` by the vault, then `NFTokenCreateOffer`: sell, `Amount` = 0, no `Destination` | Any helper can claim the sub-task. |
+| 10. Helper claim | `NFTokenAcceptOffer` by the helper wallet | The helper gets the sub-task NFT. A second claim fails because the offer no longer exists. |
+| 13. Helper payout | Helper `NFTokenCreateOffer`: sell, `Amount` = 4 RLUSD, `Destination` = vault. Then `NFTokenAcceptOffer` by the vault. | In one transaction, the NFT goes back to the vault and the helper gets $4. |
+| 13. Agent payout | The same swap for the task NFT, `Amount` = 6 RLUSD ($5 reward + $1 pledge) | The local agent gets $6. |
+| 13. Close | `NFTokenBurn` by the vault, for both NFTs | The tasks are closed. |
+| Failure | `NFTokenBurn` by the vault, then `Payment` vault to requester (5 + 1 RLUSD) and vault to local agent (4 RLUSD) | The requester gets the money back plus the pledge. |
+
+The server signs helper transactions with the helper wallet that it made for the helper.
+
+> **Caution:** Make sure that the XRPL accepts a sell offer with `Amount` = 0 and no `Destination` (step 8).
+> Test it on testnet before you build other parts.
+> If the XRPL rejects it, set `Amount` to 1 drop of XRP. Each helper wallet gets XRP from the testnet faucet.
+
+## 6. The voice agent
+
+We use ElevenLabs Agents with a phone number.
+
+The voice agent must:
+
+1. Answer the call and ask what the caller needs.
+2. Get four values: the task, the place, the time limit, and the maximum price.
+3. Repeat the four values and get a "yes".
+4. Call the `create_task` tool on the server.
+5. Read the PIN from the tool result and say it to the caller two times.
+6. Tell the caller the board URL, where they can see the task.
+
+The voice agent must not:
+
+- Make up a price. If the caller does not give a price, it asks for one.
+- Accept a task that is not a seat hold in the base demo. It says: "Right now I can only save seats."
+
+Server tools:
+
+| Tool | Input | Output |
+|---|---|---|
+| `create_task` | `description, place, time_limit_minutes, price_usd, caller_phone` | `task_id, pin, board_url` |
+| `task_status` | `task_id` | `status, helper_note` |
+
+## 7. The local agent
+
+The local agent is a TypeScript program on our laptop.
+It uses the Claude Agent SDK.
+It receives each task from the server and does all the work without a person.
+
+### 7.1 What it does for each task
+
+1. Receive the task from the server.
+2. Claim the task: accept the NFT offer and pay the pledge.
+3. Decide the sub-task price. In the base demo, the sub-task price is 80% of the task price, rounded down to $0.50.
+4. Make the sub-task and pay its money into the vault.
+5. Write a short Yik Yak post with the place, the time limit, the price, and the claim link.
+6. Post it on Yik Yak with the browser agent (see [section 8](#8-the-yik-yak-post)).
+7. Watch the sub-task. When the helper enters the correct PIN, redeem the task NFT for the payout.
+
+### 7.2 Tools that the local agent has
+
+| Tool | What it does |
+|---|---|
+| `claim_task` | Accepts the vault's NFT offer for a task. |
+| `create_subtask` | Pays the sub-task money to the vault and makes the sub-task. |
+| `post_yikyak` | Gives a post to the browser agent. Returns a screenshot of the post. |
+| `get_task` | Reads the status of a task or a sub-task. |
+| `redeem_task` | Swaps a completed task NFT for the payout. |
+
+### 7.3 Example Yik Yak post
+
+> $4 to save a seat at the front table in the next 3 min. First to claim gets it: <board-url>/c/7Q2K
+
+The local agent writes each post from the task data.
+The post is not fixed in the code.
+
+## 8. The Yik Yak post
+
+Yik Yak does not have a public API for posts, and Yik Yak does not permit bots.
+For this demo, the local agent posts from our own Yik Yak account.
+It uses our browser on our laptop, where we are already logged in.
+
+How the post works:
+
+1. The local agent calls `post_yikyak` with the post text.
+2. The browser agent opens Yik Yak in our logged-in browser.
+3. The browser agent writes the post and posts it.
+4. The browser agent takes a screenshot of the post.
+5. The local agent sends the screenshot to the server. The board shows it.
+
+Rules for the post:
+
+- Post at most one post each 10 minutes, so that Yik Yak does not block the account.
+- Keep our laptop near the venue. Yik Yak shows posts by location.
+- Show the laptop on the projector during the demo, so that the judges see the post live.
+
+> **Caution:** Make sure that Yik Yak works in our desktop browser on day one.
+> The only Yik Yak website that we found is from 2016.
+> If there is no website, use the Yik Yak iPhone app on an Apple silicon Mac, and use a computer-use agent in place of the browser agent.
+
+## 9. The board and the claim page
+
+### 9.1 The board
+
+The board is the main screen of the demo.
+It must show:
+
+- Each task and sub-task as a card, with its status: open, claimed, done, or failed.
+- The money tree for each task, with the amount on each line.
+- An explorer link for each ledger transaction.
+- The Yik Yak screenshot and the helper's seat photo.
+- A short log of the local agent's decisions, for example "Sub-task price: $4.00 (80% of $5.00)".
+
+The board must update in less than 2 seconds after each change.
+It must be easy to read from the back of the room.
+
+### 9.2 The claim page
+
+The helper opens the claim page from the link in the Yik Yak post.
+The claim page must:
+
+1. Show the sub-task: the place, the time limit, and the pay.
+2. Show one "Claim" button.
+3. Make a wallet for the helper when the helper taps "Claim". The helper does not see the wallet.
+4. Show "Already claimed" if another person claimed first.
+5. Let the helper add a photo and a short note, for example "Front table, left side".
+6. Let the helper enter the PIN.
+7. Show "Paid $4.00" with an explorer link after the payout.
+
+The claim page must work well on a phone.
+
+## 10. Build order
+
+Build in this order.
+Each part depends on the part before it.
+
+| # | Part | Done when |
+|---|---|---|
+| 1 | XRPL ledger module | A script does the full success flow and the full failure flow from [section 5.3](#53-ledger-transactions-in-the-demo) on testnet. |
+| 2 | Server and database | The server API makes tasks, claims, sub-tasks, and payouts. It sends live updates. |
+| 3 | Board | The board shows the flow from part 1 live, with explorer links. |
+| 4 | Claim page | A helper can claim, add a photo, and enter the PIN from a phone. |
+| 5 | Local agent | The local agent claims a task and makes a sub-task without a person. |
+| 6 | Yik Yak post | The local agent posts on Yik Yak and the screenshot shows on the board. |
+| 7 | Voice agent | A phone call makes a task and the caller hears the PIN. |
+| 8 | Full rehearsal | Two full demos in a row, one success and one failure, with no person at the laptop. |
+| 9 | Video | We film the demo in Main Stacks. |
+
+Do these tasks first, because they can block the build:
+
+- Get testnet RLUSD. Ask the Ripple team at their table.
+- Make sure that Yik Yak works in our desktop browser.
+- Get the ElevenLabs phone number.
+
+## 11. Risks
+
+| Risk | What we do |
+|---|---|
+| We cannot get testnet RLUSD. | Make our own test token from a team account. If we set `allowTrustLineLocking` on that account, we can also show native Token Escrow. |
+| Yik Yak does not work in a desktop browser. | Use the Yik Yak iPhone app on an Apple silicon Mac with a computer-use agent. |
+| Yik Yak blocks the account. | Post at most one post each 10 minutes. Keep a recording of a post as a backup for the demo. |
+| Nobody in the room claims the sub-task. | Ask the room to watch Yik Yak before the demo. The failure flow also shows the pledge, so the demo still works. |
+| XRPL testnet is slow (about 4 seconds for each ledger). | Send independent transactions at the same time. Show "pending" on the board. |
+| The phone call fails. | Keep a web form on the board that sends the same `create_task` call. |
+
+## 12. Features for later
+
+We add these features only after the base demo works.
+Each feature has a short description.
+
+- **Competing agents.** Many agents bid on each task. The lowest price wins among agents that pay the required pledge.
+- **Agents from other people.** Developers connect their own agents to the server and earn money.
+- **Public profit and loss.** A page for each agent with its earnings, costs, and lost pledges, from ledger data.
+- **Price learning.** The local agent sets the sub-task price from past results, and increases it when no helper claims.
+- **Food delivery.** The local agent calls a restaurant with an ElevenLabs voice and orders food. A helper picks it up, pays, and gets the food cost plus a fee. Context.dev gives restaurant and menu prices.
+- **Bug fixes.** A requester gives a repository and a failing command. An agent sends a patch. A verifier runs the command again. The vault pays when the command passes.
+- **Sub-task chains.** An agent gives a task to another agent, which gives a sub-task to a helper.
+- **More places to post.** Discord, SMS, and push messages to helpers near the task.
+- **Helper pledges.** Helpers also lock a small pledge when they claim.
+- **Vault security.** The vault uses a multi-signature `SignerList` and a disabled master key.
+- **Helper credentials.** The platform gives an XRPL Credential to verified helpers.
+
+## 13. Decision log
+
+| Date | Decision | Reason |
+|---|---|---|
+| 2026-10-11 | We use XRPL and RLUSD for money. | XRPL NFTs give a claim lock and a payout swap with no smart contract. This is for the Ripple track. |
+| 2026-10-11 | The vault holds the money, not native escrow. | The RLUSD issuer has `allowTrustLineLocking` off on testnet and on mainnet. |
+| 2026-10-11 | The base demo is the seat hold only. | It is fast, it is real, and it shows the full idea: a person calls, an agent hires a person, and the money moves on proof. |
+| 2026-10-11 | The local agent runs on our laptop and posts on Yik Yak from our logged-in browser. | Yik Yak has no public API for posts. Our own browser session makes the post real and visible to the judges. |
+| 2026-10-11 | The proof is a PIN from the requester to the helper. | It is simple, and the helper cannot fake it. |
+| 2026-10-11 | Other features wait until the base demo works. | A small demo that works is better than a large demo that does not work. |
