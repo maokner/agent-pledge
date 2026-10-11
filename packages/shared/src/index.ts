@@ -70,7 +70,20 @@ export type LedgerErrorCode =
   | "INVALID_TX"
   | "INVALID_INPUT"
   | "CONFIG"
-  | "TX_FAILED";
+  | "TX_FAILED"
+  // Codes from the task ops (packages/ledger/src/ops).
+  /** failTask: a task or sub-task NFT was already paid out, so the task did not fail. */
+  | "ALREADY_PAID_OUT"
+  /** failTask: an NFT is not burned and none of the candidate accounts holds it. */
+  | "NFT_HOLDER_UNKNOWN"
+  /** A validated transaction's metadata has no NFT ID or offer ID. */
+  | "META_PARSE"
+  /** failTask: the caller's amounts differ from what the vault received on the ledger. */
+  | "FUNDING_MISMATCH"
+  /** acceptPayoutOffer: the offer on the ledger is not the expected payout offer. */
+  | "OFFER_MISMATCH"
+  /** failTask: the XRPL server does not have the vault's full history. */
+  | "HISTORY_INCOMPLETE";
 
 /** Fields that every ledger transaction event has. */
 export interface LedgerTxEventBase {

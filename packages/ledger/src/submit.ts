@@ -250,7 +250,7 @@ export async function submitTx<T extends SubmittableTransaction>(
         ...base,
         hash,
         code: error.resultCode ?? error.code,
-        errorCode: error.code as LedgerErrorCode,
+        errorCode: error.code,
         message: error.message,
         explorerUrl: onLedger ? explorerTxUrl(config, hash) : null,
       });
@@ -262,7 +262,7 @@ export async function submitTx<T extends SubmittableTransaction>(
     ledgerEvents.emit("tx.unknown", {
       ...base,
       hash: signedHash,
-      errorCode: error.code as LedgerErrorCode,
+      errorCode: error.code,
       message: error.message,
       explorerUrl: explorerTxUrl(config, signedHash),
     });

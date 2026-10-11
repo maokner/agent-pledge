@@ -1,3 +1,5 @@
+import type { LedgerErrorCode } from "@agent-pledge/shared";
+
 /** Extra facts about a failed transaction. Both fields are absent for errors that are not about a transaction. */
 export interface LedgerErrorDetails {
   /** The raw XRPL result code, for example `tecOBJECT_NOT_FOUND`. */
@@ -8,8 +10,8 @@ export interface LedgerErrorDetails {
 
 /**
  * Base class for every error that the ledger package throws on purpose.
- * `code` is a stable value that the server can switch on. The package only uses the values of
- * `LedgerErrorCode` from `@agent-pledge/shared`.
+ * `code` is a stable value that the server can switch on: one of `LedgerErrorCode` from
+ * `@agent-pledge/shared`.
  */
 export class LedgerError extends Error {
   public readonly resultCode: string | undefined;
@@ -17,7 +19,7 @@ export class LedgerError extends Error {
 
   constructor(
     message: string,
-    public readonly code: string,
+    public readonly code: LedgerErrorCode,
     public readonly cause?: unknown,
     details: LedgerErrorDetails = {},
   ) {
