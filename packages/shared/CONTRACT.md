@@ -73,7 +73,9 @@ Agent: `GET /ws/agent` with the Bearer token. The server sends `{ type: "task.ne
    no listed event would carry it otherwise.
 3. **`subtask.created` also carries the parent task**, whose `subtask_ids` changed.
 4. **`task.paid` and `task.failed` carry the final sub-tasks.** There is no `subtask.paid` or `subtask.failed` event.
-5. **The backup web form (#38)** cannot send the voice secret from a browser. It needs its own endpoint,
-   or a server-side proxy route in the web app.
+5. **The backup web form (#38)** cannot send the voice secret from a browser. The web app answers this with a
+   server-side proxy route (`POST /api/backup-task` in `apps/web`, gated by an operator passcode) that calls
+   `POST /tools/create_task` with the secret, so the server needs no new endpoint. It must accept the form's
+   placeholder `caller_phone` (`+15555550100` by default) when the operator leaves the phone empty.
 6. **Explorer links** default to `https://testnet.xrpl.org/{transactions|accounts|nft}/<id>` in the web app.
    Confirm against the ledger package (#10).

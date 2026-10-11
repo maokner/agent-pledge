@@ -17,6 +17,7 @@ pnpm dev:web            # against a server; see .env.example
 | `components/ui/*` | Shared pieces: status badges, money, explorer links, countdown. |
 | `lib/api/*` | `getApiClient()`: HTTP client, or the fixture client in fixture mode. |
 | `lib/board/*` | Board state reducer, selectors, sync (reconnect and seq resync), transports, `useBoard`. |
+| `lib/backup-task/*`, `app/api/backup-task/route.ts` | The backup form's validation, browser client and server-side proxy to create_task (#38). |
 | `lib/fixtures/*` | Fixture data built from the PRD's seat-hold flow. |
 | `lib/format.ts`, `lib/labels.ts` | RLUSD amounts, explorer links, countdowns, enum labels. |
 
@@ -63,8 +64,9 @@ curl -sS -X POST "$API_URL/tools/create_task" \
   -d '{"description":"Save me a seat at the front table","place":"Main Stacks, front table","time_limit_minutes":3,"price_usd":5,"caller_phone":"+15105550123"}'
 ```
 
-The task card appears and the number in the header stays under 2 s. In fixture mode, use the backup form
-(below) instead of `curl`: it also says how long the new task took to reach the board.
+The task card appears and the number in the header stays under 2 s. In fixture mode, create a task with the
+backup form (below) instead of `curl`. To check from the browser console:
+`document.querySelector('[data-testid=latency-meter]').dataset`.
 `lib/board/fixture-transport.test.ts` checks that a board catches up within the budget after a dropped connection.
 
 ## Agent log (#37)
@@ -74,3 +76,28 @@ with its time and a short tag for its task (the last 4 characters of the task ID
 description). It follows new lines while scrolled to the bottom. Scrolling up pauses that and shows a
 "N new lines, jump to latest" button. The board keeps the last 200 lines (`AGENT_LOG_LIMIT`).
 The local agent adds lines with `POST /agent/log`.
+
+## Backup form (#38, PRD 11)
+
+If the phone call fails, the small "Phone call failed? Create the task here" link at the bottom of the board
+opens a form with the voice agent's `create_task` fields (description, place, time limit, price, and an
+optional phone). It shows the PIN that comes back, and says when the task is on the board.
+
+The browser cannot hold the voice agent's shared secret, so the form posts to this app's route handler
+`POST /api/backup-task` (`app/api/backup-task/route.ts`, logic in `lib/backup-task/`). The route checks an
+operator passcode (header `x-backup-passcode`), validates the form, and calls the server's
+`POST /tools/create_task` with `x-agent-pledge-secret`. Its server-only env vars (see `.env.example`):
+
+| Variable | What |
+|---|---|
+| `BACKUP_FORM_PASSCODE` | What the operator types into the form. The route returns 503 until it is set. |
+| `AGENT_PLEDGE_SERVER_URL` | The server's base URL from the web server. Defaults to `NEXT_PUBLIC_API_URL` if absolute. |
+| `AGENT_PLEDGE_VOICE_SECRET` | The voice agent's shared secret. |
+| `BACKUP_FORM_CALLER_PHONE` | `caller_phone` when the form leaves it empty. Default `+15555550100`. |
+
+This needs the web app to run as a Next.js server (not a static export), and on a shared host `/api/*` must
+route to Next.js. The form remembers the passcode for the browser tab (sessionStorage).
+
+In fixture mode the route answers from the fixture client (PIN `4821`) and needs no passcode unless
+`BACKUP_FORM_PASSCODE` is set. The page then adds the task to the simulated stream, which runs it
+through the seat-hold flow.

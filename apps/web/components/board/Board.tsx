@@ -6,6 +6,7 @@ import { useBoard } from "@/lib/board/use-board";
 import { FIXTURE_MODE } from "@/lib/config";
 import { FixtureBadge } from "@/components/ui/FixtureBadge";
 import { AgentLog } from "./AgentLog";
+import { BackupTaskForm } from "./BackupTaskForm";
 import { ConnectionStatus } from "./ConnectionStatus";
 import { FixtureControls } from "./FixtureControls";
 import { LatencyMeter } from "./LatencyMeter";
@@ -40,6 +41,10 @@ export function Board() {
         </section>
         <AgentLog entries={selectAgentLog(state)} />
       </div>
+
+      <footer className="flex justify-end">
+        <BackupTaskForm isOnBoard={(taskId) => taskId in state.tasks} />
+      </footer>
     </div>
   );
 }

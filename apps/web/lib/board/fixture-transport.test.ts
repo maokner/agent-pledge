@@ -89,6 +89,35 @@ describe("fixture transport with board sync", () => {
     expect(loaded.getSnapshot().state).toEqual(steady.getSnapshot().state);
   });
 
+  it("shows a task from the backup form at once, then runs it through the seat-hold flow", () => {
+    const transport = createFixtureTransport({ intervalMs: 1000 });
+    const board = createBoardSync(transport);
+    board.start();
+    vi.advanceTimersByTime(1500); // mid-way through a live run
+
+    transport.createTask({
+      task_id: "tsk_form_1",
+      description: "Save me a seat by the stairs",
+      place: "Doe Library, 2nd floor",
+      time_limit_minutes: 7,
+      price_usd: 6,
+    });
+    vi.advanceTimersByTime(1);
+
+    const task = board.getSnapshot().state.tasks.tsk_form_1;
+    expect(task).toMatchObject({ description: "Save me a seat by the stairs", place: "Doe Library, 2nd floor", price: "6", time_limit_minutes: 7 });
+    expect(board.getSnapshot().state.needsResync).toBe(false);
+
+    vi.advanceTimersByTime(30_000);
+    const state = board.getSnapshot().state;
+    expect(state.tasks.tsk_form_1?.subtask_ids).toHaveLength(1);
+    expect(Object.values(state.subtasks).find((s) => s.task_id === "tsk_form_1")?.price).toBe("4.5");
+    const fresh = createBoardSync(transport);
+    fresh.start();
+    vi.advanceTimersByTime(1);
+    expect(fresh.getSnapshot().state).toEqual(state);
+  });
+
   it("catches up within the 2 second budget after the connection drops (PRD R3)", () => {
     const transport = createFixtureTransport({ intervalMs: 1000 });
     const board = createBoardSync(transport);
