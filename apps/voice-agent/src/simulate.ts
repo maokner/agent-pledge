@@ -1,10 +1,11 @@
 /**
  * Sends the sample tool payloads to a server and checks the responses against the contract.
  * It works against the mock server or the real server, so the back end can use it as a contract test.
+ * The server check is the part without side effects, and `pnpm provision` runs it before any write.
  */
 import { randomBytes } from "node:crypto";
 import type { CreateTaskInput, CreateTaskOutput } from "@agent-pledge/shared";
-import type { z } from "zod";
+import { z } from "zod";
 import {
   CREATE_TASK_PATH,
   VOICE_SECRET_HEADER,
@@ -24,9 +25,17 @@ export interface CheckResult {
   detail: string;
 }
 
+/** Runs the server check against a base URL. `pnpm provision` takes one, so tests and the dry run can replace it. */
+export type ServerCheck = (baseUrl: string, secret: string) => Promise<CheckResult[]>;
+
 interface ToolCall {
   status: number;
   body: unknown;
+}
+
+/** Joins like the tool templates do (`${PUBLIC_BASE_URL}/tools/...`), so a base URL with a path keeps it. */
+export function joinUrl(baseUrl: string, path: string): string {
+  return `${baseUrl.replace(/\/+$/, "")}${path}`;
 }
 
 async function call(
@@ -42,7 +51,7 @@ async function call(
     headers["content-type"] = "application/json";
     request.body = JSON.stringify(init.body);
   }
-  const res = await fetchFn(new URL(path, baseUrl).toString(), request);
+  const res = await fetchFn(joinUrl(baseUrl, path), request);
   const text = await res.text();
   let body: unknown = text;
   try {
@@ -103,6 +112,134 @@ function sameTaskCheck(
   return shape;
 }
 
+/** A body that the server must reject with 400 if the secret is right, so no check creates a task. */
+function bodyWithoutPrice(): Partial<CreateTaskInput> {
+  const body: Partial<CreateTaskInput> = { ...SAMPLE_NORMAL_CALL, call_id: "conv_server_check" };
+  delete body.price_usd;
+  return body;
+}
+
+type SecretUse = "right" | "wrong" | "none";
+
+interface ServerCheckStep {
+  name: string;
+  method: "GET" | "POST";
+  path: string;
+  secret: SecretUse;
+  body?: () => unknown;
+  status: number;
+  schema: z.ZodType;
+}
+
+/**
+ * Checks without side effects: none of them can create a task, even on a server that ignores the secret.
+ * Together they prove that the server is up, rejects a wrong or missing secret, and accepts the right one.
+ */
+const SERVER_CHECK_STEPS: readonly ServerCheckStep[] = [
+  {
+    name: "server: GET /health answers 200",
+    method: "GET",
+    path: "/health",
+    secret: "none",
+    status: 200,
+    schema: z.unknown(),
+  },
+  {
+    name: "create_task: wrong secret is rejected",
+    method: "POST",
+    path: CREATE_TASK_PATH,
+    secret: "wrong",
+    body: bodyWithoutPrice,
+    status: 401,
+    schema: toolErrorSchema,
+  },
+  {
+    name: "create_task: missing secret is rejected",
+    method: "POST",
+    path: CREATE_TASK_PATH,
+    secret: "none",
+    body: bodyWithoutPrice,
+    status: 401,
+    schema: toolErrorSchema,
+  },
+  {
+    name: "create_task: missing price is rejected",
+    method: "POST",
+    path: CREATE_TASK_PATH,
+    secret: "right",
+    body: bodyWithoutPrice,
+    status: 400,
+    schema: toolErrorSchema,
+  },
+  {
+    name: "task_status: unknown task is 404",
+    method: "GET",
+    path: taskStatusPath("task_does_not_exist"),
+    secret: "right",
+    status: 404,
+    schema: toolErrorSchema,
+  },
+];
+
+const SECRET_LABELS: Record<SecretUse, string> = {
+  right: "with VOICE_TOOL_SECRET",
+  wrong: "with a wrong secret",
+  none: "with no secret",
+};
+
+/** One line for each server check, for the dry run. */
+export function describeServerCheck(baseUrl: string): string[] {
+  return SERVER_CHECK_STEPS.map(
+    (step) =>
+      `${step.method} ${joinUrl(baseUrl, step.path)} ${SECRET_LABELS[step.secret]}: expect HTTP ${step.status}`,
+  );
+}
+
+/** A short reason for a failed fetch, for example "ECONNREFUSED 127.0.0.1:8791" instead of "fetch failed". */
+export function networkReason(err: unknown): string {
+  let e: unknown = err;
+  while (e instanceof Error && e.cause !== undefined) e = e.cause;
+  if (e instanceof AggregateError && e.errors.length > 0) e = e.errors[0];
+  if (e instanceof Error) {
+    const code = (e as { code?: unknown }).code;
+    return typeof code === "string" && !e.message.includes(code)
+      ? `${code} ${e.message}`
+      : e.message;
+  }
+  return String(e);
+}
+
+export interface ServerCheckOptions {
+  baseUrl: string;
+  secret: string;
+  fetchFn?: FetchLike;
+}
+
+/** Runs the checks without side effects. A network error fails the check instead of throwing. */
+export async function runServerCheck(options: ServerCheckOptions): Promise<CheckResult[]> {
+  const fetchFn = options.fetchFn ?? ((url, init) => fetch(url, init));
+  const results: CheckResult[] = [];
+  for (const step of SERVER_CHECK_STEPS) {
+    const secret =
+      step.secret === "right"
+        ? options.secret
+        : step.secret === "wrong"
+          ? `${options.secret}-wrong`
+          : null;
+    try {
+      const res = await call(fetchFn, options.baseUrl, step.path, {
+        method: step.method,
+        secret,
+        ...(step.body ? { body: step.body() } : {}),
+      });
+      results.push(expectShape(step.name, res, step.status, step.schema));
+    } catch (err) {
+      results.push({ name: step.name, ok: false, detail: `no answer: ${networkReason(err)}` });
+    }
+  }
+  return results;
+}
+
 export interface SimulationOptions {
   baseUrl: string;
   secret: string;
@@ -118,7 +255,7 @@ export function randomCallId(): string {
   return `conv_simulate_${randomBytes(6).toString("hex")}`;
 }
 
-/** Runs the sample payloads and the negative checks. Never throws for a failed check. */
+/** Runs the sample payloads, then the server check. Never throws for a failed check. */
 export async function runSimulation(options: SimulationOptions): Promise<CheckResult[]> {
   const fetchFn = options.fetchFn ?? ((url, init) => fetch(url, init));
   const { baseUrl, secret } = options;
@@ -171,40 +308,7 @@ export async function runSimulation(options: SimulationOptions): Promise<CheckRe
     });
   }
 
-  const wrongSecret = await call(fetchFn, baseUrl, CREATE_TASK_PATH, {
-    method: "POST",
-    secret: `${secret}-wrong`,
-    body: { ...SAMPLE_NORMAL_CALL, call_id: newCallId() },
-  });
-  results.push(
-    expectShape("create_task: wrong secret is rejected", wrongSecret, 401, toolErrorSchema),
-  );
-
-  const noSecret = await call(fetchFn, baseUrl, CREATE_TASK_PATH, {
-    method: "POST",
-    secret: null,
-    body: { ...SAMPLE_NORMAL_CALL, call_id: newCallId() },
-  });
-  results.push(
-    expectShape("create_task: missing secret is rejected", noSecret, 401, toolErrorSchema),
-  );
-
-  const noPrice: Partial<CreateTaskInput> = { ...SAMPLE_NORMAL_CALL, call_id: newCallId() };
-  delete noPrice.price_usd;
-  const missingPrice = await call(fetchFn, baseUrl, CREATE_TASK_PATH, {
-    method: "POST",
-    secret,
-    body: noPrice,
-  });
-  results.push(
-    expectShape("create_task: missing price is rejected", missingPrice, 400, toolErrorSchema),
-  );
-
-  const unknown = await call(fetchFn, baseUrl, taskStatusPath("task_does_not_exist"), {
-    method: "GET",
-    secret,
-  });
-  results.push(expectShape("task_status: unknown task is 404", unknown, 404, toolErrorSchema));
+  results.push(...(await runServerCheck({ baseUrl, secret, fetchFn })));
 
   return results;
 }
