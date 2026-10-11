@@ -3,7 +3,7 @@ import { taskTag } from "@/lib/board/agent-log";
 import { selectPartyNames, subtaskHolder, type TaskView } from "@/lib/board/selectors";
 import { cn } from "@/lib/cn";
 import { formatRlusd } from "@/lib/format";
-import { FAILURE_REASON_LABEL } from "@/lib/labels";
+import { failureText } from "@/lib/labels";
 import { MoneyTree } from "./MoneyTree";
 import { GLOW, LINK, WORK_BORDER } from "./term-style";
 import { Countdown, Money, Pane, SectionTitle, TimeLeft, Waiting, WorkStatusTag, ZoomableImage } from "./term";
@@ -53,7 +53,7 @@ export function ProjectorTaskCard({ view, arrived = false }: { view: TaskView; a
 
       {task.status === "failed" && (
         <p role="status" className="border border-term-red px-3 py-1 text-2xl font-bold text-term-red">
-          [ERR] FAILED{task.failure_reason ? `: ${FAILURE_REASON_LABEL[task.failure_reason]}.` : "."}{" "}
+          [ERR] FAILED{failureText(task) ? `: ${failureText(task)}.` : "."}{" "}
           <span className="text-term-amber">
             <span aria-hidden>↩ </span>The requester gets {formatRlusd(task.price)} back plus the agent&apos;s {formatRlusd(task.pledge)}{" "}
             pledge.
@@ -115,9 +115,9 @@ function SubtaskPanel({ subtask, earlier }: { subtask: Subtask; earlier: number 
           </a>
         </Fact>
       </dl>
-      {subtask.status === "failed" && subtask.failure_reason && (
+      {subtask.status === "failed" && failureText(subtask) && (
         <p className="mt-2 border border-term-red px-2 py-1 text-lg font-bold text-term-red">
-          [ERR] {FAILURE_REASON_LABEL[subtask.failure_reason]}
+          [ERR] {failureText(subtask)}
         </p>
       )}
     </section>

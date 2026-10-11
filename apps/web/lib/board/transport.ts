@@ -4,10 +4,12 @@
  * stream (fixture-transport.ts). Reconnects and resyncs live in sync.ts.
  */
 import type { BoardServerMessage } from "@agent-pledge/shared";
+import type { BoardState } from "./state";
 
 export interface BoardConnectionHandlers {
   onOpen(): void;
-  onMessage(message: BoardServerMessage): void;
+  /** One message as it came off the wire. The sync layer decodes it with the transport's `decode`. */
+  onMessage(wire: unknown): void;
   /** The connection ended without the client asking. Not called after close(). */
   onClose(): void;
 }
@@ -22,4 +24,12 @@ export interface BoardTransport {
    * `since` (a replay of events, or a board.snapshot), then live events.
    */
   open(since: number, handlers: BoardConnectionHandlers): BoardConnection;
+  /**
+   * Turns one wire message into the board's own message, given the state it
+   * will apply to. The real server sends patches, so its decoder
+   * (lib/backend) fills them in from that state. Returns null to drop a
+   * message. Omitted when the wire already carries the board's own messages
+   * (the fixture stream).
+   */
+  decode?(wire: unknown, state: BoardState): BoardServerMessage | null;
 }

@@ -6,11 +6,23 @@
 /** NEXT_PUBLIC_FIXTURES=1 serves fixture data and a simulated live event stream; no server needed. */
 export const FIXTURE_MODE = process.env.NEXT_PUBLIC_FIXTURES === "1";
 
+/** The server's port when it runs locally (its PORT default). */
+export const LOCAL_API_URL = "http://localhost:3001";
+
 /**
- * Base URL of the server's HTTP API. Empty means same origin, which is the
- * deploy plan (server and board on one host, PRD 4).
+ * Base URL of the server's HTTP API: NEXT_PUBLIC_API_URL, or the server's
+ * local default outside fixture mode. Set it to "" for same origin (server and
+ * board behind one host).
  */
-export const API_URL = trimSlash(process.env.NEXT_PUBLIC_API_URL ?? "");
+export function apiUrlFrom(env: { NEXT_PUBLIC_API_URL?: string; NEXT_PUBLIC_FIXTURES?: string }): string {
+  return trimSlash(env.NEXT_PUBLIC_API_URL ?? (env.NEXT_PUBLIC_FIXTURES === "1" ? "" : LOCAL_API_URL));
+}
+
+// Spelled out, so Next.js inlines them at build time.
+export const API_URL = apiUrlFrom({
+  NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+  NEXT_PUBLIC_FIXTURES: process.env.NEXT_PUBLIC_FIXTURES,
+});
 
 /**
  * Base URL of the server's WebSocket endpoint. Defaults to API_URL with

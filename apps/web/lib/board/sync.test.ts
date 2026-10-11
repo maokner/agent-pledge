@@ -46,6 +46,27 @@ describe("createBoardSync", () => {
     expect(sync.getSnapshot().state.tasks.tsk_a).toBeDefined();
   });
 
+  it("decodes each wire message with the transport's decoder, against the current state", () => {
+    const fake = fakeTransport();
+    const seen: number[] = [];
+    const decode = vi.fn((wire: unknown, state: { seq: number }) => {
+      seen.push(state.seq);
+      const { n } = wire as { n: number };
+      return n < 0 ? null : logEvent(n);
+    });
+    const sync = createBoardSync({ ...fake.transport, decode });
+    sync.start();
+    fake.open();
+
+    fake.send({ n: 1 } as never);
+    fake.send({ n: -1 } as never);
+    fake.send({ n: 2 } as never);
+
+    expect(seen).toEqual([0, 1, 1]);
+    expect(sync.getSnapshot().state.seq).toBe(2);
+    expect(sync.getSnapshot().state.agentLog.map((l) => l.id)).toEqual(["l1", "l2"]);
+  });
+
   it("after the connection drops, reconnects from the last applied seq after a backoff", () => {
     const fake = fakeTransport();
     const sync = createBoardSync(fake.transport);

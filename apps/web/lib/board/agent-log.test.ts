@@ -1,8 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { buildFixtureHistory, foldEvents } from "../fixtures/board";
 import { makeLogLine, makeTask } from "../fixtures/factories";
-import { countNewerThan, isAtBottom, selectAgentLog } from "./agent-log";
+import { countNewerThan, isAtBottom, selectAgentLog, taskTag } from "./agent-log";
 import { applyBoardMessage, initialBoardState } from "./state";
+
+describe("taskTag", () => {
+  it("is the last 4 characters of the ID, upper case, for the draft's and the real server's prefixes", () => {
+    expect(taskTag("tsk_01JA7Q2K")).toBe("7Q2K");
+    expect(taskTag("task_k3j9x0c2m1q8z7w4")).toBe("Z7W4");
+    expect(taskTag("task_ab")).toBe("AB");
+  });
+});
 
 describe("selectAgentLog", () => {
   it("lists lines oldest first, each with a short tag and the description of its task", () => {

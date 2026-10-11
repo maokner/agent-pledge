@@ -115,7 +115,7 @@ function EdgeDown({ edge }: { edge: MoneyEdge }) {
     <div className={cn("ml-3 border-l-2 py-1 pl-2 projector:py-0.5", TONE_BORDER[tone])}>
       <span className={cn("inline-flex flex-wrap items-baseline gap-x-1.5 text-sm projector:text-lg", TONE_TEXT[tone])} title={EDGE_TITLE[edge.state]}>
         {edge.txHash ? (
-          <a href={explorerTxUrl(edge.txHash)} target="_blank" rel="noopener noreferrer" className={cn(LINK, "inline-flex flex-wrap items-baseline gap-x-1.5")}>
+          <a href={edge.explorerUrl ?? explorerTxUrl(edge.txHash)} target="_blank" rel="noopener noreferrer" className={cn(LINK, "inline-flex flex-wrap items-baseline gap-x-1.5")}>
             <EdgeLabel edge={edge} />
           </a>
         ) : (
@@ -139,7 +139,7 @@ function ReceivedChip({ edge }: { edge: MoneyEdge }) {
   const className = cn("inline-flex flex-wrap items-baseline gap-x-1.5 border px-1 text-sm projector:text-lg", TONE_BORDER[tone], TONE_TEXT[tone]);
   const title = [edge.note, EDGE_TITLE[edge.state]].filter(Boolean).join(". ");
   return edge.txHash ? (
-    <a href={explorerTxUrl(edge.txHash)} target="_blank" rel="noopener noreferrer" title={title} className={cn(LINK, "no-underline", className)}>
+    <a href={edge.explorerUrl ?? explorerTxUrl(edge.txHash)} target="_blank" rel="noopener noreferrer" title={title} className={cn(LINK, "no-underline", className)}>
       {content}
     </a>
   ) : (

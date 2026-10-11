@@ -1,5 +1,7 @@
 import { Bot, User } from "lucide-react";
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
+import { Suspense } from "react";
 import { PoweredBy } from "@/components/landing/PoweredBy";
 import { RoleButton } from "@/components/landing/RoleButton";
 
@@ -8,9 +10,16 @@ export const metadata: Metadata = {
 };
 
 /** The landing page (docs/design/DIRECTION.md, "Landing" and landing-mockup.png). */
-export default function LandingPage() {
+export default function LandingPage({ searchParams }: PageProps<"/">) {
   return (
     <main className="flex min-h-dvh flex-col">
+      {/* The server's board_url is `/?task=<id>`: send it on to the board. */}
+      <Suspense fallback={null}>
+        {searchParams.then(({ task }) => {
+          if (typeof task === "string" && task) redirect(`/board?task=${encodeURIComponent(task)}`);
+          return null;
+        })}
+      </Suspense>
       {/* Bottom padding lifts the heading and buttons a little above the middle, as in the mockup. */}
       <div className="flex flex-1 flex-col items-center justify-center gap-14 px-4 pt-16 pb-16 sm:gap-24 sm:pb-24">
         <h1 className="text-center text-[clamp(4rem,12vw,9rem)] leading-none font-bold tracking-[-0.015em]">

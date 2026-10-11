@@ -1,10 +1,15 @@
-/** The real board socket from the contract: `GET /ws/board?since=<seq>`. */
-import { BOARD_WS_PATH, type BoardServerMessage } from "@agent-pledge/shared";
+/**
+ * The real board socket: `GET /ws/board?since=<seq>`. It speaks the server's
+ * own shapes, which lib/backend decodes into the board's.
+ */
+import { BOARD_WS_PATH } from "@agent-pledge/shared";
+import { boardMessageFromBackend } from "../backend";
 import { wsBaseUrl } from "../config";
 import type { BoardTransport } from "./transport";
 
 export function createWebSocketTransport(baseUrl: () => string = wsBaseUrl): BoardTransport {
   return {
+    decode: boardMessageFromBackend,
     open(since, handlers) {
       let closedByClient = false;
       const ws = new WebSocket(`${baseUrl()}${BOARD_WS_PATH}?since=${since}`);
@@ -13,14 +18,14 @@ export function createWebSocketTransport(baseUrl: () => string = wsBaseUrl): Boa
       };
       ws.onmessage = (event: MessageEvent<string>) => {
         if (closedByClient) return;
-        let message: BoardServerMessage;
+        let wire: unknown;
         try {
-          message = JSON.parse(event.data) as BoardServerMessage;
+          wire = JSON.parse(event.data);
         } catch {
           console.warn("Ignoring a board message that is not JSON", event.data);
           return;
         }
-        handlers.onMessage(message);
+        handlers.onMessage(wire);
       };
       // An error is always followed by close, so close is the one place to react.
       ws.onclose = () => {

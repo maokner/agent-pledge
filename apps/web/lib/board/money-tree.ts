@@ -33,6 +33,8 @@ export interface MoneyEdge {
   state: EdgeState;
   /** The transaction behind the edge, for its explorer link. Null while planned. */
   txHash: TxHash | null;
+  /** The server's explorer link for that transaction. Null while planned, or when the server sent none (fixture mode). */
+  explorerUrl: string | null;
 }
 
 export type MoneyRole = "requester" | "vault" | "task_nft" | "agent" | "subtask_nft" | "helper";
@@ -208,11 +210,11 @@ class EdgeFactory {
   down(kind: TxKind, subtaskId: string | null, label: string): MoneyEdge {
     const tx = this.latest(kind, subtaskId);
     if (!tx) return this.planned(kind, `${subtaskId ?? this.task.id}:${kind}`, label);
-    return { id: tx.hash, kind, label, note: null, state: this.stateOf(tx), txHash: tx.hash };
+    return { id: tx.hash, kind, label, note: null, state: this.stateOf(tx), txHash: tx.hash, explorerUrl: tx.explorer_url ?? null };
   }
 
   planned(kind: TxKind, id: string, label: string): MoneyEdge {
-    return { id, kind, label, note: null, state: "planned", txHash: null };
+    return { id, kind, label, note: null, state: "planned", txHash: null, explorerUrl: null };
   }
 
   /** Payouts and refunds of these kinds that exist so far, oldest first. */
@@ -226,6 +228,7 @@ class EdgeFactory {
         note: this.receivedNote(tx),
         state: this.stateOf(tx),
         txHash: tx.hash,
+        explorerUrl: tx.explorer_url ?? null,
       }));
   }
 
