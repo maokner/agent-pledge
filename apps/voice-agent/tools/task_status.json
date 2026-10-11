@@ -1,0 +1,23 @@
+{
+  "tool_config": {
+    "type": "webhook",
+    "name": "task_status",
+    "description": "Get the status of a task created in this call. Returns status (open, claimed, done, or failed) and helper_note. Use it only when the caller asks about their task.",
+    "response_timeout_secs": 10,
+    "execution_mode": "immediate",
+    "tool_error_handling_mode": "passthrough",
+    "api_schema": {
+      "url": "${PUBLIC_BASE_URL}/tools/task_status/{task_id}",
+      "method": "GET",
+      "request_headers": {
+        "x-voice-secret": { "secret_id": "${VOICE_TOOL_SECRET_ID}" }
+      },
+      "path_params_schema": {
+        "task_id": {
+          "type": "string",
+          "description": "The task_id from the create_task result in this call."
+        }
+      }
+    }
+  }
+}
