@@ -1,4 +1,6 @@
 import { Link2Off, Lock, TimerOff, UserCheck, type LucideIcon } from "lucide-react";
+import Link from "next/link";
+import { buttonVariants } from "@/components/human/Button";
 import { Card } from "@/components/human/Card";
 import { cn } from "@/lib/cn";
 import { BoardLink } from "./parts";
@@ -37,15 +39,18 @@ export function ClaimClosed({ reason }: { reason: ClosedReason }) {
   const { title, body, icon: Icon, tone } = MESSAGE[reason];
   return (
     <section className="flex flex-col gap-4" aria-labelledby="claim-closed-title">
-      <Card className="flex flex-col items-start gap-3">
-        <span aria-hidden="true" className={cn("grid size-12 place-items-center rounded-xl bg-human-muted", tone)}>
-          <Icon className="size-6" />
+      <Card className="flex flex-col items-start gap-3 sm:p-8 lg:p-10">
+        <span aria-hidden="true" className={cn("grid size-14 place-items-center rounded-full bg-human-muted", tone)}>
+          <Icon className="size-7" />
         </span>
-        <h2 id="claim-closed-title" className="font-display text-4xl leading-[1.1] tracking-[-0.02em]">
+        <h2 id="claim-closed-title" className="mt-2 text-4xl font-bold leading-[1.1] tracking-[-0.02em]">
           {title}
         </h2>
         <p className="text-lg leading-relaxed text-human-muted-fg">{body}</p>
       </Card>
+      <Link href="/human" className={buttonVariants({ variant: "primary" })}>
+        See other open tasks
+      </Link>
       <BoardLink />
     </section>
   );
