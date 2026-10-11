@@ -118,4 +118,16 @@ describe("fixture API client", () => {
     expect((await settle(api.getClaim("SOON"))).state).toBe("expired");
     await expect(settle(api.claimSubtask("SOON"))).rejects.toMatchObject({ status: 410, code: "expired" });
   });
+
+  it("PAID points at the helper payout transaction shown on the board", async () => {
+    const api = createFixtureApiClient();
+    const board = await settle(api.getBoardState());
+    const sub = board.subtasks.find((s) => s.claim_code === "PAID");
+    const payoutTx = board.txs.find((tx) => tx.kind === "helper_payout" && tx.subtask_id === sub?.id);
+
+    const claim = await settle(api.getClaim("PAID"));
+
+    expect(payoutTx).toBeDefined();
+    expect(claim.payout).toEqual({ amount: sub?.price, tx_hash: payoutTx?.hash, status: "validated" });
+  });
 });

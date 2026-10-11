@@ -94,7 +94,7 @@ function ClaimFlow({
     case "paying":
       return <PayingView view={view} />;
     case "paid":
-      return <PaidView claim={view} />;
+      return <PaidView view={view} />;
     default:
       return (
         <>
@@ -110,7 +110,7 @@ function PhotoRecap({ view, onAddPhoto }: { view: ClaimView; onAddPhoto: () => v
   if (view.photo) {
     return (
       <div className="flex items-center gap-4 rounded-2xl bg-zinc-100 p-3 dark:bg-zinc-800">
-        <img src={view.photo.url} alt="Your photo of the saved seat" className="size-20 shrink-0 rounded-xl object-cover" />
+        <img src={view.photo.url} alt="Your photo" className="size-20 shrink-0 rounded-xl object-cover" />
         <div>
           <p className="text-lg font-semibold">Photo sent</p>
           {view.photo.note && <p className="text-zinc-700 dark:text-zinc-300">{view.photo.note}</p>}
@@ -132,7 +132,7 @@ function PhotoRecap({ view, onAddPhoto }: { view: ClaimView; onAddPhoto: () => v
 function YoursBanner() {
   return (
     <p className="rounded-2xl bg-emerald-100 p-4 text-lg font-semibold text-emerald-950 dark:bg-emerald-950 dark:text-emerald-100">
-      It is yours. Save the seat before the time runs out.
+      It is yours. Finish it before the time runs out.
     </p>
   );
 }

@@ -14,7 +14,7 @@ type Picked = { file: File; previewUrl: string };
 type Phase = "idle" | "preparing" | "uploading";
 
 /**
- * Photo of the saved seat and a short note (PRD 2.1 step 11, 9.2 step 5).
+ * Photo of the finished task (the saved seat) and a short note (PRD 2.1 step 11, 9.2 step 5).
  * Camera or gallery, a preview, upload progress, cancel and retry. Optional:
  * the helper can skip to the PIN.
  */
@@ -93,9 +93,9 @@ export function PhotoForm({
 
   return (
     <section className="flex flex-col gap-4" aria-labelledby="photo-step">
-      <StepHeading id="photo-step" step={2} title="Add a photo of the seat" />
+      <StepHeading id="photo-step" step={2} title="Add a photo" />
       <p className="-mt-2 text-lg text-zinc-700 dark:text-zinc-300">
-        It shows the requester where you saved it. This step is optional.
+        Show the requester it is done, for example the seat you saved. This step is optional.
       </p>
 
       {phase === "preparing" ? (
@@ -104,7 +104,7 @@ export function PhotoForm({
         </p>
       ) : picked ? (
         <div className="flex flex-col items-center gap-1">
-          <img src={picked.previewUrl} alt="Your photo of the saved seat" className="max-h-80 w-full rounded-2xl bg-zinc-100 object-contain dark:bg-zinc-800" />
+          <img src={picked.previewUrl} alt="Your photo" className="max-h-80 w-full rounded-2xl bg-zinc-100 object-contain dark:bg-zinc-800" />
           {!uploading && (
             <label className={`${TEXT_BUTTON} cursor-pointer has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-emerald-500`}>
               Take a different photo

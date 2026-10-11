@@ -65,7 +65,7 @@ export function PinForm({
     <form onSubmit={submit} className="flex flex-col gap-4" aria-labelledby="pin-step" noValidate>
       <StepHeading id="pin-step" step={3} title="Enter the PIN" />
       <p className="-mt-2 text-lg text-zinc-700 dark:text-zinc-300">
-        When the requester reaches the seat, ask them for their 4-digit PIN. You get paid when it is right.
+        When the requester arrives, ask them for their 4-digit PIN. You get paid when it is right.
       </p>
       <input
         ref={input}
