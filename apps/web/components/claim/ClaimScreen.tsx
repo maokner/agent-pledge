@@ -11,6 +11,7 @@ import { useClaim } from "@/lib/claim/use-claim";
 import { ClaimButton } from "./ClaimButton";
 import { ClaimClosed } from "./ClaimClosed";
 import { PaidView } from "./PaidView";
+import { PayingView } from "./PayingView";
 import { ErrorNotice, SECONDARY_BUTTON, TEXT_BUTTON } from "./parts";
 import { PhotoForm } from "./PhotoForm";
 import { PinForm } from "./PinForm";
@@ -85,12 +86,13 @@ function ClaimFlow({
           ) : (
             <>
               <PhotoRecap view={view} onAddPhoto={() => setPhotoSkipped(false)} />
-              <PinForm claim={view} onUpdate={onUpdate} />
+              <PinForm view={view} onUpdate={onUpdate} refresh={refresh} />
             </>
           )}
         </>
       );
     case "paying":
+      return <PayingView view={view} />;
     case "paid":
       return <PaidView claim={view} />;
     default:
