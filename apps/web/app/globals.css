@@ -217,35 +217,6 @@ body:has([data-surface="agent"]) { background: #0a0a0a; }
     0% { background-color: color-mix(in oklab, var(--term-fg) 35%, transparent); }
     100% { background-color: transparent; }
   }
-
-  /*
-   * Legacy board animations from #32-#36, still used by the current board
-   * components. Remove them once the board restyle no longer needs them.
-   */
-  --animate-status-pop: status-pop 0.9s ease-out;
-  --animate-card-glow: card-glow 2.4s ease-out forwards;
-  --animate-row-flash: row-flash 1.6s ease-out;
-  --animate-fade-in: fade-in 0.6s ease-out;
-
-  @keyframes status-pop {
-    0% { transform: scale(1); }
-    25% { transform: scale(1.35); }
-    55% { transform: scale(0.95); }
-    100% { transform: scale(1); }
-  }
-  @keyframes card-glow {
-    0% { opacity: 1; }
-    70% { opacity: 0.8; }
-    100% { opacity: 0; }
-  }
-  @keyframes row-flash {
-    0% { background-color: color-mix(in oklab, var(--color-emerald-400) 45%, transparent); }
-    100% { background-color: transparent; }
-  }
-  @keyframes fade-in {
-    0% { opacity: 0; transform: translateY(6px); }
-    100% { opacity: 1; transform: none; }
-  }
 }
 
 /* ------------------------------------------------------------------ */

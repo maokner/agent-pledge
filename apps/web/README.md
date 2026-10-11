@@ -17,7 +17,7 @@ pnpm dev:web            # against a server; see .env.example
 | `components/board/*` | Board UI (#32 to #38, #43), in the agent design system's terminal style. `Board.tsx` wires `useBoard` to the cards, or to `ProjectorBoard` in projector mode. `term.tsx` has the board's own terminal pieces (panes, status tags, buttons, ASCII bars, money, countdown, explorer links, zoomable image). |
 | `components/claim/*` | Claim page UI (#39 to #42). `ClaimScreen.tsx` loads the claim and picks a view per state. |
 | `components/landing/*` | Landing page (`/`): the two role buttons and the "powered by" footer. |
-| `components/ui/*` | Pieces for the human side: status badges, money, explorer links, countdown. |
+| `components/human/*` | Human design system pieces (button, card, input, badge, live dot, pay amount, countdown, notice) for `/human` and the claim page. |
 | `lib/api/*` | `getApiClient()`: HTTP client, or the fixture client in fixture mode. |
 | `lib/board/*` | Board state reducer, selectors, sync (reconnect and seq resync), transports, `useBoard`. `terminal.ts`: status tags and ASCII bars; `arrivals.ts`: which tasks flash as new. |
 | `lib/backup-task/*`, `app/api/backup-task/route.ts` | The backup form's validation, browser client and server-side proxy to create_task (#38). |

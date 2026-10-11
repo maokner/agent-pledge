@@ -22,8 +22,8 @@ import { GLOW, LINK, TONE_TEXT } from "./term-style";
 /*
  * Terminal building blocks for the board (docs/design/agent-design-system.md):
  * panes, status tags, bracketed buttons, ASCII bars, the blinking cursor,
- * money, countdowns, explorer links and the zoomable image. The board uses
- * these instead of components/ui, which the human side keeps.
+ * money, countdowns, explorer links and the zoomable image. The human side
+ * has its own in components/human.
  */
 
 /** The blinking block cursor. Steady under reduced motion. */

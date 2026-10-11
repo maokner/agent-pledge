@@ -8,7 +8,7 @@ import { useState } from "react";
  * CSS animation each time the value changes:
  *
  *   const changes = useChangeCount(task.status);
- *   {changes > 0 && <span key={changes} className="animate-card-glow" />}
+ *   {changes > 0 && <span key={changes} className="motion-safe:animate-term-validated" />}
  */
 export function useChangeCount<T>(value: T): number {
   const [state, setState] = useState({ value, count: 0 });
