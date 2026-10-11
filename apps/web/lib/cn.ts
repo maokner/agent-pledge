@@ -13,6 +13,10 @@ const twMerge = extendTailwindMerge({
       shadow: ["human-sm", "human-md", "human-lg", "human-xl", "human-accent", "human-accent-lg"],
       "text-shadow": ["term-glow", "term-glow-subtle"],
     },
+    classGroups: {
+      // Background images, not colors: they combine with bg-human-inverted etc.
+      "bg-image": [{ bg: ["human-gradient", "human-gradient-button", "human-dots"] }],
+    },
   },
 });
 
