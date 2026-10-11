@@ -11,7 +11,7 @@
  * from the XRPL (XRPL_NETWORK_URL, default testnet), so nothing in the report comes from the
  * database alone. Needs no seed.
  */
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readdir, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { BoardState, type SubtaskView, type TaskView, type TxView } from "@agent-pledge/shared";
 import { Client, type Amount } from "xrpl";
@@ -208,7 +208,8 @@ async function main(): Promise<void> {
   const roleOf = (address: string | null | undefined): string | null =>
     address ? (roles.get(address) ?? "other") : null;
 
-  const outDir = resolve(args.out, task.id);
+  // pnpm runs this in packages/ledger; INIT_CWD is where the command was typed.
+  const outDir = resolve(process.env.INIT_CWD || process.cwd(), args.out, task.id);
   await mkdir(outDir, { recursive: true });
 
   const client = new Client(network);
@@ -304,9 +305,14 @@ async function main(): Promise<void> {
       media,
     };
     await writeFile(resolve(outDir, "evidence.json"), JSON.stringify(evidence, null, 2) + "\n");
+    // Screenshots taken by hand (or by a browser agent) into <out>/screenshots/ are listed too.
+    const screenshots = await readdir(resolve(outDir, "screenshots")).then(
+      (files) => files.filter((f) => /\.(png|jpe?g)$/i.test(f)).sort(),
+      () => [] as string[],
+    );
     await writeFile(
       resolve(outDir, "README.md"),
-      renderReadme(task, records, accounts, media, nftData, network, explorer),
+      renderReadme(task, records, accounts, media, nftData, network, explorer, screenshots),
     );
     console.log(outDir);
   } finally {
@@ -322,6 +328,7 @@ function renderReadme(
   nftData: Record<string, unknown>,
   network: string,
   explorer: string,
+  screenshots: string[] = [],
 ): string {
   const L: string[] = [];
   const p = (s = "") => L.push(s);
@@ -523,6 +530,14 @@ function renderReadme(
     p(`## Media`);
     p();
     for (const m of media) p(`- ${m.label}: [${m.file}](${m.file}) (served at ${m.url})`);
+    p();
+  }
+  if (screenshots.length) {
+    p(`## Screenshots`);
+    p();
+    p(`Board and claim page during the run, in order.`);
+    p();
+    for (const f of screenshots) p(`- [${f}](screenshots/${f})`);
     p();
   }
   return L.join("\n");
