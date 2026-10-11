@@ -39,3 +39,30 @@ Claim codes for `/c/<code>` (the PIN is `4821`; state lives in memory, so reload
 | `PAYG` | paying, then paid after about 4 seconds |
 | `PAID` | paid |
 | anything else | not found |
+
+## Live updates (#35, PRD R3)
+
+`useBoard` loads `GET /board/state`, then opens `/ws/board?since=<snapshot seq>` and applies each event.
+If the snapshot load fails it connects from seq 0 and the server sends a `board.snapshot` instead.
+On a drop it reconnects with backoff (250 ms, doubling, capped at 4 s) from the last seq it applied, and
+reconnects at once when the tab becomes visible again or the browser comes back online (a phone that slept).
+On a seq gap it reconnects at once. All of this is in `lib/board/sync.ts`.
+
+The header shows the connection: green "Live", amber while connecting, red "Offline, reconnecting" when
+the socket is down. Next to it, a small number is the last event's time from the server to the screen
+(the event's `at` to the paint after React committed it). Hover it for the split: server to browser
+(which includes any clock difference between the server and the phone) and browser to screen, the worst
+of the last 20 events, and how many went over 2 s. It turns amber over 2 s. The element also carries
+`data-last-total-ms`, `data-worst-total-ms` and `data-over-budget` for scripted checks.
+
+**R3 check against a real server:** open the board on a phone, then create a task:
+
+```sh
+curl -sS -X POST "$API_URL/tools/create_task" \
+  -H "content-type: application/json" -H "x-agent-pledge-secret: $VOICE_SECRET" \
+  -d '{"description":"Save me a seat at the front table","place":"Main Stacks, front table","time_limit_minutes":3,"price_usd":5,"caller_phone":"+15105550123"}'
+```
+
+The task card appears and the number in the header stays under 2 s. In fixture mode, use the backup form
+(below) instead of `curl`: it also says how long the new task took to reach the board.
+`lib/board/fixture-transport.test.ts` checks that a board catches up within the budget after a dropped connection.

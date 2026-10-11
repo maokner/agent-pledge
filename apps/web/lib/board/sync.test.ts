@@ -1,4 +1,4 @@
-import type { BoardEvent, BoardServerMessage } from "@agent-pledge/shared";
+import type { BoardEvent, BoardServerMessage, BoardSnapshot } from "@agent-pledge/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { makeLogLine, makeTask } from "../fixtures/factories";
 import { createBoardSync, reconnectDelayMs } from "./sync";
@@ -140,5 +140,103 @@ describe("createBoardSync resync", () => {
 describe("reconnectDelayMs", () => {
   it("starts at 250 ms, doubles, and stops at 4 s", () => {
     expect([0, 1, 2, 3, 4, 5, 10].map(reconnectDelayMs)).toEqual([250, 500, 1000, 2000, 4000, 4000, 4000]);
+  });
+});
+
+function boardSnapshot(seq: number, overrides: Partial<BoardSnapshot> = {}): BoardSnapshot {
+  return { seq, generated_at: "2026-10-11T19:00:00.000Z", tasks: [], subtasks: [], txs: [], agent_log: [], ...overrides };
+}
+
+describe("createBoardSync initial load", () => {
+  it("loads the board snapshot first, then connects from its seq", async () => {
+    const fake = fakeTransport();
+    const sync = createBoardSync(fake.transport, {
+      loadSnapshot: async () => boardSnapshot(41, { tasks: [makeTask({ id: "tsk_a" })] }),
+    });
+
+    sync.start();
+    expect(fake.connections).toHaveLength(0);
+    await vi.runAllTimersAsync();
+
+    expect(sync.getSnapshot().state.tasks.tsk_a).toBeDefined();
+    expect(fake.connections).toHaveLength(1);
+    expect(fake.latest().since).toBe(41);
+  });
+
+  it("connects from seq 0 when the snapshot cannot be loaded, so the socket sends one", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const fake = fakeTransport();
+    const sync = createBoardSync(fake.transport, { loadSnapshot: () => Promise.reject(new Error("offline")) });
+
+    sync.start();
+    await vi.runAllTimersAsync();
+
+    expect(fake.connections).toHaveLength(1);
+    expect(fake.latest().since).toBe(0);
+  });
+
+  it("does not connect if stopped while the snapshot is loading", async () => {
+    const fake = fakeTransport();
+    const sync = createBoardSync(fake.transport, { loadSnapshot: async () => boardSnapshot(41) });
+
+    sync.start();
+    sync.stop();
+    await vi.runAllTimersAsync();
+
+    expect(fake.connections).toHaveLength(0);
+    expect(sync.getSnapshot().state.seq).toBe(0);
+  });
+});
+
+describe("createBoardSync onEventApplied", () => {
+  it("reports each applied event with the time it arrived, and skips duplicates and gaps", () => {
+    const fake = fakeTransport();
+    const applied: [number, number][] = [];
+    let clock = 1000;
+    const sync = createBoardSync(fake.transport, {
+      now: () => clock,
+      onEventApplied: (event, receivedAt) => applied.push([event.seq, receivedAt]),
+    });
+    sync.start();
+    fake.open();
+
+    fake.send(logEvent(1));
+    clock = 1500;
+    fake.send(logEvent(2));
+    fake.send(logEvent(2)); // duplicate
+    fake.send(logEvent(9)); // gap
+
+    expect(applied).toEqual([
+      [1, 1000],
+      [2, 1500],
+    ]);
+  });
+});
+
+describe("createBoardSync reconnectNow", () => {
+  it("skips the backoff wait and reconnects at once (the phone woke up or came back online)", () => {
+    const fake = fakeTransport();
+    const sync = createBoardSync(fake.transport);
+    sync.start();
+    fake.drop();
+    expect(fake.connections).toHaveLength(1);
+
+    sync.reconnectNow();
+
+    expect(fake.connections).toHaveLength(2);
+    vi.advanceTimersByTime(60_000);
+    expect(fake.connections).toHaveLength(2);
+  });
+
+  it("does nothing while the connection is open", () => {
+    const fake = fakeTransport();
+    const sync = createBoardSync(fake.transport);
+    sync.start();
+    fake.open();
+
+    sync.reconnectNow();
+
+    expect(fake.connections).toHaveLength(1);
+    expect(fake.connections[0]?.closed).toBe(false);
   });
 });

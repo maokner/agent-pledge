@@ -7,11 +7,12 @@ import { FixtureBadge } from "@/components/ui/FixtureBadge";
 import { AgentLog } from "./AgentLog";
 import { ConnectionStatus } from "./ConnectionStatus";
 import { FixtureControls } from "./FixtureControls";
+import { LatencyMeter } from "./LatencyMeter";
 import { TaskCard } from "./TaskCard";
 
 /** The public board (PRD 9.1): every task with its sub-tasks and transactions, plus the agent log. */
 export function Board() {
-  const { state, status } = useBoard();
+  const { state, status, latency } = useBoard();
   const tasks = selectTaskViews(state);
 
   return (
@@ -24,6 +25,7 @@ export function Board() {
         <div className="flex items-center gap-3">
           {FIXTURE_MODE && <FixtureControls />}
           <ConnectionStatus status={status} seq={state.seq} />
+          <LatencyMeter latency={latency} seq={state.seq} />
         </div>
       </header>
 

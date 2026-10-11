@@ -8,10 +8,13 @@
  * gap resync without a server.
  */
 import type { BoardEvent, BoardServerMessage, BoardSnapshot } from "@agent-pledge/shared";
-import { buildFixtureSnapshot, buildLiveRun } from "../fixtures/board";
+import { buildFixtureSnapshot, buildLiveRun, foldEvents, toSnapshot } from "../fixtures/board";
+import { applyBoardMessage, initialBoardState } from "./state";
 import type { BoardConnectionHandlers, BoardTransport } from "./transport";
 
 export interface FixtureTransport extends BoardTransport {
+  /** What `GET /board/state` would return now. */
+  loadSnapshot(): Promise<BoardSnapshot>;
   /** Ends every open connection as if the server went away. */
   dropConnections(): void;
   /** The next live event is recorded but not delivered, so clients see a gap. */
@@ -91,6 +94,11 @@ export function createFixtureTransport(options: FixtureTransportOptions = {}): F
     },
     skipNextEvent() {
       skipNext = true;
+    },
+    async loadSnapshot() {
+      const snap = ensureStarted();
+      const state = foldEvents(published, applyBoardMessage(initialBoardState, { type: "board.snapshot", snapshot: snap }));
+      return toSnapshot(state, new Date(now()).toISOString());
     },
   };
 }

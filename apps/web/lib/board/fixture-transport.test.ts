@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createFixtureTransport } from "./fixture-transport";
+import { R3_BUDGET_MS } from "./latency";
 import { createBoardSync } from "./sync";
 
 const NOW = Date.parse("2026-10-11T19:00:00.000Z");
@@ -73,5 +74,37 @@ describe("fixture transport with board sync", () => {
 
     expect(board.getSnapshot().status).toBe("open");
     expect(board.getSnapshot().state.seq).toBe(before + 3);
+  });
+
+  it("a board that loads GET /board/state first matches one that took the socket's snapshot", async () => {
+    const transport = createFixtureTransport({ intervalMs: 1000 });
+    const steady = createBoardSync(transport);
+    steady.start();
+    await vi.advanceTimersByTimeAsync(2500);
+
+    const loaded = createBoardSync(transport, { loadSnapshot: () => transport.loadSnapshot() });
+    loaded.start();
+    await vi.advanceTimersByTimeAsync(10);
+
+    expect(loaded.getSnapshot().state).toEqual(steady.getSnapshot().state);
+  });
+
+  it("catches up within the 2 second budget after the connection drops (PRD R3)", () => {
+    const transport = createFixtureTransport({ intervalMs: 1000 });
+    const board = createBoardSync(transport);
+    board.start();
+    vi.advanceTimersByTime(1990); // an event is about to be published
+    const before = board.getSnapshot().state.seq;
+
+    transport.dropConnections();
+    vi.advanceTimersByTime(10); // published while the board is down
+    expect(board.getSnapshot().state.seq).toBe(before);
+
+    vi.advanceTimersByTime(R3_BUDGET_MS - 1010); // just before the next event
+    const reference = createBoardSync(transport);
+    reference.start();
+    vi.advanceTimersByTime(1);
+    expect(board.getSnapshot().state.seq).toBe(before + 1);
+    expect(board.getSnapshot().state).toEqual(reference.getSnapshot().state);
   });
 });
