@@ -17,6 +17,7 @@
     "db:migrate": "pnpm --filter @agent-pledge/server db:migrate",
     "db:seed": "pnpm --filter @agent-pledge/server db:seed",
     "db:reset": "pnpm --filter @agent-pledge/server db:reset",
+    "demo:local": "bash scripts/demo-local.sh",
     "demo:reset": "pnpm db:reset && pnpm --dir apps/server exec tsx ../../scripts/demo-reset.ts",
     "smoke": "pnpm --dir apps/server exec tsx ../../scripts/smoke.ts",
     "deploy:secrets": "pnpm --dir apps/server exec tsx ../../scripts/gen-secrets.ts",
