@@ -63,7 +63,7 @@ type Variant = NonNullable<VariantProps<typeof buttonVariants>["variant"]>;
 /** Disabled but not busy: clearly inactive, label still readable (never just faded out). */
 const INACTIVE: Record<Variant, string> = {
   primary:
-    "bg-human-muted text-human-fg/70 shadow-none hover:brightness-100 hover:shadow-none motion-safe:hover:translate-y-0 motion-safe:active:scale-100",
+    "bg-none! bg-human-muted text-human-fg/70 shadow-none hover:brightness-100 hover:shadow-none motion-safe:hover:translate-y-0 motion-safe:active:scale-100",
   secondary: "text-human-fg/70 hover:bg-transparent hover:border-human-border motion-safe:active:scale-100",
   ghost: "text-human-fg/60 hover:text-human-fg/60 no-underline",
 };

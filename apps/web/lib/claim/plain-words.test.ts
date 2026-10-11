@@ -16,6 +16,7 @@ const SCANNED = [
   "components/open-list",
   "lib/open-list",
   "app/(human)/human",
+  "lib/human-stats",
 ];
 /** The word list itself, and tests (which quote server errors on purpose). */
 const SKIPPED = [/plain-words\.ts$/, /\.test\.tsx?$/];
@@ -88,7 +89,7 @@ describe("the human side's copy (PRD R7)", () => {
     expect(userFacingStrings("x.tsx", source)).toEqual(["Claim", "Paid ", " today", "Send", "Enter the", "PIN"]);
   });
 
-  it("scans every claim page and /human list file", () => {
+  it("scans every claim page and /human page file", () => {
     const files = SCANNED.flatMap(sourceFiles).map((f) => relative(WEB_ROOT, f));
     expect(files).toEqual(
       expect.arrayContaining([
@@ -100,6 +101,12 @@ describe("the human side's copy (PRD R7)", () => {
         "lib/open-list/label.ts",
         "lib/open-list/announce.ts",
         "app/(human)/human/page.tsx",
+        "components/human/SiteNav.tsx",
+        "components/open-list/HowItWorks.tsx",
+        "components/open-list/StatsBand.tsx",
+        "lib/open-list/icon.ts",
+        "lib/open-list/bento.ts",
+        "lib/human-stats/stats.ts",
       ]),
     );
   });

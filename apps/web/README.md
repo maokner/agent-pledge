@@ -50,10 +50,11 @@ What the adapter covers, and what it works around until the server changes:
 | Path | What |
 |---|---|
 | `components/board/*` | Board UI (#32 to #38, #43), in the agent design system's terminal style. `Board.tsx` wires `useBoard` to the cards, or to `ProjectorBoard` in projector mode. `term.tsx` has the board's own terminal pieces (panes, status tags, buttons, ASCII bars, money, countdown, explorer links, zoomable image). |
-| `components/claim/*` | Claim page UI (#39 to #42). `ClaimScreen.tsx` loads the claim and picks a view per state. |
+| `components/claim/*` | Claim page UI (#39 to #42). `ClaimScreen.tsx` loads the claim and picks a view per state: on desktop the sub-task on the left and a sticky step panel (with `StepIndicator`) on the right, stacked on phones. |
 | `components/landing/*` | Landing page (`/`): the two role buttons and the "powered by" footer. |
-| `components/human/*` | Human design system pieces (button, card, input, badge, live dot, pay amount, countdown, notice) for `/human` and the claim page. |
-| `components/open-list/*`, `lib/open-list/*` | The `/human` list of open sub-tasks: cards, polling, expiry and announcements. |
+| `components/human/*` | Human design system pieces (button, card, input, badge, live dot, pay amount, countdown, notice, icon tile) for `/human` and the claim page, and the shared page frame: `SiteNav` (sticky top bar) and `HumanShell` (skip link, nav, `max-w-6xl` main). |
+| `components/open-list/*`, `lib/open-list/*` | The `/human` page: the bento grid of open sub-tasks (`bento.ts`: the highest pay gets the featured card, the rest soonest deadline first; `icon.ts`: an icon per sub-task), polling, expiry and announcements, plus the How it works strip and the stats band. |
+| `lib/human-stats/*` | The `/human` stats band's numbers from `getBoardState()`: open now, paid out today (validated Helper payouts since local midnight) and Helpers paid today (distinct sub-tasks among those payouts). Refreshes every 30 s and when the tab is shown. |
 | `lib/api/*` | `getApiClient()`: HTTP client, or the fixture client in fixture mode. |
 | `lib/backend/*` | The adapter from the real server's shapes to the DRAFT types (see "Against the real server"). |
 | `lib/board/*` | Board state reducer, selectors, sync (reconnect and seq resync), transports, `useBoard`. `terminal.ts`: status tags and ASCII bars; `arrivals.ts`: which tasks flash as new. |

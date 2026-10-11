@@ -13,7 +13,7 @@ const FIELD_BASE = [
  * Text input classes. Text is never under 16px, so iOS does not zoom the page.
  *
  * - size: `md` h-12 16px, `lg` h-14 18px (default), `code` h-20 with big,
- *   spaced, centered mono digits (the PIN).
+ *   spaced, centered tabular digits (the PIN).
  *
  * `aria-invalid` turns the border red; pair it with a message.
  */
@@ -22,7 +22,7 @@ export const inputVariants = cva(FIELD_BASE, {
     size: {
       md: "h-12 text-base",
       lg: "h-14 text-lg",
-      code: "h-20 pl-[0.6em] text-center font-mono text-5xl tracking-[0.6em]",
+      code: "h-20 pl-[0.6em] text-center font-sans text-5xl font-semibold tabular-nums tracking-[0.6em]",
     },
   },
   defaultVariants: { size: "lg" },
