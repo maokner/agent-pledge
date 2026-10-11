@@ -1,0 +1,47 @@
+{
+  "tool_config": {
+    "type": "webhook",
+    "name": "create_task",
+    "description": "Create a seat-hold task for the caller. Returns task_id, pin, and board_url. Call it only after the caller has said yes to a summary of all four values: the task, the place, the time limit, and the price.",
+    "response_timeout_secs": 30,
+    "execution_mode": "immediate",
+    "pre_tool_speech": "force",
+    "interruption_mode": "disable_during_tool_and_turn",
+    "tool_error_handling_mode": "passthrough",
+    "api_schema": {
+      "url": "${PUBLIC_BASE_URL}/tools/create_task",
+      "method": "POST",
+      "content_type": "application/json",
+      "request_headers": {
+        "x-voice-secret": { "secret_id": "${VOICE_TOOL_SECRET_ID}" }
+      },
+      "request_body_schema": {
+        "type": "object",
+        "description": "The seat-hold task that the caller confirmed.",
+        "required": ["description", "place", "time_limit_minutes", "price_usd", "caller_phone"],
+        "properties": {
+          "description": {
+            "type": "string",
+            "description": "The task in a few words, without the place, the time, or the price. Example: Save one seat."
+          },
+          "place": {
+            "type": "string",
+            "description": "Where to save the seat, in the caller's words. Example: the front table."
+          },
+          "time_limit_minutes": {
+            "type": "integer",
+            "description": "How many minutes from now the seat must be saved, as a whole number that the caller said. Example: 10."
+          },
+          "price_usd": {
+            "type": "number",
+            "description": "The maximum price in US dollars that the caller said. Never guess this value. Example: 5."
+          },
+          "caller_phone": {
+            "type": "string",
+            "dynamic_variable": "system__caller_id"
+          }
+        }
+      }
+    }
+  }
+}
