@@ -10,8 +10,14 @@ import {
   type OpsContext,
 } from "./context.js";
 import { buildMemos } from "../memo.js";
-import { createSellOffer, mintNft, SUBTASK_NFT_TAXON } from "./nft.js";
-import type { MintResult, OfferResult } from "./types.js";
+import {
+  createSellOffer,
+  mintNft,
+  mintNftWithOffer,
+  SUBTASK_NFT_TAXON,
+  type MintNftParams,
+} from "./nft.js";
+import type { MintOfferResult, MintResult, OfferResult } from "./types.js";
 
 /**
  * Price of the open sub-task offer, in XRP drops.
@@ -19,9 +25,6 @@ import type { MintResult, OfferResult } from "./types.js";
  * Destination is accepted, and any account can then take it for free.
  */
 export const OPEN_OFFER_AMOUNT = "0";
-
-/** Fallback from PRD 5.4 if a network rejects zero-price sell offers: 1 drop of XRP. */
-export const OPEN_OFFER_FALLBACK_AMOUNT = "1";
 
 export interface FundSubtaskInput {
   agent: Wallet;
@@ -67,33 +70,61 @@ export interface MintSubtaskNftInput {
 
 const NFT_ID_PATTERN = /^[0-9A-Fa-f]{64}$/;
 
-/** Demo step 8 (sub-task NFT): NFTokenMint by the vault with tfBurnable and tfTransferable. */
-export async function mintSubtaskNft(
-  input: MintSubtaskNftInput,
-  ctx?: Partial<OpsContext>,
-): Promise<MintResult> {
+function subtaskMintParams(input: MintSubtaskNftInput): MintNftParams {
   if (!NFT_ID_PATTERN.test(input.parentNftId)) {
     throw new LedgerError(
       `parentNftId must be the 64 hex character task NFT ID, not "${input.parentNftId}"`,
       "INVALID_INPUT",
     );
   }
-  const c = await resolveContext(ctx);
-  return mintNft(
-    {
-      vault: input.vault,
-      uri: input.uri,
-      taxon: SUBTASK_NFT_TAXON,
-      memos: buildMemos({
-        task: input.taskId,
-        subtask: input.subtaskId,
-        parentNft: input.parentNftId,
-        action: "subtask.mint",
-      }),
-      kind: "subtask.mint",
-    },
-    c,
-  );
+  return {
+    vault: input.vault,
+    uri: input.uri,
+    taxon: SUBTASK_NFT_TAXON,
+    memos: buildMemos({
+      task: input.taskId,
+      subtask: input.subtaskId,
+      parentNft: input.parentNftId,
+      action: "subtask.mint",
+    }),
+    kind: "subtask.mint",
+  };
+}
+
+/** Throws for a zero token amount: rippled returns temBAD_AMOUNT. Zero is legal only in XRP drops. */
+function checkOpenOfferAmount(amount: Amount): Amount {
+  if (typeof amount !== "string" && isZeroIouValue(amount.value)) {
+    throw new TypeError('A zero-price open offer must use XRP drops ("0"), not a token amount.');
+  }
+  return amount;
+}
+
+/** Demo step 8 (sub-task NFT): NFTokenMint by the vault with tfBurnable and tfTransferable. */
+export async function mintSubtaskNft(
+  input: MintSubtaskNftInput,
+  ctx?: Partial<OpsContext>,
+): Promise<MintResult> {
+  const params = subtaskMintParams(input);
+  return mintNft(params, await resolveContext(ctx));
+}
+
+export interface MintSubtaskNftWithOfferInput extends MintSubtaskNftInput {
+  /** Offer price. Defaults to OPEN_OFFER_AMOUNT ("0" drops of XRP). See OfferSubtaskToAnyoneInput. */
+  amount?: Amount | undefined;
+}
+
+/**
+ * Demo step 8 in one transaction: NFTokenMint with Amount "0" (XRP drops) and no Destination.
+ * It makes the sub-task NFT and the open offer at once, one ledger sooner than mintSubtaskNft then
+ * offerSubtaskToAnyone. The board sees one `subtask.mint` transaction.
+ */
+export async function mintSubtaskNftWithOffer(
+  input: MintSubtaskNftWithOfferInput,
+  ctx?: Partial<OpsContext>,
+): Promise<MintOfferResult> {
+  const params = subtaskMintParams(input);
+  const amount = checkOpenOfferAmount(input.amount ?? OPEN_OFFER_AMOUNT);
+  return mintNftWithOffer(params, { amount }, await resolveContext(ctx));
 }
 
 export interface OfferSubtaskToAnyoneInput {
@@ -102,7 +133,6 @@ export interface OfferSubtaskToAnyoneInput {
   /**
    * Offer price. Defaults to OPEN_OFFER_AMOUNT ("0" drops of XRP). A zero price must be in XRP
    * drops: a zero token amount is temBAD_AMOUNT.
-   * Pass OPEN_OFFER_FALLBACK_AMOUNT ("1" drop) if a network rejects zero-price offers.
    */
   amount?: Amount | undefined;
   subtaskId: string;
@@ -116,11 +146,7 @@ export async function offerSubtaskToAnyone(
   ctx?: Partial<OpsContext>,
 ): Promise<OfferResult> {
   const c = await resolveContext(ctx);
-  const amount = input.amount ?? OPEN_OFFER_AMOUNT;
-  if (typeof amount !== "string" && isZeroIouValue(amount.value)) {
-    // rippled returns temBAD_AMOUNT for a zero token amount. Zero is legal only in XRP drops.
-    throw new TypeError('A zero-price open offer must use XRP drops ("0"), not a token amount.');
-  }
+  const amount = checkOpenOfferAmount(input.amount ?? OPEN_OFFER_AMOUNT);
   return createSellOffer(
     {
       seller: input.vault,

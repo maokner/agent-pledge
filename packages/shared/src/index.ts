@@ -22,7 +22,9 @@ export type TxKind =
   | "payout.offer"
   | "payout.accept"
   | "nft.burn"
-  | "refund";
+  | "refund"
+  /** A plain token payment, for example from a treasury into a new requester wallet. */
+  | "token.transfer";
 
 /** Input to the voice agent's create_task tool. PRD section 6. */
 export interface CreateTaskInput {

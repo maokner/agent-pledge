@@ -15,5 +15,6 @@ export * from "./payout.js";
 export * from "./state.js";
 export * from "./subtask.js";
 export * from "./task.js";
+export * from "./transfer.js";
 export * from "./types.js";
 export * from "./uri.js";
