@@ -246,10 +246,26 @@ Every broadcast carries a claim link (and a QR code) to the sub-task's page on t
 | Agent Pledge runner app | Push to runners who opted in and whose shared location is inside the task's geofence (for example the library) | P0 |
 | Campus Discord or GroupMe | Bot or webhook posts to a channel the community opted into | P1 |
 | SMS | Text to opted-in runners near the task | P1 |
-| Yik Yak and other social apps | Yik Yak has no public posting API, and posting from a bot would break its terms. The agent drafts the post and claim link; a human posts it with one tap (copy and open the app). | P1, human-in-the-loop |
+| Yik Yak | The agent posts as the user, from the user's own logged-in Yik Yak on their computer, by driving the app with computer use (see below) | P0 for the demo |
 
 The agent writes the post itself and picks channels by location and urgency.
 For a 10-minute window it goes wide right away; for a 2-hour window it starts with the runner app only.
+
+#### Posting to Yik Yak through the user's own account
+
+Yik Yak has no public posting API, so the agent posts the way a person would: from the user's computer, using the user's existing login.
+
+- A **broadcaster** process runs on the user's laptop and connects to the server like any other agent.
+- When the agent wants to broadcast, the server sends `broadcast.request { channel: "yikyak", message, claim_url }` to the broadcaster.
+- The broadcaster drives Yik Yak with Claude computer use: open the app, start a new yak, type the message with the claim link, post, and take a screenshot as a receipt.
+- The receipt screenshot is attached to the sub-task, so the board shows the real post.
+- Which Yik Yak client to drive:
+  - The website, if Yik Yak currently offers one (verify on day one), driven in the browser.
+  - Otherwise the Yik Yak iPhone app running natively on an Apple silicon Mac, driven with computer use.
+- Yik Yak feeds are local, so the laptop must be on campus (or near the venue) for the yak to reach the right people.
+- The user turns this on per account and can switch it off at any time. Posts are rate-limited (for example at most one every 10 minutes) to keep the account in good standing.
+
+In the demo, the broadcaster runs on a projected laptop, so the judges watch the agent write and post the yak live.
 
 ### 6.5 Sub-tasks all the way down
 
@@ -396,6 +412,7 @@ An agent's identity is its XRPL address, and every message it sends is signed wi
 | `task.awarded` | `task_id, winner, price, offer_id` (the NFT offer to accept) |
 | `subtask.claimed` | `task_id, parent_id, claimer` |
 | `subtask.status` | `task_id, note, photo_url?` (for example "Seat saved: 3rd floor, window table") |
+| `broadcast.request` | `task_id, channel, message, claim_url` (sent to a broadcaster such as the Yik Yak laptop; it replies with `broadcast.receipt { task_id, screenshot_url }`) |
 | `task.completed` | `task_id, redeem_amount` |
 | `task.failed` | `task_id, reason` |
 
@@ -424,6 +441,8 @@ flowchart LR
   API --> Verifier["Verifier (Docker sandbox)"]
   Agents --> CTX["Context.dev"]
   Agents --> ELOut["ElevenLabs outbound calls"]
+  API <-->|broadcast.request| BC["Broadcaster on user's laptop (computer use)"]
+  BC --> YY["Yik Yak (user's own login)"]
 ```
 
 Suggested stack:
@@ -454,7 +473,7 @@ If we are not near Main Stacks, the judge asks for a seat somewhere in the venue
 1. A judge calls the number: "Save me a seat at the front table in the next 3 minutes, I'll pay $5."
 2. The task appears on the board, and bids from Thrifty, Hustler, and Premium arrive within seconds.
 3. The winner takes it at $5.00. The money tree draws itself, and each edge links to its testnet transaction.
-4. The agent writes its recruiting post ("$4 to save a seat at the front table, next 3 minutes") and broadcasts it. It pops up on phones in the room, including on a projected Discord channel.
+4. The agent writes its recruiting post ("$4 to save a seat at the front table, next 3 minutes, claim here") and posts it to Yik Yak from a teammate's projected laptop, through that teammate's own login. The judges watch it type and post the yak, and it shows up on phones in the room.
 5. Someone in the room (ideally another attendee, not a teammate) claims it, puts a bag on a chair, and posts the photo. The judge's task page updates live.
 6. The judge walks over and says the PIN. Both NFTs redeem on screen: $4.00 to the seat-holder, $1.00 margin to the agent.
 7. Switch to the bug fix: post a broken repo, watch Premium win it and subcontract to Patch, see the verifier go red, then green. This shows an agent-to-agent chain.
@@ -483,6 +502,7 @@ If we are not near Main Stacks, the judge asks for a seat somewhere in the venue
 - [ ] Live board web page with the money tree (renders chains of any depth up to 3).
 - [ ] Mobile runner page: claim link, geofenced push, status and photo updates, PIN entry.
 - [ ] Seat-hold task: Thrifty agent, recruiting post, instant-claim sub-task, PIN proof.
+- [ ] Yik Yak broadcaster on the user's laptop: computer use posts the yak through the user's login and returns a screenshot receipt.
 - [ ] Bug-fix task: verifier (reproduce failure, apply patch, rerun, cheat checks) and the Patch agent.
 - [ ] Food delivery task: Context.dev pricing, runner sub-task with receipt reimbursement.
 - [ ] ElevenLabs inbound voice agent calling `post_task`.
@@ -493,7 +513,7 @@ If we are not near Main Stacks, the judge asks for a seat somewhere in the venue
 - [ ] Hustler and Premium agents, so the auction is contested.
 - [ ] Agent-to-agent subcontracting: Premium hands bug fixes to Patch.
 - [ ] Repost at a higher reward when a sub-task goes unclaimed.
-- [ ] Broadcast to a campus Discord channel and SMS, plus the one-tap "post to Yik Yak" draft.
+- [ ] Broadcast to a campus Discord channel and SMS.
 - [ ] Seat-hold pricing learned from fill history.
 - [ ] Public P&L pages from the ledger index.
 - [ ] Failure path demo: a task that times out and pays the slashed pledge to the requester.
@@ -516,6 +536,7 @@ If we are not near Main Stacks, the judge asks for a seat somewhere in the venue
 | Restaurant hangs up on an AI caller | Call during a quiet hour, pick a restaurant that takes phone orders, and have the agent disclose it is automated. Fallback: the runner orders at the counter, and the call is shown from a recorded run. |
 | ElevenLabs telephony setup takes too long | Set up the phone number and outbound calling in the first hours. Fallback: browser-based voice widget for intake. |
 | Verifier runs untrusted code | Docker with resource limits, no network after install, a fresh container per run, and an allowlist of public GitHub repos for the demo. |
+| Yik Yak has no usable desktop client, or flags the automated account | Verify the client on day one (website, or the iPhone app on an Apple silicon Mac). Rate-limit posts. Keep a recorded run of the yak being posted as the video fallback. |
 | Testnet latency (~4 seconds per ledger close) | Submit independent transactions in parallel and show pending states in the UI. |
 | Agents fail to bid when Context.dev data is missing | Agents decline to bid rather than guess, and the board shows "no valid bids" honestly. |
 
@@ -540,7 +561,7 @@ Open questions:
 | 2026-10-11 | Only two task types: food delivery and bug fix | A general marketplace demos as an empty shell. Both types complete for real and have objective proof. |
 | 2026-10-11 | Add `seat_hold` as a third type and make it the live demo | It reuses the in-person PIN proof, needs no restaurant, finishes in minutes, and shows the agent-hires-a-human spread ($5 in, $4 out, $1 margin) in its simplest form. |
 | 2026-10-11 | Sub-tasks can chain up to depth 3, agent to agent or agent to human, and each child must be fully funded by its parent | Lets agents specialize and subcontract while guaranteeing every promised reward is backed by money. |
-| 2026-10-11 | Yik Yak broadcasts are drafted by the agent and posted by a human | Yik Yak has no public posting API, and bot posting would break its terms. Channels with real APIs (our app, Discord, SMS) are automated. |
+| 2026-10-11 | The agent posts to Yik Yak itself, through the user's own login on the user's computer, using computer use | Yik Yak has no public posting API. Driving the user's own app keeps it real, needs no credentials on our server, and makes a strong live visual. |
 | 2026-10-11 | Pledged auctions: lowest price among bidders who post the required stake | Plain lowest-bid invites lowballing and failure. Pledges make the name literal and compensate requesters. |
 | 2026-10-11 | Agent orders by phone, human runner pays at the counter and is reimbursed | Restaurants do not take stablecoins. This keeps the whole flow real. |
 | 2026-10-11 | Vault custody instead of native escrow for RLUSD | The RLUSD issuer has `allowTrustLineLocking` off on testnet and mainnet, so native Token Escrow of RLUSD is not possible today. |
