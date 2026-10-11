@@ -10,19 +10,18 @@ export const FIXTURE_MODE = process.env.NEXT_PUBLIC_FIXTURES === "1";
 export const LOCAL_API_URL = "http://localhost:3001";
 
 /**
- * Base URL of the server's HTTP API: NEXT_PUBLIC_API_URL, or the server's
- * local default outside fixture mode. Set it to "" for same origin (server and
- * board behind one host).
+ * Base URL of the server's HTTP API: NEXT_PUBLIC_API_URL when set, else ""
+ * (same origin). The server reverse-proxies this app, so the pages, the API
+ * and /ws/board normally share one origin (the server's port, or the demo
+ * tunnel). Set NEXT_PUBLIC_API_URL (for example to LOCAL_API_URL) only when
+ * this app is opened on its own origin.
  */
-export function apiUrlFrom(env: { NEXT_PUBLIC_API_URL?: string; NEXT_PUBLIC_FIXTURES?: string }): string {
-  return trimSlash(env.NEXT_PUBLIC_API_URL ?? (env.NEXT_PUBLIC_FIXTURES === "1" ? "" : LOCAL_API_URL));
+export function apiUrlFrom(env: { NEXT_PUBLIC_API_URL?: string }): string {
+  return trimSlash(env.NEXT_PUBLIC_API_URL ?? "");
 }
 
 // Spelled out, so Next.js inlines them at build time.
-export const API_URL = apiUrlFrom({
-  NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
-  NEXT_PUBLIC_FIXTURES: process.env.NEXT_PUBLIC_FIXTURES,
-});
+export const API_URL = apiUrlFrom({ NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL });
 
 /**
  * Base URL of the server's WebSocket endpoint. Defaults to API_URL with

@@ -170,13 +170,13 @@ describe("readBackupTaskConfig", () => {
     });
   });
 
-  it("falls back to NEXT_PUBLIC_API_URL when it is absolute, and to no phone", () => {
-    expect(readBackupTaskConfig({ NEXT_PUBLIC_API_URL: "http://localhost:3001" })).toMatchObject({
-      serverUrl: "http://localhost:3001",
+  it("falls back to NEXT_PUBLIC_API_URL when it is absolute, then the server's local port, and to no phone", () => {
+    expect(readBackupTaskConfig({ NEXT_PUBLIC_API_URL: "https://api.example" })).toMatchObject({
+      serverUrl: "https://api.example",
       passcode: null,
       callerPhone: null,
     });
-    expect(readBackupTaskConfig({ NEXT_PUBLIC_API_URL: "" }).serverUrl).toBeNull();
+    expect(readBackupTaskConfig({ NEXT_PUBLIC_API_URL: "" }).serverUrl).toBe("http://localhost:3001");
     expect(readBackupTaskConfig({}).serverUrl).toBe("http://localhost:3001");
     expect(readBackupTaskConfig({ NEXT_PUBLIC_FIXTURES: "1" }).mode).toBe("fixtures");
   });

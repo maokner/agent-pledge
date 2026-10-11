@@ -11,7 +11,8 @@
  * - BACKUP_FORM_PASSCODE: what the operator types into the form. The form is
  *   off (503) until it is set, except in fixture mode.
  * - AGENT_PLEDGE_SERVER_URL: the server's base URL as this Next.js server
- *   reaches it. Falls back to NEXT_PUBLIC_API_URL if that is absolute.
+ *   reaches it. Falls back to NEXT_PUBLIC_API_URL if that is absolute, then
+ *   to the server's local default (http://localhost:3001).
  * - AGENT_PLEDGE_VOICE_SECRET: the same secret the voice agent sends.
  * - BACKUP_FORM_CALLER_PHONE: caller_phone when the form leaves it empty.
  *   Optional: without it the task has no phone, which the server accepts.
@@ -28,7 +29,7 @@ import {
 } from "@/lib/contract";
 import { ApiError } from "../api/client";
 import { createHttpApiClient } from "../api/http-client";
-import { apiUrlFrom, trimSlash } from "../config";
+import { apiUrlFrom, LOCAL_API_URL, trimSlash } from "../config";
 import { BACKUP_PASSCODE_HEADER, type BackupTaskErrorBody } from "./protocol";
 import { validateBackupTask } from "./validate";
 
@@ -46,7 +47,9 @@ export interface BackupTaskConfig {
 
 export function readBackupTaskConfig(env: Record<string, string | undefined>): BackupTaskConfig {
   const publicApi = apiUrlFrom(env);
-  const serverUrl = env.AGENT_PLEDGE_SERVER_URL || (/^https?:\/\//.test(publicApi) ? publicApi : "");
+  // The browser default is same origin (""), which means nothing to this server-side code.
+  const serverUrl =
+    env.AGENT_PLEDGE_SERVER_URL || (/^https?:\/\//.test(publicApi) ? publicApi : LOCAL_API_URL);
   return {
     mode: env.NEXT_PUBLIC_FIXTURES === "1" ? "fixtures" : "server",
     passcode: env.BACKUP_FORM_PASSCODE || null,
