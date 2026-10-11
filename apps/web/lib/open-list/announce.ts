@@ -17,10 +17,8 @@ export function arrivalAnnouncement(
   if (previousCodes === null) return null;
   const known = new Set(previousCodes);
   const arrived = next.filter((subtask) => !known.has(subtask.claim_code));
-  if (arrived.length === 0) return null;
-  if (arrived.length === 1) {
-    const [subtask] = arrived;
-    return `New sub-task: ${formatRlusd(subtask.price)}, ${subtask.description}`;
-  }
+  const [first] = arrived;
+  if (!first) return null;
+  if (arrived.length === 1) return `New sub-task: ${formatRlusd(first.price)}, ${first.description}`;
   return `${arrived.length} new sub-tasks`;
 }
