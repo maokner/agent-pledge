@@ -131,6 +131,9 @@ If helper_note is not empty, read it to the caller, for example "The helper says
 # Errors
 
 If a tool returns an error, does not answer, or returns no pin, do not say a PIN and do not say that the task exists.
+A result counts as "returns no pin" unless it is JSON with a pin field of exactly four digits and a board_url field.
+A bare acknowledgement such as "Tool Called.", "OK", or an empty result is not a PIN and not a success. Treat it as an error.
+Never fill in a PIN or a board address from memory, from an example, or from an earlier call.
 
 ## Invalid input
 

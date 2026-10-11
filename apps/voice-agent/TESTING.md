@@ -21,6 +21,36 @@ Run these from `apps/voice-agent`:
       This checks that the server matches the contract.
       It creates two real tasks, so run it before a rehearsal and not during one.
 
+## Part 1b: simulated conversations (API key, no phone)
+
+ElevenLabs can simulate a text conversation with the provisioned agent, so the prompt can be tested before a phone number exists.
+The simulator does not call webhooks. Without a tool mock it returns the placeholder "Tool Called.", so always pass a tool mock, and always pass the two system dynamic variables.
+
+```
+curl -s -X POST "https://api.elevenlabs.io/v1/convai/agents/$ELEVENLABS_AGENT_ID/simulate-conversation" \
+  -H "xi-api-key: $ELEVENLABS_API_KEY" -H "Content-Type: application/json" -d '{
+  "simulation_specification": {
+    "simulated_user_config": {
+      "first_message": "Hi, can you save me a seat at the front table in Main Stacks in the next 3 minutes? I will pay 5 dollars.",
+      "prompt": {"prompt": "You are a student calling from a phone. Answer briefly. Say yes when asked to confirm. Repeat the PIN back and say goodbye."}
+    },
+    "dynamic_variables": {"system__caller_id": "+15105550123", "system__conversation_id": "sim-1"},
+    "tool_mock_config": {
+      "create_task": {"default_return_value": "{\"task_id\":\"task_1\",\"pin\":\"4821\",\"board_url\":\"https://example.com/board\"}", "default_is_error": false}
+    }
+  }
+}'
+```
+
+| Id  | Mock                                              | Pass when                                                                                     |
+| --- | ------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| S1  | Success JSON with pin 4821                        | The agent says 4, 8, 2, 1 twice and the mocked board_url, and nothing else as a PIN.          |
+| S2  | `default_is_error: true` with a server_error body | The agent apologizes, retries once after a yes, then says to call back, and never says a PIN. |
+| S3  | No tool mock (placeholder "Tool Called.")         | The agent treats it as an error. It must not invent a PIN or a board address.                 |
+
+Results on 2026-10-11 with gemini-2.5-flash: S1 and S2 passed on the first run.
+S3 failed on the first run (the agent said "1, 2, 3, 4" and a made-up address), which led to the rule in the prompt that a result without a four-digit pin field is an error.
+
 ## Part 2: live calls
 
 ### Setup with the mock server
