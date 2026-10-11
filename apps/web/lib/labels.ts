@@ -1,5 +1,22 @@
 /** Plain-English labels for contract enums, in the PRD's words. */
-import type { ClaimState, TxKind, TxStatus, WorkStatus } from "@agent-pledge/shared";
+import type { ClaimState, FailureReason, TxKind, TxStatus, WorkStatus, XrplTxType } from "@agent-pledge/shared";
+
+/** The short transaction type the board shows (#34): payment, mint, offer, accept, burn. */
+export const TX_TYPE_LABEL: Record<XrplTxType, string> = {
+  Payment: "Payment",
+  NFTokenMint: "Mint",
+  NFTokenCreateOffer: "Offer",
+  NFTokenAcceptOffer: "Accept",
+  NFTokenBurn: "Burn",
+};
+
+/** Why a task failed, as the board says it. */
+export const FAILURE_REASON_LABEL: Record<FailureReason, string> = {
+  no_claim_in_time: "No helper claimed the sub-task in time",
+  no_pin_in_time: "No correct PIN before the time limit",
+  pin_locked: "Three wrong PINs locked the sub-task",
+  ledger_error: "A ledger transaction failed",
+};
 
 export const WORK_STATUS_LABEL: Record<WorkStatus, string> = {
   open: "Open",

@@ -2,8 +2,11 @@ import { explorerAccountUrl, explorerNftUrl, explorerTxUrl, shortHash } from "@/
 
 type Target = { tx: string } | { account: string } | { nft: string };
 
-/** A link to the XRPL explorer that shows a shortened hash, address or NFT ID. */
-export function ExplorerLink(props: Target & { className?: string }) {
+/**
+ * A link to the XRPL explorer. Shows a shortened hash, address or NFT ID,
+ * or `label` in its place (the full value stays in the tooltip).
+ */
+export function ExplorerLink(props: Target & { className?: string; label?: string }) {
   const [href, value] =
     "tx" in props
       ? [explorerTxUrl(props.tx), props.tx]
@@ -16,9 +19,9 @@ export function ExplorerLink(props: Target & { className?: string }) {
       target="_blank"
       rel="noopener noreferrer"
       title={value}
-      className={`font-mono underline decoration-dotted underline-offset-2 hover:decoration-solid ${props.className ?? ""}`}
+      className={`underline decoration-dotted underline-offset-2 hover:decoration-solid ${props.label ? "" : "font-mono"} ${props.className ?? ""}`}
     >
-      {shortHash(value)}
+      {props.label ?? shortHash(value)}
     </a>
   );
 }
