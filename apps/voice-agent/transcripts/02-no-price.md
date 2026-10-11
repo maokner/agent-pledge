@@ -4,8 +4,7 @@ The caller does not say a price.
 The agent asks for one, and does not suggest a price when the caller asks for advice.
 Later the caller asks about the task, so the agent uses task_status.
 
-**Agent:** Hi, this is Agent Pledge.
-I can save you a seat.
+**Agent:** Hi, this is Agent Pledge, and I can save you a seat.
 What do you need?
 
 **Caller:** Can you hold two seats for me in Main Stacks?

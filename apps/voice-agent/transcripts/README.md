@@ -20,3 +20,13 @@ Format rules, which `test/transcripts.test.ts` checks:
 - A tool call is a `**Tool call:**` line with the tool name, then a JSON block with the arguments.
 - A tool result is a `**Tool result:**` line with the HTTP status, then a JSON block with the body.
 - The create_task arguments must equal the samples in `src/samples.ts`, which `pnpm simulate` sends to the server.
+
+Behavior rules, which the same test checks:
+
+- Every agent turn has one or two sentences and at most 20 words.
+  The summary ("To confirm: ...") and the PIN turn are checked against their exact form instead.
+- The PIN turn is the agent turn right after a successful create_task.
+  It has the PIN two times, the helper sentence, the board address as the prompt says it, and "Do you need anything else?".
+- Right before each create_task call there are exactly three events: the summary of the exact values in the call, a caller yes, and "One moment.".
+  A retry replaces the summary with the retry offer, and it must repeat the values of a call that failed with an error other than `invalid_input`.
+- The description in create_task is only the seat hold, for example "Save one seat".

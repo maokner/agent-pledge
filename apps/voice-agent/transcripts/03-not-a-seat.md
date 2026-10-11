@@ -3,8 +3,7 @@
 The caller asks for food delivery, and then for a spot in a line.
 Neither is a seat hold, so the agent says the exact refusal sentence each time, offers a seat instead, and never calls create_task.
 
-**Agent:** Hi, this is Agent Pledge.
-I can save you a seat.
+**Agent:** Hi, this is Agent Pledge, and I can save you a seat.
 What do you need?
 
 **Caller:** Can you get me a burrito and bring it to Doe Library?

@@ -126,8 +126,11 @@ describe("system prompt", () => {
     );
   });
 
-  it("keeps turns short for speakerphone", () => {
+  it("keeps turns short for speakerphone, with the PIN turn as the one exception", () => {
     expect(systemPrompt).toContain("Keep every turn short: one or two short sentences.");
+    expect(systemPrompt).toContain(
+      "The one exception is the turn after create_task gives you a PIN, in steps 7 and 8.",
+    );
     expect(systemPrompt).toMatch(/speakerphone/);
   });
 
@@ -153,6 +156,7 @@ describe("system prompt", () => {
 describe("first message", () => {
   it("is short, says who is calling, and asks what the caller needs", () => {
     expect(firstMessage.split(/\s+/).length).toBeLessThanOrEqual(20);
+    expect(firstMessage.split(/(?<=[.?!])\s+/)).toHaveLength(2);
     expect(firstMessage).toContain("Agent Pledge");
     expect(firstMessage.endsWith("?")).toBe(true);
     expect(firstMessage).not.toContain("\n");

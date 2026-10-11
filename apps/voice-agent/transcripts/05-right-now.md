@@ -4,8 +4,7 @@ The caller asks for a seat "right now".
 The time limit must be a whole number of at least 1 minute, so the agent makes it 2 minutes and tells the caller before the summary.
 Without this rule, the agent would send 0 minutes and the server would reject the task.
 
-**Agent:** Hi, this is Agent Pledge.
-I can save you a seat.
+**Agent:** Hi, this is Agent Pledge, and I can save you a seat.
 What do you need?
 
 **Caller:** I need a seat at the front table right now.
