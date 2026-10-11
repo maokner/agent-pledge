@@ -28,11 +28,6 @@ const agentLines = (events: TranscriptEvent[]) =>
 const toolCalls = (events: TranscriptEvent[], name: string) =>
   events.flatMap((e) => (e.kind === "tool_call" && e.name === name ? [e.args] : []));
 
-function lastIndex<T>(items: T[], test: (item: T) => boolean): number {
-  for (let i = items.length - 1; i >= 0; i--) if (test(items[i] as T)) return i;
-  return -1;
-}
-
 /** "4821" becomes "4, 8, 2, 1". */
 const spoken = (pin: string) => pin.split("").join(", ");
 
