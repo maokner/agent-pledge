@@ -1,35 +1,87 @@
-// The board and the claim page (apps/web/public), served from this server so that the pages,
-// the JSON API, and /ws/board share one origin (one tunnel URL, no CORS).
-// GET /        -> index.html (the board)
-// GET /c/:code -> claim.html (the claim page; the JSON API stays at /claim/:code)
-// Other files (board.js, styles.css, fixtures/...) are served by @fastify/static.
-import { existsSync } from "node:fs";
-import { resolve } from "node:path";
-import fastifyStatic from "@fastify/static";
+// The board, the claim page and the rest of the web app (apps/web, Next.js) are served through this
+// server, so that the pages, the JSON API and /ws/board share one public origin: one tunnel URL,
+// claim links that open on any phone, and no CORS.
+//
+// Every path that is not an API route is reverse-proxied to the Next.js server at WEB_UPSTREAM_URL
+// (default http://localhost:3000). The API routes are registered as static or parametric routes,
+// which the router always prefers over the proxy's catch-all, so none of them can be shadowed.
+// Unknown paths under the API's own prefixes keep the API's JSON 404 instead of a Next.js page.
+// With WEB_UPSTREAM_URL empty, nothing is proxied and only the API is served.
+import httpProxy from "@fastify/http-proxy";
+import { ErrorCode, type ApiError } from "@agent-pledge/shared";
 import type { FastifyPluginAsync } from "fastify";
-import { SERVER_ROOT } from "../config";
+import type { IncomingHttpHeaders } from "node:http";
+import type { IncomingHttpHeaders as Http2IncomingHttpHeaders } from "node:http2";
+import { sendError } from "../lib/http";
 
-export const WEB_ROOT = resolve(SERVER_ROOT, "../web/public");
+/** Path prefixes that belong to the API. Next.js serves nothing under them. */
+export const API_PREFIXES = ["agent", "tools", "claim", "admin", "media", "ws", "tasks"] as const;
+
+/** Every method but OPTIONS: @fastify/cors owns OPTIONS for CORS preflights. */
+const PROXY_METHODS = ["DELETE", "GET", "HEAD", "PATCH", "POST", "PUT"];
+
+/** Next.js dev server's hot reload socket (`next dev` only; `next start` never opens it). */
+const NEXT_HMR_PATH = "/_next/webpack-hmr";
+
+type Headers = IncomingHttpHeaders | Http2IncomingHttpHeaders;
+
+/** Tell Next.js the public host and scheme, since the proxy rewrites Host to the upstream's. */
+export function forwardedHeaders(
+  headers: Headers,
+  req: { headers: Headers; protocol: string; ip: string; ips?: string[] },
+): Headers {
+  const host = req.headers["x-forwarded-host"] ?? req.headers.host;
+  return {
+    ...headers,
+    ...(host ? { "x-forwarded-host": host } : {}),
+    "x-forwarded-proto": req.protocol,
+    "x-forwarded-for": req.ips?.join(", ") ?? req.ip,
+  };
+}
 
 const webRoutes: FastifyPluginAsync = async (app) => {
-  if (!existsSync(WEB_ROOT)) {
-    app.log.warn({ root: WEB_ROOT }, "web root missing, board and claim page not served");
+  for (const prefix of API_PREFIXES) {
+    app.route({
+      method: PROXY_METHODS,
+      url: `/${prefix}/*`,
+      handler: (_req, reply) => sendError(reply, 404, ErrorCode.notFound, "Not found"),
+    });
+  }
+
+  const upstream = app.config.WEB_UPSTREAM_URL;
+  if (!upstream) {
+    app.log.warn("WEB_UPSTREAM_URL is empty: the web app (board, claim page) is not served");
     return;
   }
-  await app.register(fastifyStatic, {
-    root: WEB_ROOT,
+
+  // Pages, static assets, /_next/*, and the web app's own route handlers (/api/*).
+  await app.register(httpProxy, {
+    upstream,
     prefix: "/",
-    // Register one route per file at startup instead of a catch-all, so unknown paths keep the
-    // API's JSON 404 and no API route can be shadowed.
-    wildcard: false,
-    index: false,
-    // Demo pages change often; always revalidate.
-    cacheControl: false,
-    setHeaders: (reply) => reply.header("Cache-Control", "no-cache"),
+    httpMethods: PROXY_METHODS,
+    replyOptions: {
+      rewriteRequestHeaders: (req, headers) => forwardedHeaders(headers, req),
+      onError: (reply, { error }) => {
+        reply.log.warn({ err: error, upstream }, "web app unreachable");
+        const body: ApiError = {
+          error: "web_unavailable",
+          message: `The web app is not answering at ${upstream}. Start it (pnpm dev:web) or set WEB_UPSTREAM_URL.`,
+        };
+        void reply.code(502).send(body);
+      },
+    },
   });
 
-  app.get("/", (_req, reply) => reply.sendFile("index.html"));
-  app.get("/c/:code", (_req, reply) => reply.sendFile("claim.html"));
+  // `next dev` hot reload. Scoped to its own path so the proxy never claims /ws/board or /ws/agent.
+  await app.register(httpProxy, {
+    upstream,
+    prefix: NEXT_HMR_PATH,
+    rewritePrefix: NEXT_HMR_PATH,
+    httpMethods: ["GET"],
+    websocket: true,
+  });
+
+  app.log.info({ upstream }, "web app proxied");
 };
 
 export default webRoutes;
