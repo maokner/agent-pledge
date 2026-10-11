@@ -24,7 +24,8 @@
     "typecheck:scripts": "tsc -p scripts/tsconfig.json",
     "ledger:demo": "pnpm --filter @agent-pledge/ledger demo",
     "format:check": "prettier --check .",
-    "build": "pnpm -r --if-present build"
+    "build": "pnpm -r --if-present build",
+    "demo:evidence": "pnpm --filter @agent-pledge/ledger run evidence"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

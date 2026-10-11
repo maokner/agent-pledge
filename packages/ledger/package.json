@@ -17,7 +17,8 @@
     "spike": "tsx scripts/spike-open-offer.ts",
     "demo": "tsx scripts/demo.ts",
     "transfer": "tsx scripts/transfer.ts",
-    "claim-rlusd": "tsx scripts/claim-rlusd.ts"
+    "claim-rlusd": "tsx scripts/claim-rlusd.ts",
+    "evidence": "tsx scripts/evidence.ts"
   },
   "dependencies": {
     "@agent-pledge/shared": "workspace:*",

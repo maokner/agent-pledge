@@ -176,7 +176,7 @@ describe("scripted post text", () => {
         { price: "4.00", claim_url: "http://board.test/c/7Q2K" },
       ),
     ).toBe(
-      "$4 to save a seat at the front table at Main Stacks in the next 3 min. First to claim gets it: http://board.test/c/7Q2K",
+      "I'll pay $4 if you save a seat at the front table at Main Stacks in the next 3 min. First to claim gets it: http://board.test/c/7Q2K",
     );
   });
 });

@@ -42,7 +42,7 @@ export function scriptedPostText(
   subtask: { price: string; claim_url: string },
 ): string {
   return (
-    `${dollars(subtask.price)} to ${helperPhrase(task.description)} at ${task.place} ` +
+    `I'll pay ${dollars(subtask.price)} if you ${helperPhrase(task.description)} at ${task.place} ` +
     `in the next ${task.time_limit_minutes} min. First to claim gets it: ${subtask.claim_url}`
   );
 }
