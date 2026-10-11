@@ -7,8 +7,16 @@ import { hasCryptoWord, PLAIN_FALLBACK_MESSAGE, plainMessage } from "./plain-wor
 
 const WEB_ROOT = fileURLToPath(new URL("../../", import.meta.url));
 
-/** Everything the claim page shows comes from these folders. */
-const SCANNED = ["components/claim", "components/human", "lib/claim", "app/(human)/c"];
+/** Everything the human side (the claim page and the /human list) shows comes from these folders. */
+const SCANNED = [
+  "components/claim",
+  "components/human",
+  "lib/claim",
+  "app/(human)/c",
+  "components/open-list",
+  "lib/open-list",
+  "app/(human)/human",
+];
 /** The word list itself, and tests (which quote server errors on purpose). */
 const SKIPPED = [/plain-words\.ts$/, /\.test\.tsx?$/];
 
@@ -67,7 +75,7 @@ describe("plainMessage", () => {
   });
 });
 
-describe("the claim page's copy (PRD R7)", () => {
+describe("the human side's copy (PRD R7)", () => {
   it("reads strings and JSX text but not comments, identifiers or imports", () => {
     const source = `
       import { formatRlusd } from "@/lib/ledger";
@@ -80,9 +88,20 @@ describe("the claim page's copy (PRD R7)", () => {
     expect(userFacingStrings("x.tsx", source)).toEqual(["Claim", "Paid ", " today", "Send", "Enter the", "PIN"]);
   });
 
-  it("scans every claim page file", () => {
+  it("scans every claim page and /human list file", () => {
     const files = SCANNED.flatMap(sourceFiles).map((f) => relative(WEB_ROOT, f));
-    expect(files).toEqual(expect.arrayContaining(["components/claim/PaidView.tsx", "components/human/Button.tsx", "lib/claim/flow.ts"]));
+    expect(files).toEqual(
+      expect.arrayContaining([
+        "components/claim/PaidView.tsx",
+        "components/human/Button.tsx",
+        "lib/claim/flow.ts",
+        "components/open-list/OpenList.tsx",
+        "components/open-list/OpenSubtaskCard.tsx",
+        "lib/open-list/label.ts",
+        "lib/open-list/announce.ts",
+        "app/(human)/human/page.tsx",
+      ]),
+    );
   });
 
   it("has no crypto words: wallet, NFT, XRPL, XRP Ledger, RLUSD, ledger, token or testnet", () => {
