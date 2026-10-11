@@ -21,8 +21,11 @@ export const ConfigSchema = z.object({
   LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"]).default("info"),
   PORT: z.coerce.number().int().default(3001),
   HOST: z.string().default("0.0.0.0"),
-  /** Where the board and claim page live (apps/web). Claim links: `${PUBLIC_BASE_URL}/c/<CODE>`. */
-  PUBLIC_BASE_URL: z.string().url().default("http://localhost:3000"),
+  /**
+   * Where the board and claim page live. This server serves them (apps/web/public), so in most
+   * setups this equals PUBLIC_API_URL. Claim links: `${PUBLIC_BASE_URL}/c/<CODE>`.
+   */
+  PUBLIC_BASE_URL: z.string().url().default("http://localhost:3001"),
   /** Public URL of this server. NFT URIs and media URLs use it. */
   PUBLIC_API_URL: z.string().url().default("http://localhost:3001"),
   /**

@@ -20,6 +20,7 @@
     "@fastify/cookie": "^11.0.2",
     "@fastify/cors": "^11.1.0",
     "@fastify/multipart": "^9.2.1",
+    "@fastify/static": "^10.1.6",
     "@fastify/websocket": "^11.2.0",
     "dotenv": "^17.2.3",
     "drizzle-orm": "^0.44.7",

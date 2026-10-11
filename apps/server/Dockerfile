@@ -15,6 +15,7 @@ COPY tsconfig.base.json ./
 COPY packages/shared packages/shared
 COPY packages/ledger packages/ledger
 COPY apps/server apps/server
+COPY apps/web apps/web
 
 ENV NODE_ENV=production HOST=0.0.0.0 PORT=3001
 EXPOSE 3001

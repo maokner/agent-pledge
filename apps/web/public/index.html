@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Agent Pledge - Board</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="/css/base.css" />
+    <link rel="stylesheet" href="/css/board.css" />
+  </head>
+  <body class="board">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark">AP</span>
+        <span class="brand-name">Agent Pledge</span>
+        <span class="brand-sub">Tasks paid in RLUSD on the XRP Ledger</span>
+      </div>
+      <div class="topbar-right">
+        <span id="addresses" class="addresses"></span>
+        <span id="conn" class="conn conn-offline"><span class="dot"></span><span id="conn-text">Offline</span></span>
+      </div>
+    </header>
+    <main class="layout">
+      <section id="tasks" class="tasks" aria-label="Tasks">
+        <div class="empty">Loading the board...</div>
+      </section>
+      <aside class="log-panel" aria-label="Agent log">
+        <h2 class="panel-title">Local agent log</h2>
+        <ol id="log" class="log"></ol>
+      </aside>
+    </main>
+    <div id="lightbox" class="lightbox" hidden>
+      <img id="lightbox-img" alt="" />
+      <div id="lightbox-caption" class="lightbox-caption"></div>
+    </div>
+    <script type="module" src="/js/board.js"></script>
+  </body>
+</html>
