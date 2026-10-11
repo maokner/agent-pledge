@@ -64,7 +64,7 @@ The scripts read `.env` if it exists; real environment variables win.
 1. Stores `VOICE_TOOL_SECRET` as the workspace secret `agent_pledge_voice_tool_secret`, or updates it.
 2. Creates or updates the `create_task` and `task_status` webhook tools.
    Each tool sends the secret as the `x-voice-secret` header from the secret store.
-   `create_task` fills `caller_phone` from `system__caller_id`, so the LLM never fills it.
+   `create_task` fills `caller_phone` from `system__caller_id` and `call_id` from `system__conversation_id`, so the LLM never fills them.
 3. Creates or updates the agent with the prompt, the first message, the tool ids, the `end_call` tool, and the voice settings.
 4. If `ELEVENLABS_PHONE_NUMBER_ID` is set, routes that number to the agent.
 
@@ -87,6 +87,7 @@ The server (issue 19) must implement this contract.
 | Auth | Header `x-voice-secret` must equal `VOICE_TOOL_SECRET`. Otherwise 401. | Same |
 | Success | 200 with `CreateTaskOutput`: `task_id`, `pin` (exactly 4 digits, as a string), `board_url` | 200 with `TaskStatusOutput`: `status` (`open`, `claimed`, `done`, `failed`), `helper_note` (string or null) |
 | Errors | 400 for invalid input, 401, 503 when unavailable | 401, 404 for an unknown task |
+| Retries | A repeated `call_id` returns the existing task (same `task_id`, `pin`, and `board_url`) with 200 and creates nothing. | Safe to repeat. |
 | Time limit | Answer within 30 seconds. Answer before ledger transactions validate, if possible, because the caller waits in silence. | Answer within 10 seconds. |
 
 Notes for the server:
@@ -95,6 +96,15 @@ Notes for the server:
 - `time_limit_minutes` is a whole number and `price_usd` is a positive number.
 - `caller_phone` comes from the caller ID.
   It may be an empty string in a call without a phone line, such as a dashboard test.
+- `call_id` is the ElevenLabs conversation id, and the server must dedupe on it.
+  The agent calls `create_task` again after an error or a timeout, and the first attempt may have worked on the server.
+  Without dedupe, that retry makes a second task and a second payment, and the caller hears the PIN of the second task only.
+  Validate the body first, then look up `call_id`.
+  If a task with that `call_id` exists, return it, even if the new body has other values.
+  One call creates at most one task.
+  The retry can arrive while the first request is still running, because ElevenLabs stops waiting after 30 seconds.
+  So reserve the `call_id` before the ledger work, for example with a unique index, and make the second request wait for the result of the first.
+  An absent or empty `call_id` (for example from the board's web form) means no dedupe.
 - Error bodies use `{ "error": "<code>", "message": "<text>", "details": ["..."] }`.
   The agent gets the error body, so the message must not contain a PIN.
 - The mock server's `src/mock-server.ts` is a reference implementation of this contract.

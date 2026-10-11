@@ -28,8 +28,37 @@ describe("runSimulation", () => {
       fetchFn: inMemoryFetch(ctx),
     });
     expect(results.filter((r) => !r.ok)).toEqual([]);
-    expect(results).toHaveLength(7);
+    expect(results).toHaveLength(8);
     expect(ctx.tasks.size).toBe(2);
+  });
+
+  it("uses a new call_id for each simulated call, so a rerun does not reuse old tasks", async () => {
+    const ctx = createMockContext({ secret: "s", boardUrl: "https://board.example/board" });
+    await runSimulation({ baseUrl: "http://mock.local", secret: "s", fetchFn: inMemoryFetch(ctx) });
+    await runSimulation({ baseUrl: "http://mock.local", secret: "s", fetchFn: inMemoryFetch(ctx) });
+    const callIds = [...ctx.tasks.values()].map((t) => t.input.call_id);
+    expect(callIds).toHaveLength(4);
+    expect(new Set(callIds).size).toBe(4);
+    expect(callIds.every((id) => id?.startsWith("conv_simulate_"))).toBe(true);
+  });
+
+  it("reports a failure when the server does not dedupe on call_id", async () => {
+    const ctx = createMockContext({ secret: "s", boardUrl: "https://board.example/board" });
+    const fetchFn = inMemoryFetch(ctx);
+    const dropsCallId: FetchLike = (url, init) => {
+      if (typeof init.body !== "string") return fetchFn(url, init);
+      const body = JSON.parse(init.body) as Record<string, unknown>;
+      delete body.call_id;
+      return fetchFn(url, { ...init, body: JSON.stringify(body) });
+    };
+    const results = await runSimulation({
+      baseUrl: "http://mock.local",
+      secret: "s",
+      fetchFn: dropsCallId,
+    });
+    expect(results.filter((r) => !r.ok).map((r) => r.name)).toEqual([
+      "create_task: a retry with the same call_id returns the same task",
+    ]);
   });
 
   it("reports a failure when the server returns a bad PIN", async () => {

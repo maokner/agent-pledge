@@ -63,6 +63,7 @@ describe("create_task", () => {
     const c = ctx();
     const other = {
       ...SAMPLE_NORMAL_CALL,
+      call_id: "conv_other",
       place: "Doe Library",
       time_limit_minutes: 20,
       price_usd: 12.5,
@@ -76,8 +77,67 @@ describe("create_task", () => {
     const ids = ["task_a", "task_a", "task_b"];
     const c = ctx({ newTaskId: () => ids.shift() ?? "task_z" });
     handleRequest(req("POST", "/tools/create_task", SAMPLE_NORMAL_CALL), c);
-    const res = handleRequest(req("POST", "/tools/create_task", SAMPLE_NORMAL_CALL), c);
+    const res = handleRequest(
+      req("POST", "/tools/create_task", { ...SAMPLE_NORMAL_CALL, call_id: "conv_other" }),
+      c,
+    );
     expect((res.body as { task_id: string }).task_id).toBe("task_b");
+  });
+
+  it("returns the existing task for a repeated call_id instead of creating a new one", () => {
+    let pins = 0;
+    const c = ctx({ newPin: () => ["1111", "2222"][pins++] ?? "9999" });
+    const first = handleRequest(req("POST", "/tools/create_task", SAMPLE_NORMAL_CALL), c);
+    const retry = handleRequest(req("POST", "/tools/create_task", SAMPLE_NORMAL_CALL), c);
+    expect(retry).toEqual(first);
+    expect(retry.body).toEqual({
+      task_id: "task_1",
+      pin: "1111",
+      board_url: "https://board.example/board",
+    });
+    expect(c.tasks.size).toBe(1);
+  });
+
+  it("returns the first task for a call_id even if a later request has other values", () => {
+    const c = ctx();
+    handleRequest(req("POST", "/tools/create_task", SAMPLE_NORMAL_CALL), c);
+    const changed = { ...SAMPLE_NORMAL_CALL, price_usd: 9 };
+    const res = handleRequest(req("POST", "/tools/create_task", changed), c);
+    expect((res.body as { task_id: string }).task_id).toBe("task_1");
+    expect(c.tasks.get("task_1")?.input).toEqual(SAMPLE_NORMAL_CALL);
+    expect(c.tasks.size).toBe(1);
+  });
+
+  it.each([
+    ["no call_id", undefined],
+    ["an empty call_id", ""],
+  ])("creates a new task each time for %s", (_label, callId) => {
+    const c = ctx();
+    const body = { ...SAMPLE_NORMAL_CALL, call_id: callId };
+    handleRequest(req("POST", "/tools/create_task", body), c);
+    handleRequest(req("POST", "/tools/create_task", body), c);
+    expect(c.tasks.size).toBe(2);
+  });
+
+  it("still rejects an invalid body that repeats a known call_id", () => {
+    const c = ctx();
+    handleRequest(req("POST", "/tools/create_task", SAMPLE_NORMAL_CALL), c);
+    const res = handleRequest(
+      req("POST", "/tools/create_task", { ...SAMPLE_NORMAL_CALL, price_usd: 0 }),
+      c,
+    );
+    expect(res.status).toBe(400);
+  });
+
+  it("creates the task on the first success after a failed attempt with the same call_id", () => {
+    const c = ctx({ failMode: "create_task" });
+    expect(handleRequest(req("POST", "/tools/create_task", SAMPLE_NORMAL_CALL), c).status).toBe(
+      503,
+    );
+    c.failMode = "none";
+    const res = handleRequest(req("POST", "/tools/create_task", SAMPLE_NORMAL_CALL), c);
+    expect(res.status).toBe(200);
+    expect(c.tasks.size).toBe(1);
   });
 
   it.each([

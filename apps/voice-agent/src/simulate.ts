@@ -2,7 +2,8 @@
  * Sends the sample tool payloads to a server and checks the responses against the contract.
  * It works against the mock server or the real server, so the back end can use it as a contract test.
  */
-import type { CreateTaskInput } from "@agent-pledge/shared";
+import { randomBytes } from "node:crypto";
+import type { CreateTaskInput, CreateTaskOutput } from "@agent-pledge/shared";
 import type { z } from "zod";
 import {
   CREATE_TASK_PATH,
@@ -73,19 +74,61 @@ function expectShape(
   return { name, ok: true, detail: JSON.stringify(result.body) };
 }
 
+const RETRY_CHECK = "create_task: a retry with the same call_id returns the same task";
+
+/** The retry must return the first task (same task_id and pin), and the other call's task must be a different one. */
+function sameTaskCheck(
+  retry: ToolCall,
+  first: CreateTaskOutput | null,
+  other: CreateTaskOutput | null,
+): CheckResult {
+  const shape = expectShape(RETRY_CHECK, retry, 200, createTaskOutputSchema);
+  if (!shape.ok) return shape;
+  if (!first) return { name: RETRY_CHECK, ok: false, detail: "skipped, the first call failed" };
+  const again = createTaskOutputSchema.parse(retry.body);
+  if (again.task_id !== first.task_id || again.pin !== first.pin) {
+    return {
+      name: RETRY_CHECK,
+      ok: false,
+      detail: `expected task_id ${first.task_id} and pin ${first.pin} again, got ${shape.detail}`,
+    };
+  }
+  if (other && other.task_id === first.task_id) {
+    return {
+      name: RETRY_CHECK,
+      ok: false,
+      detail: `two calls with different call_id values got the same task ${first.task_id}`,
+    };
+  }
+  return shape;
+}
+
 export interface SimulationOptions {
   baseUrl: string;
   secret: string;
   fetchFn?: FetchLike;
+  /**
+   * Makes the call_id for each simulated call.
+   * The default is unique per run, so a second run against the real server creates new tasks instead of getting old ones.
+   */
+  newCallId?: () => string;
+}
+
+export function randomCallId(): string {
+  return `conv_simulate_${randomBytes(6).toString("hex")}`;
 }
 
 /** Runs the sample payloads and the negative checks. Never throws for a failed check. */
 export async function runSimulation(options: SimulationOptions): Promise<CheckResult[]> {
   const fetchFn = options.fetchFn ?? ((url, init) => fetch(url, init));
   const { baseUrl, secret } = options;
+  const newCallId = options.newCallId ?? randomCallId;
   const results: CheckResult[] = [];
 
-  const createTask = async (name: string, input: CreateTaskInput): Promise<string | null> => {
+  const createTask = async (
+    name: string,
+    input: CreateTaskInput,
+  ): Promise<CreateTaskOutput | null> => {
     const res = await call(fetchFn, baseUrl, CREATE_TASK_PATH, {
       method: "POST",
       secret,
@@ -94,17 +137,26 @@ export async function runSimulation(options: SimulationOptions): Promise<CheckRe
     const check = expectShape(name, res, 200, createTaskOutputSchema);
     results.push(check);
     const parsed = createTaskOutputSchema.safeParse(res.body);
-    return check.ok && parsed.success ? parsed.data.task_id : null;
+    return check.ok && parsed.success ? parsed.data : null;
   };
 
-  const firstTaskId = await createTask(
-    "create_task: normal call (transcript 01)",
-    SAMPLE_NORMAL_CALL,
-  );
-  await createTask("create_task: price asked for (transcript 02)", SAMPLE_NO_PRICE_CALL);
+  const normalCall: CreateTaskInput = { ...SAMPLE_NORMAL_CALL, call_id: newCallId() };
+  const first = await createTask("create_task: normal call (transcript 01)", normalCall);
+  const second = await createTask("create_task: price asked for (transcript 02)", {
+    ...SAMPLE_NO_PRICE_CALL,
+    call_id: newCallId(),
+  });
 
-  if (firstTaskId) {
-    const res = await call(fetchFn, baseUrl, taskStatusPath(firstTaskId), {
+  // Transcript 04: a retry after a timeout sends the same call_id and must get the same task, not a second one.
+  const retry = await call(fetchFn, baseUrl, CREATE_TASK_PATH, {
+    method: "POST",
+    secret,
+    body: normalCall,
+  });
+  results.push(sameTaskCheck(retry, first, second));
+
+  if (first) {
+    const res = await call(fetchFn, baseUrl, taskStatusPath(first.task_id), {
       method: "GET",
       secret,
     });
@@ -122,7 +174,7 @@ export async function runSimulation(options: SimulationOptions): Promise<CheckRe
   const wrongSecret = await call(fetchFn, baseUrl, CREATE_TASK_PATH, {
     method: "POST",
     secret: `${secret}-wrong`,
-    body: SAMPLE_NORMAL_CALL,
+    body: { ...SAMPLE_NORMAL_CALL, call_id: newCallId() },
   });
   results.push(
     expectShape("create_task: wrong secret is rejected", wrongSecret, 401, toolErrorSchema),
@@ -131,13 +183,13 @@ export async function runSimulation(options: SimulationOptions): Promise<CheckRe
   const noSecret = await call(fetchFn, baseUrl, CREATE_TASK_PATH, {
     method: "POST",
     secret: null,
-    body: SAMPLE_NORMAL_CALL,
+    body: { ...SAMPLE_NORMAL_CALL, call_id: newCallId() },
   });
   results.push(
     expectShape("create_task: missing secret is rejected", noSecret, 401, toolErrorSchema),
   );
 
-  const noPrice: Partial<CreateTaskInput> = { ...SAMPLE_NORMAL_CALL };
+  const noPrice: Partial<CreateTaskInput> = { ...SAMPLE_NORMAL_CALL, call_id: newCallId() };
   delete noPrice.price_usd;
   const missingPrice = await call(fetchFn, baseUrl, CREATE_TASK_PATH, {
     method: "POST",

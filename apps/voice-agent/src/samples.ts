@@ -7,6 +7,13 @@ import type { CreateTaskInput } from "@agent-pledge/shared";
 /** A fictional 555 number, as ElevenLabs would put in system__caller_id. */
 export const SAMPLE_CALLER_PHONE = "+15105550123";
 
+/** Fictional conversation ids, as ElevenLabs would put in system__conversation_id. One per sample call. */
+export const SAMPLE_CALL_IDS = {
+  normal: "conv_sample_01",
+  noPrice: "conv_sample_02",
+  serverError: "conv_sample_04",
+} as const;
+
 /** transcripts/01-normal-call.md */
 export const SAMPLE_NORMAL_CALL: CreateTaskInput = {
   description: "Save one seat",
@@ -14,6 +21,7 @@ export const SAMPLE_NORMAL_CALL: CreateTaskInput = {
   time_limit_minutes: 3,
   price_usd: 5,
   caller_phone: SAMPLE_CALLER_PHONE,
+  call_id: SAMPLE_CALL_IDS.normal,
 };
 
 /** transcripts/02-no-price.md: the caller gives the price only after the agent asks. */
@@ -23,13 +31,15 @@ export const SAMPLE_NO_PRICE_CALL: CreateTaskInput = {
   time_limit_minutes: 15,
   price_usd: 8,
   caller_phone: "+15105550188",
+  call_id: SAMPLE_CALL_IDS.noPrice,
 };
 
-/** transcripts/04-server-error.md: the same kind of task, while the server fails. */
+/** transcripts/04-server-error.md: the same kind of task, while the server fails. The retry sends the same call_id. */
 export const SAMPLE_SERVER_ERROR_CALL: CreateTaskInput = {
   description: "Save one seat",
   place: "Moffitt Library, third floor",
   time_limit_minutes: 10,
   price_usd: 6,
   caller_phone: "+15105550147",
+  call_id: SAMPLE_CALL_IDS.serverError,
 };

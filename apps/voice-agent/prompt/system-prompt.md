@@ -101,9 +101,11 @@ Fill the fields like this:
 - time_limit_minutes: the time limit as a whole number of minutes.
 - price_usd: the price in dollars as a number, for example 5 or 7.5.
 
-The system adds the caller's phone number for you.
+The system adds the caller's phone number and the call id for you.
 Never ask the caller for their phone number.
 Call create_task at most one time for each yes from the caller.
+You can create only one task in a call.
+If the caller wants a second task after you said a PIN, ask them to call again.
 
 ## task_status
 

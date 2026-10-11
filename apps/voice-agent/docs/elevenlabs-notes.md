@@ -59,6 +59,13 @@ Fields that matter for us:
 The docs say it is set for voice calls only.
 The tool fills `caller_phone` with `"dynamic_variable": "system__caller_id"`, so the LLM never sees or invents it.
 
+### Conversation id
+
+`system__conversation_id` is the id of the current conversation.
+It is the same for every tool call in one call, so it is a natural idempotency key.
+The tool fills `call_id` with `"dynamic_variable": "system__conversation_id"`, and the server returns the existing task for a repeated `call_id`.
+Thus, a retry after a timeout does not make a second task.
+
 ### Secret header
 
 `api_schema.request_headers` is a map from header name to one of: a plain string, `{ "secret_id": ... }`, `{ "variable_name": ... }`, or `{ "env_var_label": ... }`.
@@ -97,9 +104,10 @@ Check them in the first live session, and update this file.
    The mock server accepts an empty `caller_phone`, and the real server should too.
    Test the full flow with a real phone call.
 2. **A dynamic-variable property in `required`.**
-   We list `caller_phone` in `required` together with the LLM-filled fields.
+   We list `caller_phone` and `call_id` in `required` together with the LLM-filled fields.
    The schema allows it.
-   If the API rejects it, remove `caller_phone` from `required`.
+   If the API rejects it, remove them from `required`.
+   The contract keeps `call_id` optional, so the server works either way.
 3. **The caller ID format.**
    We expect E.164, for example `+15105550123`.
    The server must not depend on the format.
@@ -114,6 +122,8 @@ Check them in the first live session, and update this file.
    With `passthrough`, an HTTP error body reaches the agent.
    When the server is down, the exact text the agent gets is not documented.
    The prompt treats any error, timeout, or missing PIN the same way.
+   A timeout does not mean that the server failed: it can still create the task after ElevenLabs stops waiting.
+   That is why the server dedupes on `call_id`.
 7. **Digit readout.**
    With `text_normalisation_type: "system_prompt"` (the default), the LLM writes numbers as words.
    The voice may say "oh" for the digit zero.

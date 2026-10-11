@@ -12,6 +12,7 @@ Run these from `apps/voice-agent`:
       It checks the payloads, the prompt rules, the transcripts, and the mock server.
 - [ ] `pnpm simulate` passes.
       It starts a mock server and sends the sample tool payloads.
+      It also checks that a retry with the same `call_id` gets the same task and PIN.
 - [ ] `pnpm provision --dry-run` prints four requests: the secret, the two tools, and the agent.
       With `ELEVENLABS_PHONE_NUMBER_ID` set, it prints a fifth request for the phone number.
 - [ ] When the real server is deployed: `VOICE_TOOL_SECRET=... pnpm simulate --url https://<server>` passes.
@@ -71,6 +72,7 @@ For each test, write the result in the table at the end.
       Stop the mock server, or start it with `pnpm mock-server --fail create_task`.
       Make a normal call.
       Pass if the agent apologizes, offers to try again, tries at most one more time, and never says a PIN.
+      In the mock log, both create_task requests must have the same `call_id`.
       Compare with `transcripts/04-server-error.md`.
 - [ ] **T8. Noisy room.**
       Call on speaker in a loud room, or play crowd noise near the phone.

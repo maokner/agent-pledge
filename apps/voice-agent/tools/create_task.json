@@ -18,7 +18,14 @@
       "request_body_schema": {
         "type": "object",
         "description": "The seat-hold task that the caller confirmed.",
-        "required": ["description", "place", "time_limit_minutes", "price_usd", "caller_phone"],
+        "required": [
+          "description",
+          "place",
+          "time_limit_minutes",
+          "price_usd",
+          "caller_phone",
+          "call_id"
+        ],
         "properties": {
           "description": {
             "type": "string",
@@ -39,6 +46,10 @@
           "caller_phone": {
             "type": "string",
             "dynamic_variable": "system__caller_id"
+          },
+          "call_id": {
+            "type": "string",
+            "dynamic_variable": "system__conversation_id"
           }
         }
       }

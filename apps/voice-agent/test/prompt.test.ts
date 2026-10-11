@@ -71,6 +71,10 @@ describe("system prompt", () => {
     expect(systemPrompt).toContain("Never ask the caller for their phone number.");
   });
 
+  it("creates at most one task in a call, because the server dedupes on the call id", () => {
+    expect(systemPrompt).toContain("You can create only one task in a call.");
+  });
+
   it("names both server tools", () => {
     expect(systemPrompt).toContain("## create_task");
     expect(systemPrompt).toContain("## task_status");
