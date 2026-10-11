@@ -271,8 +271,12 @@ Server tools:
 
 | Tool | Input | Output |
 |---|---|---|
-| `create_task` | `description, place, time_limit_minutes, price_usd, caller_phone` | `task_id, pin, board_url` |
+| `create_task` | `description, place, time_limit_minutes, price_usd, caller_phone, call_id` | `task_id, pin, board_url` |
 | `task_status` | `task_id` | `status, helper_note` |
+
+`call_id` is the ElevenLabs conversation id.
+The server returns the existing task for a repeated `call_id`, so a retry after a timeout does not create a second task.
+See `apps/voice-agent/README.md` for the full contract.
 
 ## 7. The local agent
 
