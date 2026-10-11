@@ -59,6 +59,13 @@ Fields that matter for us:
 The docs say it is set for voice calls only.
 The tool fills `caller_phone` with `"dynamic_variable": "system__caller_id"`, so the LLM never sees or invents it.
 
+### Conversation id
+
+`system__conversation_id` is the id of the current conversation.
+It is the same for every tool call in one call, so it is a natural idempotency key.
+The tool fills `call_id` with `"dynamic_variable": "system__conversation_id"`, and the server returns the existing task for a repeated `call_id`.
+Thus, a retry after a timeout does not make a second task.
+
 ### Secret header
 
 `api_schema.request_headers` is a map from header name to one of: a plain string, `{ "secret_id": ... }`, `{ "variable_name": ... }`, or `{ "env_var_label": ... }`.
@@ -66,6 +73,23 @@ We store `VOICE_TOOL_SECRET` as a workspace secret named `agent_pledge_voice_too
 The tools send it as `"x-voice-secret": { "secret_id": "<id>" }`.
 Thus, the secret value is never in the tool config or in the git repo.
 `PATCH /v1/convai/secrets/{secret_id}` with `{ "type": "update", "name", "value" }` rotates it.
+A workspace secret is shared by every agent in the workspace, and the API never returns its value.
+So `pnpm provision` creates the secret only if it does not exist, and changes it only with `--rotate-secret`.
+
+### Finding tools again
+
+`GET /v1/convai/tools?search=<name>` returns tools whose names start with `<name>` (SDK: `tools.list({ search })`).
+`GET /v1/convai/tools/{tool_id}/dependent-agents` lists the agents that use a tool (SDK: `tools.getDependentAgents`).
+`pnpm provision` uses both to reuse a tool from a failed run: exact name, and no dependent agents.
+
+### Call length
+
+`conversation_config.conversation.max_duration_seconds` ends the call after that many seconds.
+The API default is 600.
+We use 480, which caps cost and still leaves room for the status question in TESTING.md T9.
+`conversation_config.agent.max_conversation_duration_message` is what the agent says at the limit.
+If it is empty (the default), the call ends in silence.
+Both fields are in the OpenAPI spec (`ConversationConfig-Input` and `AgentConfigAPIModel-Input`) and in SDK 2.71.0.
 
 ### Phone numbers
 
@@ -97,9 +121,10 @@ Check them in the first live session, and update this file.
    The mock server accepts an empty `caller_phone`, and the real server should too.
    Test the full flow with a real phone call.
 2. **A dynamic-variable property in `required`.**
-   We list `caller_phone` in `required` together with the LLM-filled fields.
+   We list `caller_phone` and `call_id` in `required` together with the LLM-filled fields.
    The schema allows it.
-   If the API rejects it, remove `caller_phone` from `required`.
+   If the API rejects it, remove them from `required`.
+   The contract keeps `call_id` optional, so the server works either way.
 3. **The caller ID format.**
    We expect E.164, for example `+15105550123`.
    The server must not depend on the format.
@@ -113,7 +138,10 @@ Check them in the first live session, and update this file.
 6. **How a network failure looks to the agent.**
    With `passthrough`, an HTTP error body reaches the agent.
    When the server is down, the exact text the agent gets is not documented.
-   The prompt treats any error, timeout, or missing PIN the same way.
+   The prompt handles an `invalid_input` error by asking for the named value again.
+   It treats every other error, a timeout, and a missing PIN the same way: one retry, then an apology.
+   A timeout does not mean that the server failed: it can still create the task after ElevenLabs stops waiting.
+   That is why the server dedupes on `call_id`.
 7. **Digit readout.**
    With `text_normalisation_type: "system_prompt"` (the default), the LLM writes numbers as words.
    The voice may say "oh" for the digit zero.
@@ -123,6 +151,6 @@ Check them in the first live session, and update this file.
    The voice is the API default voice until someone picks a clearer one (issue 11).
 9. **SDK and spec drift.**
    The spec lets `GET /v1/convai/tools` filter by `used_by_agent_id`, but SDK 2.71.0 does not have that parameter yet.
-   We find existing tools through the agent's `tool_ids` instead.
+   We find existing tools through the agent's `tool_ids`, and unused tools by name and `dependent-agents`.
    We import the SDK serializers from `@elevenlabs/elevenlabs-js/serialization/index.js`, which is not a documented entry point.
    If a later SDK version blocks that path, the typecheck fails, and the fix is to pin the version.

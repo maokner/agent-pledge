@@ -1,16 +1,20 @@
 import { readdirSync } from "node:fs";
+import type { CreateTaskInput } from "@agent-pledge/shared";
 import { describe, expect, it } from "vitest";
 import { readText } from "../src/assets.js";
 import {
   createTaskInputSchema,
   createTaskOutputSchema,
   taskStatusOutputSchema,
+  toolErrorSchema,
 } from "../src/contract.js";
 import { loadAssets } from "../src/assets.js";
 import {
   SAMPLE_CALLER_PHONE,
   SAMPLE_NORMAL_CALL,
   SAMPLE_NO_PRICE_CALL,
+  SAMPLE_RIGHT_NOW_CALL,
+  SAMPLE_SEAT_AND_COFFEE_CALL,
   SAMPLE_SERVER_ERROR_CALL,
 } from "../src/samples.js";
 import { packagePath } from "../src/paths.js";
@@ -39,7 +43,63 @@ function successfulPin(events: TranscriptEvent[]): string {
   return createTaskOutputSchema.parse(result.body).pin;
 }
 
-const FILES = ["01-normal-call.md", "02-no-price.md", "03-not-a-seat.md", "04-server-error.md"];
+const YES = /^(yes|yeah|correct|that's right)\b/i;
+const RETRY_OFFER = "Sorry, something went wrong on our side. Do you want me to try again?";
+const MAX_TURN_WORDS = 20;
+
+const sentences = (text: string) => text.split(/(?<=[.?!])\s+/).filter((t) => t.length > 0);
+const words = (text: string) => text.split(/\s+/).length;
+const isSummary = (text: string) => text.startsWith("To confirm:");
+
+/** The summary from step 5 of the prompt, for the values that create_task sends. */
+function summary(args: CreateTaskInput): string {
+  const task = args.description.charAt(0).toLowerCase() + args.description.slice(1);
+  const minutes = args.time_limit_minutes === 1 ? "1 minute" : `${args.time_limit_minutes} minutes`;
+  const dollars = args.price_usd === 1 ? "1 dollar" : `${args.price_usd} dollars`;
+  return `To confirm: ${task}, at ${args.place}, within ${minutes}, for up to ${dollars}. Is that right?`;
+}
+
+/** The board address as step 8 of the prompt says it: no https://, and "dot", "dash", "slash". */
+function spokenUrl(url: string): string {
+  return url
+    .replace(/^https?:\/\//, "")
+    .replace(/\/$/, "")
+    .replace(/[.\-/]/g, (c) => ({ ".": " dot ", "-": " dash ", "/": " slash " })[c] as string);
+}
+
+/** Steps 7 and 8 of the prompt: the one turn that may be longer than two sentences. */
+function pinTurn(pin: string, boardUrl: string): string {
+  const digits = spoken(pin);
+  return [
+    `Your PIN is ${digits}.`,
+    `Again: ${digits}.`,
+    "Give this PIN to the helper when you meet them.",
+    `You can watch your task at ${spokenUrl(boardUrl)}.`,
+    "Do you need anything else?",
+  ].join(" ");
+}
+
+/** The agent turn right after a successful create_task result. */
+function isPinTurn(events: TranscriptEvent[], i: number): boolean {
+  const previous = events[i - 1];
+  const call = events[i - 2];
+  return (
+    events[i]?.kind === "agent" &&
+    previous?.kind === "tool_result" &&
+    previous.status === 200 &&
+    call?.kind === "tool_call" &&
+    call.name === "create_task"
+  );
+}
+
+const FILES = [
+  "01-normal-call.md",
+  "02-no-price.md",
+  "03-not-a-seat.md",
+  "04-server-error.md",
+  "05-right-now.md",
+  "06-seat-and-coffee.md",
+];
 
 describe("every transcript", () => {
   it("is listed", () => {
@@ -56,10 +116,22 @@ describe("every transcript", () => {
     expect(events.at(-1)).toEqual({ kind: "tool_call", name: "end_call", args: {} });
   });
 
-  it.each(FILES)("%s keeps agent turns short for speakerphone", (file) => {
-    for (const line of agentLines(load(file))) {
-      expect(line.split(/\s+/).length, line).toBeLessThanOrEqual(45);
-    }
+  it.each(FILES)("%s keeps agent turns to one or two short sentences", (file) => {
+    const events = load(file);
+    events.forEach((e, i) => {
+      if (e.kind !== "agent" || isPinTurn(events, i) || isSummary(e.text)) return;
+      expect(sentences(e.text).length, e.text).toBeLessThanOrEqual(2);
+      expect(words(e.text), e.text).toBeLessThanOrEqual(MAX_TURN_WORDS);
+    });
+  });
+
+  it.each(FILES)("%s says the PIN turn, the one long turn, in the exact form", (file) => {
+    const events = load(file);
+    events.forEach((e, i) => {
+      if (!isPinTurn(events, i)) return;
+      const result = createTaskOutputSchema.parse((events[i - 1] as { body: unknown }).body);
+      expect((e as { text: string }).text).toBe(pinTurn(result.pin, result.board_url));
+    });
   });
 
   it.each(FILES)("%s sends only valid create_task payloads", (file) => {
@@ -68,20 +140,51 @@ describe("every transcript", () => {
     }
   });
 
-  it.each(FILES)("%s confirms before every create_task call", (file) => {
-    const events = load(file);
-    events.forEach((e, i) => {
-      if (e.kind !== "tool_call" || e.name !== "create_task") return;
-      const before = events.slice(0, i);
-      const confirm = lastIndex(
-        before,
-        (x) => x.kind === "agent" && x.text.startsWith("To confirm:"),
+  it.each(FILES)("%s puts only the seat hold in the description", (file) => {
+    for (const args of toolCalls(load(file), "create_task")) {
+      expect(createTaskInputSchema.parse(args).description).toMatch(
+        /^Save (one|two|three|four) seats?$/,
       );
-      const yes = lastIndex(before, (x) => x.kind === "caller" && /^yes\b/i.test(x.text));
-      expect(confirm, "a 'To confirm:' turn").toBeGreaterThanOrEqual(0);
-      expect(yes, "a yes after the confirmation").toBeGreaterThan(confirm);
-    });
+    }
   });
+
+  it.each(FILES)(
+    "%s gets a yes to a summary of the exact values before every create_task",
+    (file) => {
+      const events = load(file);
+      events.forEach((e, i) => {
+        if (e.kind !== "tool_call" || e.name !== "create_task") return;
+        const args = createTaskInputSchema.parse(e.args);
+        expect(events[i - 1], "One moment. before the call").toEqual({
+          kind: "agent",
+          text: "One moment.",
+        });
+        const yes = events[i - 2];
+        expect(yes?.kind === "caller" && YES.test(yes.text), "a caller yes before the call").toBe(
+          true,
+        );
+        const asked = events[i - 3];
+        if (asked?.kind === "agent" && asked.text === RETRY_OFFER) {
+          // A retry: the previous create_task had the same values and failed with an error that is not invalid_input.
+          const previous = lastIndex(
+            events.slice(0, i - 3),
+            (x) => x.kind === "tool_call" && x.name === "create_task",
+          );
+          expect(previous, "an earlier create_task to retry").toBeGreaterThanOrEqual(0);
+          expect((events[previous] as { args: unknown }).args).toEqual(e.args);
+          const result = events[previous + 1];
+          expect(result?.kind === "tool_result" && result.status !== 200).toBe(true);
+          const body = (result as { body: unknown }).body;
+          expect(toolErrorSchema.parse(body).error).not.toBe("invalid_input");
+        } else {
+          expect(asked, "the summary right before the yes").toEqual({
+            kind: "agent",
+            text: summary(args),
+          });
+        }
+      });
+    },
+  );
 });
 
 describe("01 normal call", () => {
@@ -139,6 +242,14 @@ describe("02 no price", () => {
   });
 });
 
+/** The agent turn right after the first caller turn that matches. */
+function answerTo(events: TranscriptEvent[], caller: RegExp): string {
+  const i = events.findIndex((e) => e.kind === "caller" && caller.test(e.text));
+  const next = events[i + 1];
+  if (i < 0 || next?.kind !== "agent") throw new Error(`no agent answer to ${caller}`);
+  return next.text;
+}
+
 describe("03 not a seat", () => {
   const events = load("03-not-a-seat.md");
 
@@ -147,6 +258,34 @@ describe("03 not a seat", () => {
     expect(lines.filter((l) => l.startsWith(REFUSAL)).length).toBeGreaterThanOrEqual(1);
     expect(toolCalls(events, "create_task")).toEqual([]);
     expect(lines.join(" ")).not.toMatch(/Your PIN/);
+  });
+
+  it("refuses food delivery and a spot in a line", () => {
+    expect(answerTo(events, /burrito/)).toMatch(new RegExp(`^${REFUSAL}`));
+    expect(answerTo(events, /spot in the line/)).toMatch(new RegExp(`^${REFUSAL}`));
+  });
+});
+
+describe("06 seat and coffee", () => {
+  const events = load("06-seat-and-coffee.md");
+
+  it("refuses the coffee and offers only the seat hold", () => {
+    expect(answerTo(events, /coffee/)).toBe(`${REFUSAL} Do you want me to save just the seat?`);
+  });
+
+  it("keeps the coffee out of the summary and the task", () => {
+    expect(toolCalls(events, "create_task")).toEqual([SAMPLE_SEAT_AND_COFFEE_CALL]);
+    expect(JSON.stringify(SAMPLE_SEAT_AND_COFFEE_CALL)).not.toMatch(/coffee/i);
+    const summary = agentLines(events).find((l) => l.startsWith("To confirm:"));
+    expect(summary).not.toMatch(/coffee/i);
+  });
+
+  it("says the PIN from the tool result two times", () => {
+    expect(
+      agentLines(events)
+        .join(" ")
+        .split(spoken(successfulPin(events))).length - 1,
+    ).toBe(2);
   });
 });
 
@@ -170,5 +309,32 @@ describe("04 server error", () => {
         .every((e) => e.kind === "tool_result" && e.status >= 500),
     ).toBe(true);
     expect(agentLines(events).join(" ")).not.toMatch(/PIN|\b\d, \d, \d, \d\b/);
+  });
+});
+
+describe("05 right now", () => {
+  const events = load("05-right-now.md");
+
+  it("makes the time limit 2 minutes and sends the sample payload", () => {
+    expect(toolCalls(events, "create_task")).toEqual([SAMPLE_RIGHT_NOW_CALL]);
+    expect(SAMPLE_RIGHT_NOW_CALL.time_limit_minutes).toBe(2);
+  });
+
+  it("tells the caller about the new time before the summary", () => {
+    const told = events.findIndex(
+      (e) => e.kind === "agent" && e.text === "I will make that 2 minutes. Is that OK?",
+    );
+    const summary = events.findIndex((e) => e.kind === "agent" && e.text.startsWith("To confirm:"));
+    expect(told).toBeGreaterThan(0);
+    expect(summary).toBeGreaterThan(told);
+    expect((events[summary] as { text: string }).text).toContain("within 2 minutes");
+  });
+
+  it("says the PIN from the tool result two times", () => {
+    expect(
+      agentLines(events)
+        .join(" ")
+        .split(spoken(successfulPin(events))).length - 1,
+    ).toBe(2);
   });
 });

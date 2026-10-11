@@ -3,6 +3,8 @@ import type { CreateTaskInput } from "@agent-pledge/shared";
 import { loadAssets, TOOL_NAMES } from "../src/assets.js";
 import { CREATE_TASK_PATH, TASK_STATUS_PATH_PREFIX, VOICE_SECRET_HEADER } from "../src/contract.js";
 import {
+  MAX_CALL_MESSAGE,
+  MAX_CALL_SECONDS,
   SECRET_NAME,
   buildAgentCreatePayload,
   buildAgentUpdatePayload,
@@ -25,6 +27,7 @@ const CREATE_TASK_KEYS = Object.keys({
   time_limit_minutes: true,
   price_usd: true,
   caller_phone: true,
+  call_id: true,
 } satisfies Record<keyof CreateTaskInput, true>);
 
 function webhook(name: (typeof TOOL_NAMES)[number]) {
@@ -78,13 +81,20 @@ describe("create_task tool", () => {
     expect(tool.api_schema.url).toBe(`https://pledge.example.com${CREATE_TASK_PATH}`);
   });
 
-  it("has exactly the CreateTaskInput fields, all required", () => {
+  it("has exactly the CreateTaskInput fields, all required because ElevenLabs always fills them", () => {
     expect(Object.keys(props).sort()).toEqual([...CREATE_TASK_KEYS].sort());
     expect([...(body?.required ?? [])].sort()).toEqual([...CREATE_TASK_KEYS].sort());
   });
 
   it("fills caller_phone from the caller ID, never from the conversation", () => {
     expect(props.caller_phone).toEqual({ type: "string", dynamic_variable: "system__caller_id" });
+  });
+
+  it("fills call_id from the conversation id, so the server can dedupe a retry", () => {
+    expect(props.call_id).toEqual({
+      type: "string",
+      dynamic_variable: "system__conversation_id",
+    });
   });
 
   it("lets the LLM fill the other four fields from the conversation", () => {
@@ -100,6 +110,11 @@ describe("create_task tool", () => {
     expect(props.price_usd?.type).toBe("number");
     expect(props.description?.type).toBe("string");
     expect(props.place?.type).toBe("string");
+  });
+
+  it("tells the LLM to keep add-ons out of the description", () => {
+    expect(props.description?.description).toMatch(/only the seat hold/i);
+    expect(props.description?.description).toMatch(/add-on/);
   });
 
   it("tells the LLM never to guess the price", () => {
@@ -158,6 +173,15 @@ describe("agent payload", () => {
     expect(tts?.model_id).toBe(DEFAULTS.ttsModelId);
   });
 
+  it("says goodbye at the duration limit instead of ending the call in silence", () => {
+    const config = buildAgentCreatePayload(input).conversation_config;
+    expect(config.conversation?.max_duration_seconds).toBe(MAX_CALL_SECONDS);
+    expect(MAX_CALL_SECONDS).toBeGreaterThanOrEqual(5 * 60);
+    expect(config.agent?.max_conversation_duration_message).toBe(MAX_CALL_MESSAGE);
+    expect(MAX_CALL_MESSAGE).not.toMatch(/\d/);
+    expect(MAX_CALL_MESSAGE.split(/\s+/).length).toBeLessThanOrEqual(25);
+  });
+
   it("sends the same settings on create and on update", () => {
     const created = buildAgentCreatePayload(input);
     const updated = buildAgentUpdatePayload(input);
@@ -214,6 +238,7 @@ describe("SDK schema check", () => {
   it("converts snake_case wire fields to the SDK's camelCase fields", () => {
     const sdk = toSdk.tool(buildToolPayload("create_task", assets.toolTemplates.create_task, vars));
     expect(JSON.stringify(sdk)).toContain('"dynamicVariable":"system__caller_id"');
+    expect(JSON.stringify(sdk)).toContain('"dynamicVariable":"system__conversation_id"');
     expect(JSON.stringify(sdk)).toContain('"secretId":"sec_123"');
   });
 

@@ -14,7 +14,7 @@ Everything in this package works and is tested without an ElevenLabs API key.
 | `prompt/system-prompt.md` | The agent's system prompt (issue 12). |
 | `prompt/first-message.txt` | What the agent says when it answers. |
 | `tools/create_task.json`, `tools/task_status.json` | The two server tools, in the exact `POST /v1/convai/tools` format, with `${PUBLIC_BASE_URL}` and `${VOICE_TOOL_SECRET_ID}` placeholders (issue 13). |
-| `transcripts/` | Four sample calls: normal, no price, not a seat, and server error. Tests check them against the prompt rules and the samples. |
+| `transcripts/` | Sample calls: normal, no price, not a seat, server error, "right now", and a seat with a coffee. Tests check them against the prompt rules and the samples. |
 | `scripts/provision.ts` | Creates or updates the agent (`pnpm provision`). |
 | `scripts/mock-server.ts` | A local stand-in for the server's tool endpoints (`pnpm mock-server`). |
 | `scripts/simulate.ts` | Sends the sample payloads to a server and checks the responses (`pnpm simulate`). |
@@ -30,9 +30,11 @@ Run these from `apps/voice-agent`, or with `pnpm --filter @agent-pledge/voice-ag
 
 | Command | What it does |
 |---|---|
-| `pnpm provision --dry-run` | Prints every API request that a real run sends. No network call, no API key. |
+| `pnpm provision --dry-run` | Prints the server checks and every API request that a real run sends. No network call, no API key. With `ELEVENLABS_AGENT_ID` set, it shows the update path (PATCH). |
 | `pnpm provision` | Creates or updates the secret, the two tools, the agent, and the phone number link. |
 | `pnpm provision --create-new` | Creates another agent even if one with the same name exists. |
+| `pnpm provision --rotate-secret` | Also replaces the value of the existing workspace secret. Every agent in the workspace uses it. |
+| `pnpm provision --skip-server-check` | Does not check the server at `PUBLIC_BASE_URL` first. |
 | `pnpm mock-server` | Starts the mock tool server on port 8787. Add `--fail create_task` to rehearse the error path. |
 | `pnpm simulate` | Starts a mock server in the process and runs the contract checks. |
 | `pnpm simulate --url <base-url>` | Runs the contract checks against a running server, for example the deployed one. |
@@ -61,16 +63,44 @@ The scripts read `.env` if it exists; real environment variables win.
 
 `pnpm provision` does these steps in order:
 
-1. Stores `VOICE_TOOL_SECRET` as the workspace secret `agent_pledge_voice_tool_secret`, or updates it.
-2. Creates or updates the `create_task` and `task_status` webhook tools.
+1. Checks the server at `PUBLIC_BASE_URL`, with the same checks as `pnpm simulate` that have no side effects.
+   `GET /health` must answer 200, a wrong or missing `x-voice-secret` must get 401, and `VOICE_TOOL_SECRET` must get through (400 for a body without a price, 404 for an unknown task).
+   No check creates a task.
+   If a check fails, the script stops and changes nothing.
+   `--skip-server-check` skips this step, for example when the server is not deployed yet.
+2. Reads what exists: the agent from `ELEVENLABS_AGENT_ID`, its tools, unused tools with the same names, and the workspace secret.
+   If `ELEVENLABS_AGENT_ID` names an agent that does not exist, the script stops here and says what to do.
+3. Stores `VOICE_TOOL_SECRET` as the workspace secret `agent_pledge_voice_tool_secret` if it does not exist.
+   If it exists, the script keeps it unchanged, because every agent in the ElevenLabs workspace uses it.
+   Pass `--rotate-secret` to replace its value; the script then prints a warning.
+4. Creates or updates the `create_task` and `task_status` webhook tools.
    Each tool sends the secret as the `x-voice-secret` header from the secret store.
-   `create_task` fills `caller_phone` from `system__caller_id`, so the LLM never fills it.
-3. Creates or updates the agent with the prompt, the first message, the tool ids, the `end_call` tool, and the voice settings.
-4. If `ELEVENLABS_PHONE_NUMBER_ID` is set, routes that number to the agent.
+   `create_task` fills `caller_phone` from `system__caller_id` and `call_id` from `system__conversation_id`, so the LLM never fills them.
+5. Creates or updates the agent with the prompt, the first message, the tool ids, the `end_call` tool, and the voice settings.
+   A call ends after 8 minutes (`MAX_CALL_SECONDS` in `src/payloads.ts`), and the agent says a short goodbye first.
+6. If `ELEVENLABS_PHONE_NUMBER_ID` is set, routes that number to the agent.
 
-The run is idempotent.
-With `ELEVENLABS_AGENT_ID` set, it finds the existing tools through the agent and updates everything in place.
-Without it, the script refuses to run if an agent with the same name exists, so it never makes duplicates by accident.
+ElevenLabs never shows a secret's value.
+So when the script keeps an existing secret, it cannot check that the stored value equals your `VOICE_TOOL_SECRET`.
+The server check proves only that the server accepts your local value.
+If calls get 401 after a provision run, the stored value is different: agree on one value with the team, then run `pnpm provision --rotate-secret`.
+
+### What makes a run safe to repeat
+
+- With `ELEVENLABS_AGENT_ID` set, the script finds the tools through the agent and updates everything in place.
+- Without it, the script refuses to run if an agent with the same name exists, so it never makes a second agent by accident.
+- A tool that no agent uses, with the exact name `create_task` or `task_status`, is reused instead of duplicated.
+  This covers a first run that failed after the tools were made but before the agent was saved.
+  The script never takes over a tool that an agent uses, so `--create-new` gets its own tools.
+- The secret is found by its name.
+
+These are the limits:
+
+- If the agent is created but a later step fails (for example the phone number), the next run without `ELEVENLABS_AGENT_ID` refuses to run.
+  Copy the agent id from the `Save it now: ELEVENLABS_AGENT_ID=...` line of the failed run into `.env`, then run again.
+- If two unused tools with the same name exist, the script reuses one and lists the others, which you delete in the dashboard.
+- Two people who run `pnpm provision` at the same time can still make duplicates.
+- A dashboard edit to the agent or the tools is overwritten by the next run.
 
 The payloads are pure functions in `src/payloads.ts`.
 Before any request, `src/sdk-payloads.ts` checks each payload against the official SDK schemas, with unknown fields rejected.
@@ -84,17 +114,34 @@ The server (issue 19) must implement this contract.
 | | `create_task` | `task_status` |
 |---|---|---|
 | Request | `POST /tools/create_task` with a JSON body `CreateTaskInput` | `GET /tools/task_status/:task_id` |
-| Auth | Header `x-voice-secret` must equal `VOICE_TOOL_SECRET`. Otherwise 401. | Same |
+| Auth | Header `x-voice-secret` must equal `VOICE_TOOL_SECRET`. Otherwise 401, before the body is read. | Same |
 | Success | 200 with `CreateTaskOutput`: `task_id`, `pin` (exactly 4 digits, as a string), `board_url` | 200 with `TaskStatusOutput`: `status` (`open`, `claimed`, `done`, `failed`), `helper_note` (string or null) |
 | Errors | 400 for invalid input, 401, 503 when unavailable | 401, 404 for an unknown task |
+| Retries | A repeated `call_id` returns the existing task (same `task_id`, `pin`, and `board_url`) with 200 and creates nothing. | Safe to repeat. |
 | Time limit | Answer within 30 seconds. Answer before ledger transactions validate, if possible, because the caller waits in silence. | Answer within 10 seconds. |
+
+The server must also answer `GET /health` with 200, without the secret.
+`pnpm provision` checks it before every run.
 
 Notes for the server:
 
 - The types are in `packages/shared` (`CreateTaskInput`, `CreateTaskOutput`, `TaskStatusOutput`).
-- `time_limit_minutes` is a whole number and `price_usd` is a positive number.
+- `time_limit_minutes` is a whole number of at least 1, and `price_usd` is a positive number.
+  The agent rounds a time up ("right now" becomes 2 minutes), so a 400 should be rare.
+- For a value that is not valid, answer 400 with `"error": "invalid_input"` and name the field in `details`, for example `"time_limit_minutes: ..."`.
+  The agent then asks the caller for that value again.
+  For every other failure, use another code, so that the agent offers a retry instead.
 - `caller_phone` comes from the caller ID.
   It may be an empty string in a call without a phone line, such as a dashboard test.
+- `call_id` is the ElevenLabs conversation id, and the server must dedupe on it.
+  The agent calls `create_task` again after an error or a timeout, and the first attempt may have worked on the server.
+  Without dedupe, that retry makes a second task and a second payment, and the caller hears the PIN of the second task only.
+  Validate the body first, then look up `call_id`.
+  If a task with that `call_id` exists, return it, even if the new body has other values.
+  One call creates at most one task.
+  The retry can arrive while the first request is still running, because ElevenLabs stops waiting after 30 seconds.
+  So reserve the `call_id` before the ledger work, for example with a unique index, and make the second request wait for the result of the first.
+  An absent or empty `call_id` (for example from the board's web form) means no dedupe.
 - Error bodies use `{ "error": "<code>", "message": "<text>", "details": ["..."] }`.
   The agent gets the error body, so the message must not contain a PIN.
 - The mock server's `src/mock-server.ts` is a reference implementation of this contract.
@@ -107,6 +154,7 @@ These steps need real credentials or a real phone, so they are not done yet:
    Create the key with Agents access and put it in `.env`.
 2. **First provision.**
    Run `pnpm provision --dry-run`, check the output, then run `pnpm provision`.
+   The server or the mock tunnel must be up, because the script checks it first.
    Save the printed `ELEVENLABS_AGENT_ID` in `.env`.
 3. **Phone number** (issue 11).
    ElevenLabs does not sell numbers through the API.

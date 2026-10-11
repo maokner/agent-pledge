@@ -22,6 +22,10 @@ export interface ProvisionConfig {
   dryRun: boolean;
   /** Create a new agent even if one with the same name exists. */
   createNew: boolean;
+  /** Replace the value of the workspace secret if it exists. Every agent in the workspace that uses it is affected. */
+  rotateSecret: boolean;
+  /** Do not check the server at PUBLIC_BASE_URL before the first write. */
+  skipServerCheck: boolean;
   apiKey: string | null;
   /** Optional API base URL, for example a regional ElevenLabs endpoint. */
   apiBaseUrl: string | null;
@@ -75,10 +79,14 @@ export interface ConfigResult {
   warnings: string[];
 }
 
-export function loadProvisionConfig(
-  env: Env,
-  flags: { dryRun: boolean; createNew: boolean },
-): ConfigResult {
+export interface ProvisionFlags {
+  dryRun: boolean;
+  createNew: boolean;
+  rotateSecret?: boolean;
+  skipServerCheck?: boolean;
+}
+
+export function loadProvisionConfig(env: Env, flags: ProvisionFlags): ConfigResult {
   const problems: string[] = [];
   const warnings: string[] = [];
   const { dryRun } = flags;
@@ -131,6 +139,8 @@ export function loadProvisionConfig(
     config: {
       dryRun,
       createNew: flags.createNew,
+      rotateSecret: flags.rotateSecret ?? false,
+      skipServerCheck: flags.skipServerCheck ?? false,
       apiKey,
       apiBaseUrl,
       agentId,

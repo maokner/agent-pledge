@@ -4,8 +4,7 @@ The caller does not say a price.
 The agent asks for one, and does not suggest a price when the caller asks for advice.
 Later the caller asks about the task, so the agent uses task_status.
 
-**Agent:** Hi, this is Agent Pledge.
-I can save you a seat.
+**Agent:** Hi, this is Agent Pledge, and I can save you a seat.
 What do you need?
 
 **Caller:** Can you hold two seats for me in Main Stacks?
@@ -43,7 +42,8 @@ Is that right?
   "place": "Main Stacks, second floor, near the windows",
   "time_limit_minutes": 15,
   "price_usd": 8,
-  "caller_phone": "+15105550188"
+  "caller_phone": "+15105550188",
+  "call_id": "conv_sample_02"
 }
 ```
 

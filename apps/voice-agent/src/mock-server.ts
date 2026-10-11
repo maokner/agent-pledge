@@ -121,6 +121,10 @@ function createTask(req: MockRequest, ctx: MockContext): MockResponse {
   if (!parsed.success) {
     return error(400, "invalid_input", "The task input is not valid.", formatIssues(parsed.error));
   }
+  // A retry from the same call (same call_id) gets the task from the first attempt, so a timeout never makes two tasks.
+  const callId = parsed.data.call_id;
+  const existing = callId ? findTaskByCallId(ctx, callId) : undefined;
+  if (existing) return { status: 200, body: createTaskOutput(existing, ctx) };
   let taskId = ctx.newTaskId();
   while (ctx.tasks.has(taskId)) taskId = ctx.newTaskId();
   const task: MockTask = {
@@ -132,8 +136,16 @@ function createTask(req: MockRequest, ctx: MockContext): MockResponse {
     created_at: ctx.now().toISOString(),
   };
   ctx.tasks.set(taskId, task);
-  const body: CreateTaskOutput = { task_id: task.task_id, pin: task.pin, board_url: ctx.boardUrl };
-  return { status: 200, body };
+  return { status: 200, body: createTaskOutput(task, ctx) };
+}
+
+function createTaskOutput(task: MockTask, ctx: MockContext): CreateTaskOutput {
+  return { task_id: task.task_id, pin: task.pin, board_url: ctx.boardUrl };
+}
+
+function findTaskByCallId(ctx: MockContext, callId: string): MockTask | undefined {
+  for (const task of ctx.tasks.values()) if (task.input.call_id === callId) return task;
+  return undefined;
 }
 
 function taskStatus(taskId: string, ctx: MockContext): MockResponse {

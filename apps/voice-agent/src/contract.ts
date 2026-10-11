@@ -46,6 +46,8 @@ export const createTaskInputSchema = z
     price_usd: z.number().positive().max(10_000),
     // Filled from system__caller_id. It may be empty in a call with no phone line, such as a dashboard test.
     caller_phone: z.string().max(64),
+    // Filled from system__conversation_id. The server dedupes retries on it; empty or absent means no dedupe.
+    call_id: z.string().max(128).exactOptional(),
   })
   .strict() satisfies z.ZodType<CreateTaskInput>;
 

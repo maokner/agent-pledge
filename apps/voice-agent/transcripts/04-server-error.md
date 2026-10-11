@@ -4,8 +4,7 @@ The server fails.
 The agent apologizes, offers to try again, and never says a PIN.
 Rehearse it with `pnpm mock-server --fail create_task`, or with the server stopped.
 
-**Agent:** Hi, this is Agent Pledge.
-I can save you a seat.
+**Agent:** Hi, this is Agent Pledge, and I can save you a seat.
 What do you need?
 
 **Caller:** Hold a seat for me on the third floor of Moffitt.
@@ -26,7 +25,8 @@ Is that right?
   "place": "Moffitt Library, third floor",
   "time_limit_minutes": 10,
   "price_usd": 6,
-  "caller_phone": "+15105550147"
+  "caller_phone": "+15105550147",
+  "call_id": "conv_sample_04"
 }
 ```
 
@@ -54,7 +54,8 @@ Do you want me to try again?
   "place": "Moffitt Library, third floor",
   "time_limit_minutes": 10,
   "price_usd": 6,
-  "caller_phone": "+15105550147"
+  "caller_phone": "+15105550147",
+  "call_id": "conv_sample_04"
 }
 ```
 

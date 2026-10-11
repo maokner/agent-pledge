@@ -18,11 +18,18 @@
       "request_body_schema": {
         "type": "object",
         "description": "The seat-hold task that the caller confirmed.",
-        "required": ["description", "place", "time_limit_minutes", "price_usd", "caller_phone"],
+        "required": [
+          "description",
+          "place",
+          "time_limit_minutes",
+          "price_usd",
+          "caller_phone",
+          "call_id"
+        ],
         "properties": {
           "description": {
             "type": "string",
-            "description": "The task in a few words, without the place, the time, or the price. Example: Save one seat."
+            "description": "Only the seat hold, in a few words, without the place, the time, the price, or any add-on such as coffee. Example: Save one seat."
           },
           "place": {
             "type": "string",
@@ -30,7 +37,7 @@
           },
           "time_limit_minutes": {
             "type": "integer",
-            "description": "How many minutes from now the seat must be saved, as a whole number that the caller said. Example: 10."
+            "description": "How many minutes from now the seat must be saved, as a whole number of at least 1, from the summary that the caller said yes to. Example: 10."
           },
           "price_usd": {
             "type": "number",
@@ -39,6 +46,10 @@
           "caller_phone": {
             "type": "string",
             "dynamic_variable": "system__caller_id"
+          },
+          "call_id": {
+            "type": "string",
+            "dynamic_variable": "system__conversation_id"
           }
         }
       }

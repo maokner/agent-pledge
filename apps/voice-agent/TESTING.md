@@ -1,6 +1,6 @@
 # Voice agent test plan
 
-This plan proves requirements R1 and R9 from the PRD (section 3) and covers every test in issue 14.
+This plan proves requirements R1 and R9 from the PRD (section 3) and covers every test in issue 14, plus T10 for a time limit that is not a whole number.
 Part 1 runs without credentials.
 Part 2 needs an ElevenLabs API key and a phone number.
 
@@ -12,8 +12,11 @@ Run these from `apps/voice-agent`:
       It checks the payloads, the prompt rules, the transcripts, and the mock server.
 - [ ] `pnpm simulate` passes.
       It starts a mock server and sends the sample tool payloads.
-- [ ] `pnpm provision --dry-run` prints four requests: the secret, the two tools, and the agent.
+      It also checks that a retry with the same `call_id` gets the same task and PIN.
+- [ ] `pnpm provision --dry-run` prints the five server checks and four requests: `POST` for the secret, the two tools, and the agent.
       With `ELEVENLABS_PHONE_NUMBER_ID` set, it prints a fifth request for the phone number.
+- [ ] `ELEVENLABS_AGENT_ID=agent_x pnpm provision --dry-run` prints the update path: `PATCH` for the two tools and the agent, and a line that keeps the secret.
+      With `--rotate-secret` it also prints `PATCH` for the secret and the warning that every agent in the workspace uses it.
 - [ ] When the real server is deployed: `VOICE_TOOL_SECRET=... pnpm simulate --url https://<server>` passes.
       This checks that the server matches the contract.
       It creates two real tasks, so run it before a rehearsal and not during one.
@@ -28,9 +31,14 @@ Use this setup before the real server exists.
 2. Open a public https tunnel to it, for example `cloudflared tunnel --url http://localhost:8787` or `ngrok http 8787`.
 3. Put the tunnel URL in `.env` as `PUBLIC_BASE_URL`.
 4. Run `pnpm provision`.
+   It first checks the mock server through the tunnel, so a wrong URL or secret stops it before anything changes.
    On the first run, copy the printed `ELEVENLABS_AGENT_ID` into `.env`.
 5. A quick tunnel gets a new URL each time it starts.
    When the URL changes, update `PUBLIC_BASE_URL` and run `pnpm provision` again.
+
+The workspace secret is shared by every agent in the ElevenLabs workspace, including the demo agent.
+`pnpm provision` keeps an existing secret, so use the team's `VOICE_TOOL_SECRET` for the mock server too.
+Do not pass `--rotate-secret` with your own value unless the whole team agrees, because then the deployed server rejects every demo call with 401.
 
 The mock server prints every request and response.
 Use `GET /mock/tasks` (with the `x-voice-secret` header) to see the stored tasks and their PINs.
@@ -39,6 +47,7 @@ Use `GET /mock/tasks` (with the `x-voice-secret` header) to see the stored tasks
 
 1. Set `PUBLIC_BASE_URL` to the deployed server and `VOICE_TOOL_SECRET` to the server's secret.
 2. Run `pnpm provision`.
+   If the server check passes but calls get 401, the stored workspace secret has another value: run `pnpm provision --rotate-secret`.
 3. Open the board next to the phone.
 
 ### Tests
@@ -65,12 +74,17 @@ For each test, write the result in the table at the end.
       Compare with `transcripts/02-no-price.md`.
 - [ ] **T6. Not a seat hold.**
       Ask for a food delivery.
-      Pass if the agent says exactly "Right now I can only save seats." and the mock log shows no create_task request.
+      Then ask the agent to "hold my spot in the line outside Sproul".
+      Pass if the agent says exactly "Right now I can only save seats." both times and the mock log shows no create_task request.
       Compare with `transcripts/03-not-a-seat.md`.
+      In a second call, say: "Save me a seat at the Free Speech Movement Cafe and grab me a coffee. 10 minutes, 6 dollars."
+      Pass if the agent says the same sentence, offers to save only the seat, and the create_task `description` does not mention the coffee.
+      Compare with `transcripts/06-seat-and-coffee.md`.
 - [ ] **T7. Server down.**
       Stop the mock server, or start it with `pnpm mock-server --fail create_task`.
       Make a normal call.
       Pass if the agent apologizes, offers to try again, tries at most one more time, and never says a PIN.
+      In the mock log, both create_task requests must have the same `call_id`.
       Compare with `transcripts/04-server-error.md`.
 - [ ] **T8. Noisy room.**
       Call on speaker in a loud room, or play crowd noise near the phone.
@@ -81,6 +95,16 @@ For each test, write the result in the table at the end.
       From a laptop, set the task to claimed: `curl -X POST <base>/mock/tasks/<task_id> -H "x-voice-secret: <secret>" -d '{"status":"claimed","helper_note":"Front table, left side"}'`.
       Then ask the agent: "Has anyone taken it yet?"
       Pass if the agent says that a helper has taken it and reads the helper note.
+      A call ends after 8 minutes, so do this within a few minutes of the PIN.
+      If the call reaches the limit, pass only if the agent says the time-limit goodbye instead of going silent.
+- [ ] **T10. Right now.**
+      Say: "Save me a seat at the front table right now. I will pay 4 dollars."
+      Pass if the agent says that it will make that 2 minutes, the summary says 2 minutes, and the create_task request has `time_limit_minutes: 2`.
+      Make a second call and say "in a minute and a half" instead.
+      Pass if the agent makes that 2 minutes too.
+      In both calls, the agent must never say that something went wrong on our side.
+      If the mock log shows a 400 with `invalid_input`, pass only if the agent asked for that value again and confirmed all four values again.
+      Compare with `transcripts/05-right-now.md`.
 
 ### Record the results
 
@@ -98,6 +122,7 @@ Post the results as a comment on issue 14, in this form:
 | T7 Server down     | pass   |                                         |
 | T8 Noisy room      | pass   |                                         |
 | T9 Task status     | pass   |                                         |
+| T10 Right now      | pass   |                                         |
 ```
 
 If a live call does not match its sample transcript, change the prompt or the transcript so that they match, and run `pnpm test` again.
