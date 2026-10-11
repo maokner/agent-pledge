@@ -158,6 +158,7 @@ Signs: the call does not connect, the agent says something went wrong, or no tas
 | `pnpm demo:local --port 3202` | Use another server port (for tests next to the real demo). |
 | `pnpm demo:local --web-port 3200` | Use another port for the web app (default 3000). |
 | `pnpm demo:local --web-dev` | Run the web app with `next dev` (hot reload through the server) instead of `next build` + `next start`. |
+| `pnpm demo:local --web-url https://www.yopledge.site` | The pages are hosted elsewhere (Vercel). Claim links, the phone agent's board link, and CORS use that URL; the API stays on the tunnel. Set `NEXT_PUBLIC_API_URL` to the tunnel URL on the host. Remembered by `--restart`. |
 | `pnpm demo:local --restart server` | Restart only the server. Same URL. |
 | `pnpm demo:local --restart agent` | Restart only the local agent. Same URL. |
 | `pnpm demo:local --restart web` | Rebuild and restart only the web app. Same URL. |

@@ -9,6 +9,7 @@
 #   pnpm demo:local --port 3202        # another server port (default 3002)
 #   pnpm demo:local --web-port 3200    # another web app port (default 3000)
 #   pnpm demo:local --web-dev          # next dev instead of next build + next start
+#   pnpm demo:local --web-url https://www.yopledge.site   # pages hosted elsewhere: claim links go there
 #   pnpm demo:local --stop             # stop what this script started
 #   pnpm demo:local --restart server   # restart only the server (or: agent, web), keep the tunnel URL
 #
@@ -44,6 +45,9 @@ TUNNEL=1
 PROVISION=1
 STOP_ONLY=0
 RESTART=""
+# Public URL of the web app when it is hosted elsewhere (for example Vercel). Claim links, the
+# phone agent's board link, and CORS use it; the API stays on the tunnel URL.
+WEB_URL=""
 
 # ---------- output ----------
 
@@ -64,7 +68,7 @@ die() {
 }
 
 usage() {
-  sed -n '2,15p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+  sed -n '2,16p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
   exit "${1:-0}"
 }
 
@@ -91,6 +95,12 @@ while [ $# -gt 0 ]; do
       ;;
     --web-port=*) WEB_PORT="${1#--web-port=}"; shift ;;
     --web-dev) WEB_DEV=1; shift ;;
+    --web-url)
+      [ $# -ge 2 ] || die "--web-url needs a URL, for example https://www.yopledge.site"
+      WEB_URL="${2%/}"
+      shift 2
+      ;;
+    --web-url=*) WEB_URL="${1#--web-url=}"; WEB_URL="${WEB_URL%/}"; shift ;;
     --no-tunnel) TUNNEL=0; shift ;;
     --no-provision) PROVISION=0; shift ;;
     --stop) STOP_ONLY=1; shift ;;
@@ -231,20 +241,23 @@ prepare_env_files() {
   # URLs and port.
   local local_url="http://localhost:$PORT"
   env_set "$SERVER_ENV" PORT "$PORT"
-  env_set "$SERVER_ENV" PUBLIC_BASE_URL "$PUBLIC_URL"
+  env_set "$SERVER_ENV" PUBLIC_BASE_URL "$(base_url)"
   env_set "$SERVER_ENV" PUBLIC_API_URL "$PUBLIC_URL"
   if [ "$PUBLIC_URL" = "$local_url" ]; then
-    env_set "$SERVER_ENV" CORS_ORIGINS "$local_url"
+    cors="$local_url"
   else
-    env_set "$SERVER_ENV" CORS_ORIGINS "$PUBLIC_URL,$local_url"
+    cors="$PUBLIC_URL,$local_url"
   fi
+  [ -z "$WEB_URL" ] || cors="$WEB_URL,$cors"
+  env_set "$SERVER_ENV" CORS_ORIGINS "$cors"
   env_set "$SERVER_ENV" WEB_UPSTREAM_URL "$(web_upstream)"
   env_set "$AGENT_ENV" SERVER_URL "$local_url"
   env_set "$AGENT_ENV" SERVER_WS_URL "ws://localhost:$PORT/ws/agent"
   if [ "$TUNNEL" = 1 ]; then
-    env_set "$VOICE_ENV" PUBLIC_BASE_URL "$PUBLIC_URL"
+    env_set "$VOICE_ENV" PUBLIC_BASE_URL "$(base_url)"
   fi
-  ok "PUBLIC_BASE_URL, PUBLIC_API_URL, CORS_ORIGINS -> $PUBLIC_URL"
+  ok "PUBLIC_API_URL -> $PUBLIC_URL"
+  ok "PUBLIC_BASE_URL (claim links, board link) -> $(base_url); CORS_ORIGINS -> $cors"
   ok "WEB_UPSTREAM_URL -> $(web_upstream) (the server proxies the web app)"
 
   # Ledger mode.
@@ -409,6 +422,9 @@ tunnel_health_ok() {
 # The Next.js app listens on loopback only: people reach it through the server's proxy, on the
 # server's port or the tunnel, so the pages, the API and /ws/board share one origin.
 web_upstream() { echo "http://127.0.0.1:$WEB_PORT"; }
+# Where the pages live for claim links and the phone agent's board link: the hosted web app when
+# --web-url is given, else the tunnel (or localhost), where the server proxies the web app.
+base_url() { echo "${WEB_URL:-$PUBLIC_URL}"; }
 web_healthy() { curl -fsS -o /dev/null -m 5 "$(web_upstream)/board" 2>/dev/null; }
 
 # Env for both next build and next start, exported (never on a command line, so the secret does
@@ -464,7 +480,7 @@ start_server() {
   step "Starting the server on port $PORT"
   # The env values on the command line win over the .env file (dotenv does not override), so a
   # stray export in this shell cannot point the server somewhere else.
-  start_bg server env PORT="$PORT" LEDGER_MODE="$MODE" PUBLIC_BASE_URL="$PUBLIC_URL" \
+  start_bg server env PORT="$PORT" LEDGER_MODE="$MODE" PUBLIC_BASE_URL="$(base_url)" \
     PUBLIC_API_URL="$PUBLIC_URL" WEB_UPSTREAM_URL="$(web_upstream)" \
     pnpm --dir "$ROOT" --filter @agent-pledge/server start
   local rc=0
@@ -550,7 +566,7 @@ provision_voice() {
   fi
   log="$(log_file provision)"
   # shellcheck disable=SC2086
-  (cd "$ROOT/apps/voice-agent" && env PUBLIC_BASE_URL="$PUBLIC_URL" pnpm provision $args) >"$log" 2>&1 </dev/null || rc=$?
+  (cd "$ROOT/apps/voice-agent" && env PUBLIC_BASE_URL="$(base_url)" pnpm provision $args) >"$log" 2>&1 </dev/null || rc=$?
   sed 's/^/    | /' "$log"
   [ "$rc" = 0 ] || die "Phone agent provisioning failed (exit $rc). Log: $log" \
     "The server and agent are still running. Fix it and run: cd apps/voice-agent && pnpm provision"
@@ -573,6 +589,10 @@ if [ -n "$RESTART" ]; then
   PORT="$(env_get "$SERVER_ENV" PORT)"
   MODE="$(env_get "$SERVER_ENV" LEDGER_MODE)"
   PUBLIC_URL="$(env_get "$SERVER_ENV" PUBLIC_API_URL)"
+  if [ -z "$WEB_URL" ]; then
+    saved_base="$(env_get "$SERVER_ENV" PUBLIC_BASE_URL)"
+    [ "$saved_base" = "$PUBLIC_URL" ] || WEB_URL="$saved_base"
+  fi
   upstream="$(env_get "$SERVER_ENV" WEB_UPSTREAM_URL)"
   case "$upstream" in
     http://127.0.0.1:*) WEB_PORT="${upstream##*:}" ;;
@@ -677,6 +697,9 @@ fi
 board_line="$PUBLIC_URL/board"
 [ "${BOARD_OK:-0}" = 1 ] || board_line="$PUBLIC_URL/board   (NOT served: see the web log)"
 if [ "$WEB_DEV" = 1 ]; then web_kind="next dev"; else web_kind="next start"; fi
+web_url_line=""
+[ -z "$WEB_URL" ] || web_url_line="
+  Web (hosted): $WEB_URL  (set NEXT_PUBLIC_API_URL=$PUBLIC_URL there)"
 tunnel_log_line=""
 [ "$TUNNEL" = 1 ] && tunnel_log_line="
                 $(log_file tunnel)"
@@ -687,7 +710,7 @@ ${GREEN}${BOLD}Demo is up${RESET} (ledger: $MODE)
 
   Board:        $board_line
   Board local:  http://localhost:$PORT/board
-  Claim links:  $PUBLIC_URL/c/<CODE>
+  Claim links:  $(base_url)/c/<CODE>${web_url_line}
   Phone:        $phone_line
   Health:       $PUBLIC_URL/health
   Web app:      $(web_upstream) ($web_kind, reached through the server)
