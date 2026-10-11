@@ -2,8 +2,7 @@
 
 XRPL testnet ledger package for Agent Pledge: RLUSD payments, task NFTs, claim locks, payout swaps, and refunds.
 See the root README sections 5.1 to 5.4 for the design.
-This file documents the core: config, client, submission, events, memos, wallets, explorer links, and typed errors.
-The task operations (issues 4 to 9) live in `src/ops/`.
+This file documents the core (config, client, submission, events, memos, wallets, explorer links, and typed errors) and the task operations in `src/ops/` (issues 4 to 10).
 
 ## Contents
 
@@ -11,6 +10,7 @@ The task operations (issues 4 to 9) live in `src/ops/`.
 - [Scripts](#scripts)
 - [Quick start for the server](#quick-start-for-the-server)
 - [API](#api)
+- [Task operations](#task-operations)
 - [Events](#events)
 - [Typed errors](#typed-errors)
 - [Spike results](#spike-results)
@@ -35,7 +35,8 @@ A bad value throws a `ConfigError` that names every bad variable.
 | `PUBLIC_BASE_URL`        | `http://localhost:3000`                              | Public server URL, for NFT URIs and the board link.                   |
 
 Never commit seeds.
-The root `.gitignore` ignores `.env` and `.env.*` (except `.env.example`).
+The root `.gitignore` ignores `.env` and `.env.*` (except `.env.example`), so `packages/ledger/.env.testnet` from the setup script is ignored.
+To load it into a shell: `set -a; . packages/ledger/.env.testnet; set +a`.
 
 ## Scripts
 
@@ -45,25 +46,38 @@ Without `run`, `pnpm ... setup` starts pnpm's own built-in `setup` command, whic
 ### setup (issue 1)
 
 ```sh
-pnpm --filter @agent-pledge/ledger run setup --out ../../.env.testnet
+pnpm --filter @agent-pledge/ledger run setup
 ```
 
 The script creates the vault, local agent, and demo requester wallets and funds each with XRP from the testnet faucet.
 Then it sets the token trust lines and tries to get RLUSD from the web faucet at tryrlusd.com.
 If the faucet fails, the script falls back to a self-issued token.
 At the end it sends a 1-token test payment from the requester to the vault.
-It prints the env block to stdout and writes it to `--out` with file mode 600.
-Progress goes to stderr.
-With `--out`, the env block cannot mix with pnpm's own banner lines on stdout.
 
-| Flag              | Meaning                                                    |
-| ----------------- | ---------------------------------------------------------- |
-| (none)            | RLUSD from tryrlusd.com. If that fails, self-issue.        |
-| `--rlusd`         | RLUSD only. Fail if the faucet fails.                      |
-| `--self-issue`    | Skip RLUSD and self-issue at once.                         |
-| `--amount N`      | Token amount for the requester and the agent. Default 100. |
-| `--currency CODE` | Self-issued currency code. Default `USD`.                  |
-| `--out FILE`      | Also write the env block to this file.                     |
+The seeds go only to the env file, by default `packages/ledger/.env.testnet`, with file mode 600.
+Stdout gets only the wallet addresses and explorer links, so a projected or recorded terminal never shows a seed.
+Progress goes to stderr.
+
+The script protects funded wallets:
+
+- It refuses to overwrite an existing env file without `--force`, and it checks this before it spends faucet funds.
+  An old file can hold the only copy of a funded vault seed.
+- It writes the file as soon as the wallets exist, and again after each step.
+  If a later step fails, it still writes the file (with a `# SETUP DID NOT FINISH` line), so the faucet XRP and any token are never stranded.
+  If even the file cannot be written, it prints the env block to stdout as a last resort.
+- It sets mode 600 also on a file that it replaces with `--force`.
+- It warns when the file does not match a `.gitignore` pattern (checked with `git check-ignore`).
+
+| Flag              | Meaning                                                                                          |
+| ----------------- | ------------------------------------------------------------------------------------------------ |
+| (none)            | RLUSD from tryrlusd.com. If that fails, self-issue.                                              |
+| `--rlusd`         | RLUSD only. Fail if the faucet fails.                                                            |
+| `--self-issue`    | Skip RLUSD and self-issue at once.                                                               |
+| `--amount N`      | Token amount for the requester and the agent. Default 100.                                       |
+| `--currency CODE` | Self-issued currency code. Default `USD`.                                                        |
+| `--out FILE`      | Write the env block to this file instead of `packages/ledger/.env.testnet`.                      |
+| `--force`         | Overwrite the env file if it exists.                                                             |
+| `--print-seeds`   | Also print the env block, with the seeds, to stdout. Use it only when nobody can see the screen. |
 
 The RLUSD faucet: the tryrlusd.com page sends `POST /api/mint-xrpl` with `{"address": "r..."}`.
 Each call gives 10 RLUSD.
@@ -91,6 +105,20 @@ The run on 2026-10-11 took 40 seconds (faucet 401, then self-issue):
 | Token issuer (`USD`, DefaultRipple and AllowTrustLineLocking on) | [rK5hgFwTFprL6eaonsoknSuW6kzTiwZhnh](https://testnet.xrpl.org/accounts/rK5hgFwTFprL6eaonsoknSuW6kzTiwZhnh) |
 
 Test payment of 1 USD from the requester to the vault, with the task memo `setup-check`: [02F46CC8](https://testnet.xrpl.org/transactions/02F46CC8DF0519C0B25DA66B8CB870418987538B357ABB3A060F808400A27176).
+
+### demo (issue 9)
+
+```sh
+pnpm ledger:demo success       # from the repository root
+pnpm ledger:demo failure
+pnpm ledger:demo double-claim
+```
+
+The root script runs `pnpm --filter @agent-pledge/ledger demo`.
+Each run makes fresh faucet wallets and a self-issued stand-in token (`TSTUSD`) and runs the PRD 5.4 sequence on testnet.
+It prints an explorer link and a timing for every transaction, and checks every final balance against PRD 2.2 and 2.3.
+It prints `PASS: <mode>` and exits 0, or `FAIL` and exits 1.
+Each NFT and its sell offer come from one `NFTokenMint` with `Amount`, which saves one ledger per NFT.
 
 ### spike (issue 2)
 
@@ -194,7 +222,7 @@ const response = await submitTx(
 | Option                       | Meaning                                                                                                |
 | ---------------------------- | ------------------------------------------------------------------------------------------------------ |
 | `kind?: TxKind`              | Board meaning, copied into the events. Without it, events have `kind: null`.                           |
-| `taskId?: string`            | Appends the task memo to `Memos`. Events then carry `taskId`.                                          |
+| `taskId?: string` | Appends the task memo to `Memos`, unless the transaction already has it. A different task memo throws `INVALID_INPUT`. Events then carry `taskId`. |
 | `config?: LedgerConfig`      | For explorer links. Default `loadConfig()`.                                                            |
 | `pollIntervalMs?: number`    | How often to ask for the outcome. Default 1000.                                                        |
 | `outcomeDeadlineMs?: number` | How long to keep trying to learn the outcome while the connection is down. Default 180000 (3 minutes). |
@@ -234,22 +262,39 @@ errorForResult("tecOBJECT_NOT_FOUND", acceptTx, helper.classicAddress); // Alrea
 
 ### Memos
 
+Every Agent Pledge transaction carries hex-encoded memos, so anyone can audit the vault history on the explorer (PRD 5.2).
+One codec writes and reads all of them.
+
+| Field       | MemoType                  | Value                                              |
+| ----------- | ------------------------- | -------------------------------------------------- |
+| `task`      | `agent-pledge/task`       | Task ID. For a sub-task op, the parent task ID.    |
+| `subtask`   | `agent-pledge/subtask`    | Sub-task ID.                                       |
+| `parentNft` | `agent-pledge/parent-nft` | The task NFT ID, on a sub-task mint.               |
+| `action`    | `agent-pledge/action`     | The `TxKind`, for example `task.fund` or `refund`. |
+
 ```ts
-// taskMemo(taskId: string): Memo[]
+// buildMemos(fields: MemoFields): Memo[]
+buildMemos({ task: "t1", subtask: "t1-s1", action: "subtask.fund" }); // fixed order, undefined fields left out
+
+// readMemos(memos: unknown): MemoFields
+readMemos(tx.Memos); // { task: "t1", subtask: "t1-s1", action: "subtask.fund" }; unknown memos ignored
+
+// taskMemo(taskId: string): Memo[], the same as buildMemos({ task: taskId })
 const memos = taskMemo("task_42");
 // [{ Memo: { MemoType: hex("agent-pledge/task"), MemoData: hex("task_42"), MemoFormat: hex("text/plain") } }]
 
 // readTaskMemo(tx: object): string | null
 readTaskMemo(response.result); // "task_42"; also takes a tx, a tx response, or a stream message
 
-// toHex(text: string): string, fromHex(hex: string): string | null
+// encodeMemo(type, data): Memo, toHex(text): string, fromHex(hex): string | null
 toHex("hi"); // "6869"
 
-// TASK_MEMO_TYPE = "agent-pledge/task"
+// MEMO_TYPES, TASK_MEMO_TYPE = "agent-pledge/task"
 ```
 
-`taskMemo` throws a `LedgerError` with code `INVALID_INPUT` for an empty ID, an ID with outer whitespace, or an ID longer than 256 bytes.
-The explorer shows the memo decoded on the Detailed tab of the transaction.
+Every memo has `MemoFormat` `text/plain`.
+`buildMemos` (and so `taskMemo`) throws a `LedgerError` with code `INVALID_INPUT` for an empty value, or for a task or sub-task ID with outer whitespace or longer than 256 bytes.
+The explorer shows the memos decoded on the Detailed tab of the transaction.
 
 ### Wallets
 
@@ -284,8 +329,15 @@ On testnet, `createWallet` takes 9 to 11 seconds.
 // tokenAmount(config, value: string | number): IssuedCurrencyAmount
 tokenAmount(config, 5); // { currency, issuer, value: "5" } of the configured token
 
-// getTokenBalance(client, address, config): Promise<string>
-await getTokenBalance(client, vault.classicAddress, config); // "12.5"; "0" without a trust line
+// getTokenBalance(client, config, address): Promise<string>
+await getTokenBalance(client, config, vault.classicAddress); // "12.5"; "0" without a trust line
+
+// Exact decimal math for token values. Floats are rejected, and values must be non-negative.
+formatIouValue("5.00"); // "5"
+addIouValues("5", "1"); // "6"
+subtractIouValues("6", "1"); // "5"; throws RangeError if negative
+compareIouValues("4.5", "4.50"); // 0
+normalizeLedgerValue("1e-7"); // "0.0000001", for values as the ledger returns them
 ```
 
 ### Explorer links
@@ -305,6 +357,220 @@ A transaction hash and an NFT ID are both 64 hex characters, so `explorerUrl` ne
 We took the routes from the explorer source (`ripple/explorer`, `src/containers/App/routes.ts`) and opened each kind of link on testnet.xrpl.org.
 The transaction page has `/detailed` and `/raw` tabs.
 The NFT page lists the full NFT history and shows "BURNED" after a burn.
+
+## Task operations
+
+Every op takes an input object and an optional `ctx: Partial<OpsContext>` (`{ client, config, pollIntervalMs }`, default: the shared client and `loadConfig()`).
+Every op waits for a validated ledger and returns a `SubmittedTx` (`hash`, `kind`, `status`, `explorerUrl`), or throws a typed error.
+The `tx.pending` event fires as soon as the hash is known.
+Every op writes the memos above and passes the task ID to `submitTx`, so every `tx.*` event of an op has `taskId`.
+Amounts are decimal strings in the configured token (`"5"`, `"4.50"`), a bigint, or a safe integer.
+
+The examples follow the demo: requester price 5, pledge 1, sub-task 4.
+
+### Task (demo steps 5 and 7)
+
+```ts
+// fundTask({ requester, vault, amount, taskId }): Promise<SubmittedTx>
+await fundTask({ requester, vault, amount: "5", taskId }); // Payment requester -> vault, kind task.fund
+
+// mintTaskNftWithOffer({ vault, uri, taskId, pledgeAmount, agentAddress }): Promise<MintOfferResult>
+const task = await mintTaskNftWithOffer({
+  vault,
+  uri: `${base}/api/nft/tasks/${taskId}`,
+  taskId,
+  pledgeAmount: "1",
+  agentAddress: agent.classicAddress,
+}); // { nftId, offerId, ... }: one NFTokenMint with Amount and Destination, kind task.mint
+
+// The same in two transactions:
+// mintTaskNft({ vault, uri, taskId }): Promise<MintResult>
+const nft = await mintTaskNft({ vault, uri, taskId }); // { nftId, ... }, kind task.mint
+// offerTaskToAgent({ vault, nftId, pledgeAmount, agentAddress, taskId }): Promise<OfferResult>
+const offer = await offerTaskToAgent({
+  vault,
+  nftId: nft.nftId,
+  pledgeAmount: "1",
+  agentAddress,
+  taskId,
+});
+
+// acceptOffer({ claimer, offerId, kind?, taskId, subtaskId? }): Promise<ClaimResult>
+await acceptOffer({ claimer: agent, offerId: task.offerId, taskId }); // kind task.claim, pays the pledge
+```
+
+Every NFT has exactly the flags `tfBurnable` and `tfTransferable` (`TASK_NFT_FLAGS`), never `tfTrustLine`, and `TransferFee` 0.
+`acceptOffer` throws `AlreadyClaimedError` when another account accepted the offer first.
+`taskId` is required on `offerTaskToAgent` and `acceptOffer`, because `failTask` finds the pledge by the task memo on the vault's offer.
+
+### Sub-task (demo steps 8 and 10)
+
+```ts
+// fundSubtask({ agent, vault, amount, subtaskId, taskId }): Promise<SubmittedTx>
+await fundSubtask({ agent, vault, amount: "4", subtaskId, taskId }); // kind subtask.fund
+
+// mintSubtaskNftWithOffer({ vault, uri, subtaskId, taskId, parentNftId, amount? }): Promise<MintOfferResult>
+const sub = await mintSubtaskNftWithOffer({
+  vault,
+  uri,
+  subtaskId,
+  taskId,
+  parentNftId: task.nftId,
+});
+// one NFTokenMint with Amount "0" XRP drops and no Destination, kind subtask.mint
+
+// The same in two transactions:
+// mintSubtaskNft({ vault, uri, subtaskId, taskId, parentNftId }): Promise<MintResult>
+const subNft = await mintSubtaskNft({ vault, uri, subtaskId, taskId, parentNftId: task.nftId });
+// offerSubtaskToAnyone({ vault, nftId, subtaskId, taskId, amount? }): Promise<OfferResult>
+const open = await offerSubtaskToAnyone({ vault, nftId: subNft.nftId, subtaskId, taskId });
+
+// The helper claims:
+await acceptOffer({
+  claimer: helper,
+  offerId: sub.offerId,
+  kind: "subtask.claim",
+  taskId,
+  subtaskId,
+});
+```
+
+`taskId` (the parent task) and `parentNftId` are required.
+`parentNftId` must be 64 hex characters, or the op throws `INVALID_INPUT` before it signs.
+The open offer price defaults to `OPEN_OFFER_AMOUNT` (`"0"` XRP drops).
+A zero token amount throws a `TypeError` before signing, because rippled rejects it with `temBAD_AMOUNT`.
+
+### Payout (demo step 13)
+
+```ts
+// redeem({ holder, vault, nftId, amount, taskId?, subtaskId? }): Promise<RedeemResult>
+await redeem({ holder: helper, vault, nftId: sub.nftId, amount: "4", taskId, subtaskId }); // { offer, accept }
+
+// The same in two calls, for example when the holder's wallet signs elsewhere:
+// createPayoutOffer({ holder, vaultAddress, nftId, amount, taskId?, subtaskId? }): Promise<OfferResult>
+const payout = await createPayoutOffer({
+  holder: agent,
+  vaultAddress,
+  nftId: task.nftId,
+  amount: "6",
+  taskId,
+});
+// acceptPayoutOffer({ vault, offerId, nftId, holderAddress, amount, taskId?, subtaskId? }): Promise<SubmittedTx>
+await acceptPayoutOffer({
+  vault,
+  offerId: payout.offerId,
+  nftId: task.nftId,
+  holderAddress: agent.classicAddress,
+  amount: "6",
+  taskId,
+});
+
+// burnNft({ vault, nftId, owner?, taskId?, subtaskId? }): Promise<SubmittedTx>
+await burnNft({ vault, nftId: task.nftId, taskId }); // Owner is set only if someone other than the vault holds it
+```
+
+`acceptPayoutOffer` never signs an offer that it has not checked.
+It reads the NFT's sell offers from the validated ledger (`nft_sell_offers`).
+It checks that the offer with `offerId` exists for `nftId`, is owned by `holderAddress`, has the vault as `Destination`, and asks exactly `amount` of the configured token (currency, issuer, and value).
+Any difference throws `OfferMismatchError` (`OFFER_MISMATCH`) with every problem, and nothing is submitted.
+An offer cannot change after it is created, so the check stays true until the accept.
+The PIN check (PRD R4 and R8) is not in this package: the server must check the PIN before it calls `redeem` or `acceptPayoutOffer`.
+
+With a `taskId`, `createPayoutOffer`, `acceptPayoutOffer`, and `redeem` run under the task lock, the same one as `failTask` (see below).
+`burnNft` does not take the lock, because `failTask` calls it under the lock.
+
+### Failure (PRD 2.3)
+
+```ts
+// failTask(input: FailTaskInput, ctx?): Promise<FailTaskResult>
+const result = await failTask({
+  vault,
+  taskId,
+  taskNftId: task.nftId,
+  requesterAddress: requester.classicAddress,
+  price: "5", // what the caller expects the vault received; "0" if the funding never validated
+  pledge: "1", // "0" if the agent never claimed
+  agentAddress: agent.classicAddress,
+  subtasks: [{ subtaskId, nftId: sub.nftId, amount: "4", helperAddress: helper.classicAddress }],
+});
+// { burns: FailTaskTx[], refunds: FailTaskTx[], skipped: string[] }; each tx has a plain-English label
+```
+
+What `failTask` does:
+
+1. It reads the vault's complete validated history (`listCompleteAccountHistory`): every page of `account_tx`, back to the transaction that created the vault.
+   If the server does not have that far back, it throws `HISTORY_INCOMPLETE` and sends nothing.
+   There is no option to scan a shorter range, because a skipped old refund would be paid again.
+2. It derives what the vault received for the task from that history, in the configured token, by delivered amount.
+   The price comes from the requester's `task.fund` payments.
+   The pledge comes from the validated accept of the vault's token-priced task offer.
+   Each sub-task amount comes from the agent's `subtask.fund` payments.
+3. It compares that with `price`, `pledge`, and each sub-task `amount`.
+   Any difference, or a funded sub-task missing from `subtasks`, throws `FundingMismatchError` (`FUNDING_MISMATCH`), and nothing is sent.
+   The error has `problems` (one line each) and `received` (the ledger's view), so the server can decide and call again.
+4. If the vault already bought back any of the NFTs in a payout swap, it throws `ALREADY_PAID_OUT`.
+5. It burns every NFT that is not burned yet, from its current holder.
+   If no candidate holds an NFT, it throws `NFT_HOLDER_UNKNOWN`.
+   A burn that fails with `tecNO_ENTRY` means that the NFT was burned or moved, so it reads the history again.
+   A payout of the NFT then throws `ALREADY_PAID_OUT`, a burn counts as done, and anything else rethrows.
+6. It reads the history again and plans the refunds from that read.
+   A burned NFT can never be paid out, so this view is final.
+   Thus, a payout that validated before a burn stops the call here with `ALREADY_PAID_OUT`, before any refund.
+7. It refunds the requester the received price plus the received pledge, and the agent each received sub-task amount, with `refund` action memos.
+   A refund counts as sent only up to the total token value of the validated refunds to that destination with the same task and sub-task memos.
+   If less was sent before, it sends only the rest.
+
+A second call sends nothing and lists each step in `skipped`.
+Calls for the same vault and task in one process run one after another, and never at the same time as a payout of that task (`taskLockKey(vault, taskId)` with `runExclusive`).
+
+Idempotency sees only validated ledgers.
+A refund that a crashed process submitted in its last few seconds is not in the history yet, so a retry right after the crash could send it again.
+After a crash, wait at least one ledger (about 5 seconds, or until the `LastLedgerSequence` of the last transaction has passed) before you call `failTask` again.
+The locks are in-process, so only one process may sign for the vault.
+
+`planFailTask(input, state)` is the pure planner behind `failTask`.
+`vaultStateFromHistory(vaultAddress, history, config)` builds its `state`: burned and paid-out NFTs, deposits, and refunds.
+
+### Token transfer
+
+```ts
+// transferToken({ from, to, amount, taskId? }): Promise<SubmittedTx>
+await transferToken({ from: treasury, to: requester.classicAddress, amount: "5", taskId });
+// Payment of the configured token, kind token.transfer
+```
+
+PRD 5.1 says that the server makes the requester's wallet.
+The server uses `transferToken` to put the task money into that wallet before `fundTask`, from a treasury wallet or the vault.
+`failTask` ignores token transfers, because they are not task funding.
+
+### Ledger state
+
+```ts
+// listAccountTransactions(client, address, { pageSize? }): Promise<LedgerTxRecord[]>, newest first, all pages
+// listCompleteAccountHistory(client, address, { pageSize? }): the same, or HISTORY_INCOMPLETE
+const history = await listCompleteAccountHistory(client, vault.classicAddress);
+// LedgerTxRecord: hash, type, account, destination, result, nftId, amount, offerId, createdAccount, memos
+
+// findNftHolder(client, nftId, candidates): Promise<string | undefined>
+await findNftHolder(client, nftId, [vault.classicAddress, helper.classicAddress]);
+// accountHoldsNft(client, address, nftId): Promise<boolean>
+
+// tokenValueOf(amount, config): string | undefined, the value if the amount is the configured token
+```
+
+For a payment, `LedgerTxRecord.amount` is the delivered amount (`meta.delivered_amount`), so a partial payment counts only what arrived.
+For an offer, it is the offer `Amount`.
+In API v2, `account_tx` names a payment's amount `DeliverMax`.
+
+### Metadata and URIs
+
+```ts
+getMintedNftId(meta); // meta.nftoken_id, or xrpl getNFTokenID
+getCreatedOfferId(meta); // meta.offer_id, or the CreatedNode NFTokenOffer LedgerIndex
+getAcceptedNftId(meta); // meta.nftoken_id, or the deleted offer's NFTokenID
+encodeNftUri("https://board.example/api/nft/tasks/t1"); // hex; absolute http, https, or ipfs URL, at most 256 bytes
+decodeNftUri(hex);
+```
 
 ## Events
 
@@ -344,7 +610,7 @@ The server can then look up the hash (`tx` request) to settle the state.
 
 ## Typed errors
 
-Every error extends `LedgerError` with `code` (a `LedgerErrorCode`), `resultCode` (the raw XRPL code, if any), `hash` (if signed), and `cause`.
+Every error extends `LedgerError` with `code` (a `LedgerErrorCode` from `@agent-pledge/shared`, so a `switch` on it can be exhaustive), `resultCode` (the raw XRPL code, if any), `hash` (if signed), and `cause`.
 Switch on `code` or use `instanceof`.
 The HTTP status is our suggestion for the server.
 
@@ -361,6 +627,12 @@ The HTTP status is our suggestion for the server.
 | `NetworkError`            | `NETWORK`            | none                                                                                                                                                                                                                                                      | 503  | No connection. If `hash` is set, the outcome is unknown. Check the hash before you retry.                                                                  |
 | `ConfigError`             | `CONFIG`             | none                                                                                                                                                                                                                                                      | 500  | An environment variable is missing or invalid.                                                                                                             |
 | `LedgerError`             | `INVALID_INPUT`      | none                                                                                                                                                                                                                                                      | 400  | Bad input to a helper, for example an empty task ID.                                                                                                       |
+| `FundingMismatchError`    | `FUNDING_MISMATCH`   | none                                                                                                                                                                                                                                                      | 409  | `failTask`: the input amounts differ from what the vault received. Nothing was sent. Has `problems` and `received`.                                        |
+| `OfferMismatchError`      | `OFFER_MISMATCH`     | none                                                                                                                                                                                                                                                      | 409  | `acceptPayoutOffer`: the offer is not the expected payout offer. Nothing was submitted. Has `problems`.                                                    |
+| `LedgerError`             | `ALREADY_PAID_OUT`   | none                                                                                                                                                                                                                                                      | 409  | `failTask`: an NFT of the task was paid out, so the task did not fail. No refund was sent.                                                                 |
+| `LedgerError`             | `NFT_HOLDER_UNKNOWN` | none                                                                                                                                                                                                                                                      | 500  | `failTask`: an NFT is not burned and none of the candidates holds it. No refund was sent.                                                                  |
+| `LedgerError`             | `HISTORY_INCOMPLETE` | none                                                                                                                                                                                                                                                      | 503  | `failTask`: the XRPL server lacks the vault's full history. Use a full-history server.                                                                     |
+| `LedgerError`             | `META_PARSE`         | none                                                                                                                                                                                                                                                      | 500  | A validated mint or offer has no NFT ID or offer ID in its metadata.                                                                                       |
 | `LedgerError`             | `TX_FAILED`          | every other code, and rippled request errors from `submit`                                                                                                                                                                                                | 500  | `resultCode` has the raw code.                                                                                                                             |
 
 What each mapped code means:
@@ -445,6 +717,7 @@ What we learned:
 - Never set the `tfTrustLine` mint flag.
   The fixRemoveNFTokenAutoTrustLine amendment is on and rejects it.
 - Pass `kind` and `taskId` to every `submitTx` call so the board can place each event, and so every vault transaction has the task memo.
+  If the transaction already has the same task memo, `submitTx` does not add a second one.
 - Send independent transactions with `Promise.all`.
   The account lock keeps the vault's Sequence numbers correct.
 - For a payout swap in RLUSD, the seller of the NFT (the helper or the agent) must have a trust line for the token.
