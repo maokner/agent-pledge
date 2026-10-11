@@ -12,7 +12,8 @@
     "lint": "pnpm -r run lint",
     "test": "pnpm -r run test",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "ledger:demo": "pnpm --filter @agent-pledge/ledger demo"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.0",
