@@ -197,6 +197,7 @@ What `submitTx` does:
 2. It emits `tx.pending` with the hash.
 3. It submits.
    A preliminary `tem`, `tef`, or `tel` result fails at once, because those transactions never reach a ledger.
+   A preliminary `ter` result (for example `terQUEUED` or `terINSUF_FEE_B`) is not final: the server holds the transaction and can still apply it in a later ledger.
 4. It polls by hash until a validated ledger has the transaction, or the validated ledger passes `LastLedgerSequence` (then `TxExpiredError`).
 5. If the socket drops while it waits, it waits for the reconnect and goes on polling, because a signed transaction can still validate.
 6. On `tesSUCCESS` it emits `tx.validated` and returns.
@@ -204,6 +205,9 @@ What `submitTx` does:
 
 Steps 1 to 3 run under a lock for each account.
 Thus, many concurrent `submitTx` calls from the vault get different `Sequence` numbers.
+After a `tes` or `tec` preliminary result, the open ledger has used the `Sequence`, so the lock ends before step 4.
+After a `ter` result, or an unknown result after a reconnect, the open ledger still has the old `Sequence`.
+Then the lock stays held through step 4, until the transaction validates or expires, so the next autofill cannot sign a second transaction with the same `Sequence`.
 Different accounts still submit in parallel.
 The lock is for one process only, so only one process may sign for each account.
 
@@ -329,12 +333,12 @@ The HTTP status is our suggestion for the server.
 | Class | `code` | XRPL result codes | HTTP | Meaning |
 |---|---|---|---|---|
 | `AlreadyClaimedError` | `ALREADY_CLAIMED` | `tecOBJECT_NOT_FOUND` on `NFTokenAcceptOffer` | 409 | Another account accepted the offer first (spike steps 4 and 6). |
-| `InsufficientFundsError` | `INSUFFICIENT_FUNDS` | `tecUNFUNDED_PAYMENT`, `tecINSUFFICIENT_FUNDS`, `tecUNFUNDED_OFFER`, `tecUNFUNDED`, `tecINSUFFICIENT_PAYMENT`, `tecINSUFFICIENT_RESERVE`, `tecINSUF_RESERVE_LINE`, `tecINSUF_RESERVE_OFFER`, `tecNO_LINE_INSUF_RESERVE`, `tecPATH_PARTIAL`, `tecPATH_DRY`, `terINSUF_FEE_B` | 402 | Not enough token, XRP, or XRP reserve. |
+| `InsufficientFundsError` | `INSUFFICIENT_FUNDS` | `tecUNFUNDED_PAYMENT`, `tecINSUFFICIENT_FUNDS`, `tecUNFUNDED_OFFER`, `tecUNFUNDED`, `tecINSUFFICIENT_PAYMENT`, `tecINSUFFICIENT_RESERVE`, `tecINSUF_RESERVE_LINE`, `tecINSUF_RESERVE_OFFER`, `tecNO_LINE_INSUF_RESERVE`, `tecPATH_PARTIAL`, `tecPATH_DRY` | 402 | Not enough token, XRP, or XRP reserve. |
 | `NoTrustLineError` | `NO_TRUST_LINE` | `tecNO_LINE`, `tecNO_AUTH` | 500 | A trust line is missing or not authorized. A setup problem. |
 | `NotAllowedError` | `NOT_ALLOWED` | `tecNO_PERMISSION`, `tecCANT_ACCEPT_OWN_NFTOKEN_OFFER`, `tefNFTOKEN_IS_NOT_TRANSFERABLE` | 403 | The account may not do this (spike step 8). |
 | `NotFoundError` | `NOT_FOUND` | `tecNO_ENTRY`, `tecNO_DST`, `tecNO_DST_INSUF_XRP`, `tecNO_TARGET`, and `tecOBJECT_NOT_FOUND` on transactions other than an offer accept | 404 | The NFT, offer, or destination account does not exist (spike step 10). |
 | `OfferExpiredError` | `OFFER_EXPIRED` | `tecEXPIRED` | 410 | The NFT offer has expired. |
-| `TxExpiredError` | `TX_EXPIRED` | `tefMAX_LEDGER`, or `LastLedgerSequence` passed with no result | 503 | It will never apply. You can safely build and send it again. |
+| `TxExpiredError` | `TX_EXPIRED` | `tefMAX_LEDGER`, or `LastLedgerSequence` passed with no result | 503 | It will never apply. You can safely build and send it again. The message names a `ter` preliminary result, for example `terINSUF_FEE_B`, if there was one. |
 | `InvalidTransactionError` | `INVALID_TX` | every `tem*` code, and xrpl.js `ValidationError` | 500 | Malformed transaction, a bug in our code (spike step 9). |
 | `NetworkError` | `NETWORK` | none | 503 | No connection. If `hash` is set, the outcome is unknown. Check the hash before you retry. |
 | `ConfigError` | `CONFIG` | none | 500 | An environment variable is missing or invalid. |
@@ -354,7 +358,10 @@ What each mapped code means:
 - `tecPATH_DRY`: nothing could be delivered.
   On testnet this code means two things: the sender has no token balance (spike step 11), or the receiver has no trust line (spike step 12).
   The error message names both causes.
-- `terINSUF_FEE_B`: the account cannot pay the transaction fee.
+- `terINSUF_FEE_B` is not in the table on purpose.
+  It is a preliminary `ter` result, so it never appears in a validated ledger, and the server holds the transaction and retries it.
+  If the account gets XRP before `LastLedgerSequence`, the transaction still applies.
+  Thus, `submitTx` waits, and the result is either success or a `TxExpiredError` whose message names `terINSUF_FEE_B`.
 - `tecNO_LINE`, `tecNO_AUTH`: the trust line is missing or not authorized by the issuer.
 - `tecNO_PERMISSION`: for example, an account accepts an offer whose `Destination` is a different account.
 - `tecCANT_ACCEPT_OWN_NFTOKEN_OFFER`: the account tries to accept its own offer.

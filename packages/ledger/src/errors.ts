@@ -95,8 +95,18 @@ export class OfferExpiredError extends LedgerError {
  * safe to build and submit it again. HTTP 503.
  */
 export class TxExpiredError extends LedgerError {
-  constructor(txType: string, cause?: unknown, details?: LedgerErrorDetails) {
-    super(`${txType} expired before a validated ledger included it`, "TX_EXPIRED", cause, details);
+  /**
+   * @param preliminary The preliminary result from `submit`, if it explains the expiry. For example
+   *   `terINSUF_FEE_B`: the account could not pay the fee, so the server held it until it expired.
+   */
+  constructor(txType: string, cause?: unknown, details?: LedgerErrorDetails, preliminary?: string) {
+    super(
+      `${txType} expired before a validated ledger included it` +
+        (preliminary ? ` (preliminary result ${preliminary})` : ""),
+      "TX_EXPIRED",
+      cause,
+      details,
+    );
   }
 }
 

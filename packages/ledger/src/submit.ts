@@ -50,7 +50,6 @@ export const RESULT_CODE_ERRORS = {
     "tecNO_LINE_INSUF_RESERVE",
     "tecPATH_PARTIAL",
     "tecPATH_DRY",
-    "terINSUF_FEE_B",
   ],
   NO_TRUST_LINE: ["tecNO_LINE", "tecNO_AUTH"],
   NOT_ALLOWED: [
@@ -195,6 +194,17 @@ function isFinalPreliminary(code: string): boolean {
 }
 
 /**
+ * True when the open ledger has applied the transaction, so its Sequence is used and the next
+ * autofill (which reads the account at ledger "current") gets a new one. Only `tes` and `tec`
+ * preliminary results do that. A `ter` result (for example `terQUEUED` or `terINSUF_FEE_B`) or an
+ * unknown result after a reconnect leaves the Sequence unchanged in the open ledger, but the
+ * transaction can still validate later.
+ */
+function consumedSequence(preliminary: string): boolean {
+  return preliminary.startsWith("tes") || preliminary.startsWith("tec");
+}
+
+/**
  * Autofills, signs, submits, and waits for a validated ledger. Throws a typed LedgerError on failure.
  *
  * Emits `tx.pending` once the hash is known, then `tx.validated` or `tx.failed` on `ledgerEvents`.
@@ -234,85 +244,104 @@ export async function submitTx<T extends SubmittableTransaction>(
     return error;
   };
 
-  // 1. Sign and submit under the account lock, so the next autofill sees the new Sequence.
-  const { lastLedger } = await withAccountLock(account, async () => {
-    let prepared: T;
-    let signed: { tx_blob: string; hash: string };
-    try {
-      await ensureConnected(client);
-      prepared = await client.autofill(toSubmit);
-      signed = wallet.sign(prepared);
-    } catch (error) {
-      if (error instanceof LedgerError) throw error;
-      if (error instanceof ValidationError) {
-        throw new InvalidTransactionError(error.message, error);
-      }
-      throw new NetworkError(`Cannot prepare ${tx.TransactionType}: ${String(error)}`, error);
-    }
-    const signedHash = signed.hash;
-    hash = signedHash;
-    ledgerEvents.emit("tx.pending", {
-      ...base,
-      hash: signedHash,
-      explorerUrl: explorerTxUrl(config, signedHash),
-    });
-    const rejected = (error: unknown) => {
-      const reason = rippledErrorName(error) ?? String(error);
-      return fail(
-        new LedgerError(
-          `The server rejected ${tx.TransactionType}: ${reason}`,
-          "TX_FAILED",
-          error,
-          {
-            hash: signedHash,
-            resultCode: reason,
-          },
-        ),
+  /** Polls by hash until a validated ledger has the transaction, or LastLedgerSequence has passed. */
+  const outcome = (signedHash: string, lastLedger: number, preliminary: string) =>
+    waitForOutcome<T>(
+      client,
+      tx.TransactionType,
+      signedHash,
+      lastLedger,
+      preliminary,
+      options.pollIntervalMs ?? DEFAULT_POLL_INTERVAL_MS,
+    ).catch((error: unknown) => {
+      if (error instanceof LedgerError) throw fail(error, false);
+      throw fail(
+        new NetworkError(`Outcome of ${signedHash} is unknown: ${String(error)}`, error, {
+          hash: signedHash,
+        }),
         false,
       );
-    };
+    });
 
-    let preliminary: string;
-    try {
-      preliminary = await submitBlob(client, signed.tx_blob);
-    } catch (error) {
-      if (!isConnectionError(error)) throw rejected(error);
-      // The server may or may not have the transaction. Reconnect and send the same blob again:
-      // a transaction with this hash can apply at most once.
+  // 1. Sign and submit under the account lock, so the next autofill sees the new Sequence.
+  const settled = await withAccountLock(
+    account,
+    async (): Promise<{ response: TxResponse<T> } | { hash: string; lastLedger: number }> => {
+      let prepared: T;
+      let signed: { tx_blob: string; hash: string };
       try {
         await ensureConnected(client);
-        preliminary = await submitBlob(client, signed.tx_blob);
-        if (preliminary === "tefALREADY" || preliminary === "tefPAST_SEQ") preliminary = "unknown";
-      } catch (retryError) {
-        if (!isConnectionError(retryError) && !(retryError instanceof NetworkError)) {
-          throw rejected(retryError);
+        prepared = await client.autofill(toSubmit);
+        signed = wallet.sign(prepared);
+      } catch (error) {
+        if (error instanceof LedgerError) throw error;
+        if (error instanceof ValidationError) {
+          throw new InvalidTransactionError(error.message, error);
         }
-        preliminary = "unknown";
+        throw new NetworkError(`Cannot prepare ${tx.TransactionType}: ${String(error)}`, error);
       }
-    }
-    if (isFinalPreliminary(preliminary)) {
-      throw fail(errorForResult(preliminary, tx, account, undefined, hash), false);
-    }
-    return { lastLedger: prepared.LastLedgerSequence ?? Number.POSITIVE_INFINITY };
-  });
-  const txHash = hash!;
+      const signedHash = signed.hash;
+      hash = signedHash;
+      ledgerEvents.emit("tx.pending", {
+        ...base,
+        hash: signedHash,
+        explorerUrl: explorerTxUrl(config, signedHash),
+      });
+      const rejected = (error: unknown) => {
+        const reason = rippledErrorName(error) ?? String(error);
+        return fail(
+          new LedgerError(
+            `The server rejected ${tx.TransactionType}: ${reason}`,
+            "TX_FAILED",
+            error,
+            {
+              hash: signedHash,
+              resultCode: reason,
+            },
+          ),
+          false,
+        );
+      };
 
-  // 2. Poll by hash until a validated ledger has it, or LastLedgerSequence has passed.
-  const response = await waitForOutcome<T>(
-    client,
-    tx.TransactionType,
-    txHash,
-    lastLedger,
-    options.pollIntervalMs ?? DEFAULT_POLL_INTERVAL_MS,
-  ).catch((error: unknown) => {
-    if (error instanceof LedgerError) throw fail(error, false);
-    throw fail(
-      new NetworkError(`Outcome of ${txHash} is unknown: ${String(error)}`, error, {
-        hash: txHash,
-      }),
-      false,
-    );
-  });
+      let preliminary: string;
+      try {
+        preliminary = await submitBlob(client, signed.tx_blob);
+      } catch (error) {
+        if (!isConnectionError(error)) throw rejected(error);
+        // The server may or may not have the transaction. Reconnect and send the same blob again:
+        // a transaction with this hash can apply at most once.
+        try {
+          await ensureConnected(client);
+          preliminary = await submitBlob(client, signed.tx_blob);
+          if (preliminary === "tefALREADY" || preliminary === "tefPAST_SEQ") {
+            preliminary = "unknown";
+          }
+        } catch (retryError) {
+          if (!isConnectionError(retryError) && !(retryError instanceof NetworkError)) {
+            throw rejected(retryError);
+          }
+          preliminary = "unknown";
+        }
+      }
+      if (isFinalPreliminary(preliminary)) {
+        throw fail(errorForResult(preliminary, tx, account, undefined, signedHash), false);
+      }
+      const lastLedger = prepared.LastLedgerSequence ?? Number.POSITIVE_INFINITY;
+      // 2a. The Sequence is not used in the open ledger yet. Keep the lock until the outcome is
+      // known, or the next autofill reads the same Sequence and one of the two cannot apply.
+      if (!consumedSequence(preliminary)) {
+        return { response: await outcome(signedHash, lastLedger, preliminary) };
+      }
+      return { hash: signedHash, lastLedger };
+    },
+  );
+
+  // 2b. The open ledger has the transaction. Wait for the outcome without the lock.
+  const response =
+    "response" in settled
+      ? settled.response
+      : await outcome(settled.hash, settled.lastLedger, "tesSUCCESS");
+  const txHash = hash!;
 
   const code = resultCode(response);
   if (code === "tesSUCCESS") {
@@ -338,6 +367,7 @@ async function waitForOutcome<T extends SubmittableTransaction>(
   txType: string,
   hash: string,
   lastLedger: number,
+  preliminary: string,
   pollIntervalMs: number,
 ): Promise<TxResponse<T>> {
   let disconnectedSince: number | undefined;
@@ -352,7 +382,12 @@ async function waitForOutcome<T extends SubmittableTransaction>(
         if (rippledErrorName(error) !== "txnNotFound") throw error;
       }
       if (latest > lastLedger) {
-        throw new TxExpiredError(txType, undefined, { hash, resultCode: "tefMAX_LEDGER" });
+        throw new TxExpiredError(
+          txType,
+          undefined,
+          { hash, resultCode: "tefMAX_LEDGER" },
+          consumedSequence(preliminary) ? undefined : preliminary,
+        );
       }
       disconnectedSince = undefined;
     } catch (error) {
