@@ -170,7 +170,8 @@ describe("create_task", () => {
     expect(res.status).toBe(400);
     const err = toolErrorSchema.parse(res.body);
     expect(err.error).toBe("invalid_input");
-    expect(err.details?.join(" ")).toContain(expected);
+    // The mock server sends details as a list of strings; toolErrorSchema accepts any shape.
+    expect((err.details as string[]).join(" ")).toContain(expected);
   });
 
   it("accepts an empty caller_phone from a dashboard test call", () => {
