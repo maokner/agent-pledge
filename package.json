@@ -16,7 +16,11 @@
     "db:generate": "pnpm --filter @agent-pledge/server db:generate",
     "db:migrate": "pnpm --filter @agent-pledge/server db:migrate",
     "db:seed": "pnpm --filter @agent-pledge/server db:seed",
-    "db:reset": "pnpm --filter @agent-pledge/server db:reset"
+    "db:reset": "pnpm --filter @agent-pledge/server db:reset",
+    "demo:reset": "pnpm db:reset && pnpm --dir apps/server exec tsx ../../scripts/demo-reset.ts",
+    "smoke": "pnpm --dir apps/server exec tsx ../../scripts/smoke.ts",
+    "deploy:secrets": "pnpm --dir apps/server exec tsx ../../scripts/gen-secrets.ts",
+    "typecheck:scripts": "tsc -p scripts/tsconfig.json"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
