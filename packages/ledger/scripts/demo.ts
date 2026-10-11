@@ -251,8 +251,9 @@ async function runFailure(f: Fixtures, ctx: OpsContext): Promise<Expected> {
   let started = Date.now();
   const first = await failTask(input, ctx);
   for (const tx of [...first.burns, ...first.refunds]) {
-    records.push({ label: `Failure ${tx.kind}`, hash: tx.hash, url: tx.explorerUrl, ms: 0 });
-    log(`${elapsed()}    ${tx.kind.padEnd(42)}        ${tx.explorerUrl}`);
+    records.push({ label: tx.label, hash: tx.hash, url: tx.explorerUrl, ms: 0 });
+    log(`${elapsed()}    ${tx.label}`);
+    log(`${elapsed()}      ${tx.explorerUrl}`);
   }
   log(
     `${elapsed()}    first call: ${first.burns.length} burns, ${first.refunds.length} refunds in ${seconds(started)}`,

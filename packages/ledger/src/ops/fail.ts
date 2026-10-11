@@ -35,9 +35,14 @@ export interface FailTaskInput {
   ledgerIndexMin?: number | undefined;
 }
 
+/** A failTask transaction with a plain-English label for the board. */
+export interface FailTaskTx extends SubmittedTx {
+  label: string;
+}
+
 export interface FailTaskResult {
-  burns: SubmittedTx[];
-  refunds: SubmittedTx[];
+  burns: FailTaskTx[];
+  refunds: FailTaskTx[];
   /** Steps already done on the ledger. This call did not repeat them. */
   skipped: string[];
 }
@@ -140,19 +145,23 @@ export function planFailTask(input: FailTaskInput, state: VaultState): FailPlan 
     }
   }
 
+  const requesterRefund = addIouValues(input.price, input.pledge);
   const refunds: { label: string; destination: string; amount: string; memos: MemoFields }[] = [
     {
-      label: `refund price + pledge to requester ${input.requesterAddress}`,
+      label: `refund ${requesterRefund} (price + pledge) to requester ${input.requesterAddress}`,
       destination: input.requesterAddress,
-      amount: addIouValues(input.price, input.pledge),
+      amount: requesterRefund,
       memos: { task: input.taskId },
     },
-    ...subtasks.map((sub) => ({
-      label: `refund sub-task ${sub.subtaskId} money to agent ${input.agentAddress}`,
-      destination: input.agentAddress as string,
-      amount: addIouValues(sub.amount),
-      memos: { task: input.taskId, subtask: sub.subtaskId },
-    })),
+    ...subtasks.map((sub) => {
+      const amount = addIouValues(sub.amount);
+      return {
+        label: `refund ${amount} (sub-task ${sub.subtaskId}) to agent ${input.agentAddress}`,
+        destination: input.agentAddress as string,
+        amount,
+        memos: { task: input.taskId, subtask: sub.subtaskId },
+      };
+    }),
   ];
   for (const refund of refunds) {
     if (isZeroIouValue(refund.amount)) skipped.push(`${refund.label}: amount is zero`);
@@ -192,18 +201,17 @@ export async function failTask(
           );
         }
         try {
-          result.burns.push(
-            await burnNft(
-              {
-                vault: input.vault,
-                nftId: step.nftId,
-                owner: holder,
-                taskId: step.memos.task,
-                subtaskId: step.memos.subtask,
-              },
-              c,
-            ),
+          const tx = await burnNft(
+            {
+              vault: input.vault,
+              nftId: step.nftId,
+              owner: holder,
+              taskId: step.memos.task,
+              subtaskId: step.memos.subtask,
+            },
+            c,
           );
+          result.burns.push({ ...tx, label: step.label });
         } catch (error) {
           // Burned between the history read and now. The goal of the step is met.
           if (error instanceof LedgerError && error.code === "tecNO_ENTRY") {
@@ -223,7 +231,7 @@ export async function failTask(
           },
           "refund",
         );
-        result.refunds.push(tx);
+        result.refunds.push({ ...tx, label: step.label });
       }
     }
     return result;
