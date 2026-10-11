@@ -6,7 +6,6 @@ import {
   createTaskInputSchema,
   createTaskOutputSchema,
   taskStatusOutputSchema,
-  toolErrorSchema,
 } from "../src/contract.js";
 import { loadAssets } from "../src/assets.js";
 import {
@@ -44,8 +43,6 @@ function successfulPin(events: TranscriptEvent[]): string {
   return createTaskOutputSchema.parse(result.body).pin;
 }
 
-const YES = /^(yes|yeah|correct|that's right)\b/i;
-const RETRY_OFFER = "Sorry, something went wrong on our side. Do you want me to try again?";
 const MAX_TURN_WORDS = 30;
 
 const sentences = (text: string) => text.split(/(?<=[.?!])\s+/).filter((t) => t.length > 0);
@@ -53,12 +50,6 @@ const words = (text: string) => text.split(/\s+/).length;
 const isSummary = (text: string) => text.startsWith("To confirm:");
 
 /** The summary from step 5 of the prompt, for the values that create_task sends. */
-function summary(args: CreateTaskInput): string {
-  const task = args.description.charAt(0).toLowerCase() + args.description.slice(1);
-  const minutes = args.time_limit_minutes === 1 ? "1 minute" : `${args.time_limit_minutes} minutes`;
-  const dollars = args.price_usd === 1 ? "1 dollar" : `${args.price_usd} dollars`;
-  return `To confirm: ${task}, at ${args.place}, within ${minutes}, for up to ${dollars}. Is that right?`;
-}
 
 /** The board address as step 8 of the prompt says it: no https://, and "dot", "dash", "slash". */
 function spokenUrl(url: string): string {

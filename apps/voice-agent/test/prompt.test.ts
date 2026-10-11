@@ -15,10 +15,6 @@ function section(markdown: string, heading: string): string {
   return end < 0 ? rest : rest.slice(0, end);
 }
 
-function count(haystack: string, needle: string): number {
-  return haystack.split(needle).length - 1;
-}
-
 describe("system prompt", () => {
   it("contains the refusal sentence verbatim", () => {
     expect(systemPrompt).toContain(`"${REFUSAL}"`);
