@@ -11,8 +11,9 @@ export interface AcceptOfferInput {
   offerId: string;
   /** Board label. Defaults to "task.claim". */
   kind?: "task.claim" | "subtask.claim" | undefined;
-  /** Optional memos for the audit trail. */
-  taskId?: string | undefined;
+  /** The task ID memo, so the claim events carry the task (for a sub-task, the parent task). */
+  taskId: string;
+  /** The sub-task ID memo, for a sub-task claim. */
   subtaskId?: string | undefined;
 }
 

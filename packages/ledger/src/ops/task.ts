@@ -72,8 +72,8 @@ export interface OfferTaskToAgentInput {
   /** The pledge in the token, for example "1". The agent pays it when it accepts. */
   pledgeAmount: DecimalInput;
   agentAddress: string;
-  /** Optional. Adds the task ID memo for the audit trail. */
-  taskId?: string | undefined;
+  /** The task ID memo. failTask finds the pledge on the ledger by this memo. */
+  taskId: string;
 }
 
 /** Demo step 7 (offer): sell offer for the pledge, only for the local agent (Destination). */

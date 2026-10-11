@@ -5,6 +5,7 @@ import { loadConfig, type LedgerConfig } from "../config.js";
 import { explorerTxUrl } from "../explorer.js";
 import { submitTx } from "../submit.js";
 import type { SubmittedTx } from "../types.js";
+import { readMemos } from "./memo.js";
 
 /** The client and config that every op uses. Both are optional; defaults come from the env. */
 export interface OpsContext {
@@ -37,6 +38,7 @@ export function toSubmittedTx(config: LedgerConfig, hash: string, kind: TxKind):
 
 /**
  * Submits through the core submitTx, which holds a per-account lock while it signs and submits.
+ * The task ID in the memos goes to submitTx too, so every `tx.*` event of the op carries it.
  * Returns the validated response and the SubmittedTx record for the board.
  */
 export async function submitOp<T extends SubmittableTransaction>(
@@ -45,8 +47,10 @@ export async function submitOp<T extends SubmittableTransaction>(
   tx: T,
   kind: TxKind,
 ): Promise<{ response: TxResponse<T>; tx: SubmittedTx }> {
+  const taskId = readMemos(tx.Memos).task;
   const response = await submitTx(ctx.client, wallet, tx, {
     kind,
+    ...(taskId === undefined ? {} : { taskId }),
     ...(ctx.pollIntervalMs === undefined ? {} : { pollIntervalMs: ctx.pollIntervalMs }),
   });
   return { response, tx: toSubmittedTx(ctx.config, response.result.hash, kind) };

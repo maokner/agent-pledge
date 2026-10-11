@@ -133,6 +133,7 @@ async function setUpTask(f: Fixtures, ctx: OpsContext): Promise<TaskState> {
             vault,
             uri: `${base}/api/nft/subtasks/${subtaskId}`,
             subtaskId,
+            taskId,
             parentNftId: taskNft.nftId,
           },
           ctx,
@@ -140,7 +141,7 @@ async function setUpTask(f: Fixtures, ctx: OpsContext): Promise<TaskState> {
       ),
   ]);
   const subtaskOffer = await step("8. NFTokenCreateOffer open, Amount 0", () =>
-    offerSubtaskToAnyone({ vault, nftId: subtaskNft.nftId, subtaskId }, ctx),
+    offerSubtaskToAnyone({ vault, nftId: subtaskNft.nftId, subtaskId, taskId }, ctx),
   );
   return {
     taskId,
@@ -204,6 +205,7 @@ async function runSuccess(f: Fixtures, ctx: OpsContext): Promise<Expected> {
         claimer: helper,
         offerId: task.subtaskOfferId,
         kind: "subtask.claim",
+        taskId: task.taskId,
         subtaskId: task.subtaskId,
       },
       ctx,
@@ -225,6 +227,7 @@ async function runFailure(f: Fixtures, ctx: OpsContext): Promise<Expected> {
         claimer: helper,
         offerId: task.subtaskOfferId,
         kind: "subtask.claim",
+        taskId: task.taskId,
         subtaskId: task.subtaskId,
       },
       ctx,
@@ -281,7 +284,13 @@ async function runDoubleClaim(f: Fixtures, ctx: OpsContext): Promise<Expected> {
   const started = Date.now();
   const claim = (claimer: Wallet) =>
     acceptOffer(
-      { claimer, offerId: task.subtaskOfferId, kind: "subtask.claim", subtaskId: task.subtaskId },
+      {
+        claimer,
+        offerId: task.subtaskOfferId,
+        kind: "subtask.claim",
+        taskId: task.taskId,
+        subtaskId: task.subtaskId,
+      },
       ctx,
     );
   const outcomes = await Promise.allSettled([claim(helper1), claim(helper2)]);

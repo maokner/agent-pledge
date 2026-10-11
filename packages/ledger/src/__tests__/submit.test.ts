@@ -19,7 +19,7 @@ import {
   TxExpiredError,
 } from "../errors.js";
 import { ledgerEvents } from "../events.js";
-import { readTaskMemo } from "../memo.js";
+import { readTaskMemo, taskMemo } from "../memo.js";
 import { submitTx } from "../submit.js";
 
 const config = loadConfig({});
@@ -166,6 +166,24 @@ describe("submitTx", () => {
     await submitTx(client, wallet, payment(), { ...fast, taskId: "task-8" });
     const submit = mock.request.mock.calls.find(([r]) => r.command === "submit")![0];
     expect(readTaskMemo(decode(submit.tx_blob!))).toBe("task-8");
+  });
+
+  it("does not add a second task memo when the transaction already has it", async () => {
+    const { client, mock } = mockClient();
+    const tagged = { ...payment(), Memos: taskMemo("task-9") };
+    await submitTx(client, wallet, tagged, { ...fast, taskId: "task-9" });
+    const submit = mock.request.mock.calls.find(([r]) => r.command === "submit")![0];
+    expect((decode(submit.tx_blob!) as { Memos: unknown[] }).Memos).toHaveLength(1);
+    expect(events.seen[0]!.payload).toMatchObject({ taskId: "task-9" });
+  });
+
+  it("rejects a taskId that differs from the task memo on the transaction", async () => {
+    const { client, calls } = mockClient();
+    const tagged = { ...payment(), Memos: taskMemo("task-9") };
+    await expect(
+      submitTx(client, wallet, tagged, { ...fast, taskId: "task-10" }),
+    ).rejects.toMatchObject({ code: "INVALID_INPUT" });
+    expect(calls).toEqual([]);
   });
 
   it("uses null kind and taskId when the caller gives none", async () => {

@@ -1,4 +1,5 @@
 import type { Amount, Wallet } from "xrpl";
+import { LedgerError } from "../errors.js";
 import type { SubmittedTx } from "../types.js";
 import { isZeroIouValue, tokenAmount, type DecimalInput } from "./amount.js";
 import {
@@ -29,7 +30,7 @@ export interface FundSubtaskInput {
   amount: DecimalInput;
   subtaskId: string;
   /** The parent task ID, so the ledger shows which task paid for which sub-task. */
-  taskId?: string | undefined;
+  taskId: string;
 }
 
 /** Demo step 8 (sub-task money): Payment of the sub-task price from the local agent to the vault. */
@@ -58,15 +59,25 @@ export interface MintSubtaskNftInput {
   /** URL of the sub-task data on the server. The data carries parent_nft_id (PRD 5.3). */
   uri: string;
   subtaskId: string;
-  /** The task NFT ID. Also written as a memo, so the parent link is on the ledger itself. */
-  parentNftId?: string | undefined;
+  /** The parent task ID. Written as the task memo, so the mint events carry it. */
+  taskId: string;
+  /** The task NFT ID (64 hex characters). Also written as a memo, so the parent link is on the ledger. */
+  parentNftId: string;
 }
+
+const NFT_ID_PATTERN = /^[0-9A-Fa-f]{64}$/;
 
 /** Demo step 8 (sub-task NFT): NFTokenMint by the vault with tfBurnable and tfTransferable. */
 export async function mintSubtaskNft(
   input: MintSubtaskNftInput,
   ctx?: Partial<OpsContext>,
 ): Promise<MintResult> {
+  if (!NFT_ID_PATTERN.test(input.parentNftId)) {
+    throw new LedgerError(
+      `parentNftId must be the 64 hex character task NFT ID, not "${input.parentNftId}"`,
+      "INVALID_INPUT",
+    );
+  }
   const c = await resolveContext(ctx);
   return mintNft(
     {
@@ -74,6 +85,7 @@ export async function mintSubtaskNft(
       uri: input.uri,
       taxon: SUBTASK_NFT_TAXON,
       memos: buildMemos({
+        task: input.taskId,
         subtask: input.subtaskId,
         parentNft: input.parentNftId,
         action: "subtask.mint",
@@ -93,7 +105,9 @@ export interface OfferSubtaskToAnyoneInput {
    * Pass OPEN_OFFER_FALLBACK_AMOUNT ("1" drop) if a network rejects zero-price offers.
    */
   amount?: Amount | undefined;
-  subtaskId?: string | undefined;
+  subtaskId: string;
+  /** The parent task ID. Written as the task memo, so the offer events carry it. */
+  taskId: string;
 }
 
 /** Demo step 8 (open offer): sell offer with no Destination. The first helper to accept gets it. */
@@ -112,7 +126,7 @@ export async function offerSubtaskToAnyone(
       seller: input.vault,
       nftId: input.nftId,
       amount,
-      memos: buildMemos({ subtask: input.subtaskId, action: "subtask.offer" }),
+      memos: buildMemos({ task: input.taskId, subtask: input.subtaskId, action: "subtask.offer" }),
       kind: "subtask.offer",
     },
     c,

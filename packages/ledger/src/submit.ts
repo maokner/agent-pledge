@@ -144,7 +144,10 @@ export function errorForResult(
 export interface SubmitOptions {
   /** Board meaning of the transaction. Copied into the `tx.*` events. */
   kind?: TxKind;
-  /** Appends the task memo (see `taskMemo`) to the transaction's `Memos`. */
+  /**
+   * Appends the task memo (see `taskMemo`) to the transaction's `Memos`, unless it already has the
+   * memo for this task. A different task memo already on the transaction throws INVALID_INPUT.
+   */
   taskId?: string;
   /** Used for explorer links in events. Default: `loadConfig()`. */
   config?: LedgerConfig;
@@ -193,6 +196,24 @@ function rippledErrorName(error: unknown): string | undefined {
   return typeof data?.error === "string" ? data.error : undefined;
 }
 
+/**
+ * Adds the task memo for `taskId`, unless the transaction already has it. A transaction that
+ * already carries a different task ID is a bug in the caller, so it throws INVALID_INPUT.
+ */
+function withTaskMemo<T extends SubmittableTransaction>(tx: T, taskId: string | undefined): T {
+  if (taskId === undefined) return tx;
+  const memo = taskMemo(taskId);
+  const existing = readTaskMemo(tx);
+  if (existing === taskId) return tx;
+  if (existing !== null) {
+    throw new LedgerError(
+      `${tx.TransactionType} already has task memo "${existing}", not "${taskId}"`,
+      "INVALID_INPUT",
+    );
+  }
+  return { ...tx, Memos: [...(tx.Memos ?? []), ...memo] };
+}
+
 /** Codes from `submit` that mean the transaction did not apply and will not apply later. */
 function isFinalPreliminary(code: string): boolean {
   return code.startsWith("tem") || code.startsWith("tef") || code.startsWith("tel");
@@ -225,9 +246,7 @@ export async function submitTx<T extends SubmittableTransaction>(
 ): Promise<TxResponse<T>> {
   const config = options.config ?? loadConfig();
   const account = wallet.classicAddress;
-  const toSubmit: T = options.taskId
-    ? { ...tx, Memos: [...(tx.Memos ?? []), ...taskMemo(options.taskId)] }
-    : tx;
+  const toSubmit = withTaskMemo(tx, options.taskId);
   const base = {
     kind: options.kind ?? null,
     txType: tx.TransactionType,
