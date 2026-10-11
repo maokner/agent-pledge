@@ -131,6 +131,10 @@ export interface SeatHoldSpec {
   timeLimitMinutes: number;
   price: RlusdAmount;
   stopAt: FlowStop;
+  /** What the sub-task asks a Helper to do. Defaults to the task text with "Save me" turned into "Save". */
+  subtaskDescription?: string;
+  /** The Helper's proof photo. Defaults to the seat photo. */
+  photoUrl?: string;
   photoNote?: string;
 }
 
@@ -186,7 +190,7 @@ export function seatHoldFlow(b: ScenarioBuilder, spec: SeatHoldSpec): void {
     task_id: task.id,
     claim_code: spec.claimCode,
     claim_url: `https://agentpledge.example/c/${spec.claimCode}`,
-    description: spec.description.replace(/^Save me/, "Save"),
+    description: spec.subtaskDescription ?? spec.description.replace(/^Save me/, "Save"),
     place: spec.place,
     time_limit_minutes: spec.timeLimitMinutes,
     price: subPrice,
@@ -232,7 +236,7 @@ export function seatHoldFlow(b: ScenarioBuilder, spec: SeatHoldSpec): void {
   sub = { ...sub, status: "claimed", helper_address: A.helper, claimed_at: b.now() };
   b.emit("subtask.claimed", { subtask: sub });
 
-  sub = { ...sub, photo: { url: "/fixtures/seat-photo.svg", note: spec.photoNote ?? "Front table, left side", added_at: b.now() } };
+  sub = { ...sub, photo: { url: spec.photoUrl ?? "/fixtures/seat-photo.svg", note: spec.photoNote ?? "Front table, left side", added_at: b.now() } };
   b.emit("photo.added", { subtask: sub });
   sub = { ...sub, pin_attempts_left: sub.pin_attempts_left - 1 };
   b.emit("pin.failed", { subtask: sub });

@@ -11,6 +11,7 @@ import {
 } from "@agent-pledge/shared";
 import { buildFixtureSnapshot } from "./board";
 import { fakeHex } from "./factories";
+import { FIXTURE_ERRANDS } from "./tasks";
 
 /** The requester's PIN for every fixture sub-task. */
 export const FIXTURE_PIN = "4821";
@@ -47,11 +48,11 @@ export const OPEN_FIXTURE_CLAIM_CODES = (Object.keys(FIXTURE_CLAIM_CODES) as Fix
  */
 const DEFAULT_DETAILS = { description: "Save a seat at the front table", place: "Main Stacks, front table", price: "4" };
 const FIXTURE_CLAIM_DETAILS: Partial<Record<FixtureClaimCode, typeof DEFAULT_DETAILS>> = {
-  RACE: { description: "Save two seats by the window", place: "Moffitt Library, 3rd floor", price: "6" },
-  FLAK: { description: "Save a seat near an outlet", place: "Doe Library, Heyns Reading Room", price: "3" },
-  SOON: { description: "Hold a spot in the coffee line", place: "Free Speech Movement Cafe", price: "2.5" },
+  MINE: { description: FIXTURE_ERRANDS.beer.subtaskDescription, place: FIXTURE_ERRANDS.beer.place, price: "4" },
+  RACE: { description: FIXTURE_ERRANDS.design.subtaskDescription, place: FIXTURE_ERRANDS.design.place, price: "6" },
+  FLAK: { description: FIXTURE_ERRANDS.essay.subtaskDescription, place: FIXTURE_ERRANDS.essay.place, price: "8" },
+  SOON: { description: FIXTURE_ERRANDS.beer.subtaskDescription, place: FIXTURE_ERRANDS.beer.place, price: "3" },
 };
-
 /**
  * A claim view as an item in the open sub-task list (DRAFT GET /subtasks/open).
  * ClaimView has no created_at, so it is the deadline minus the time limit.

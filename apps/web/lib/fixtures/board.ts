@@ -5,16 +5,17 @@
 import type { BoardEvent, BoardSnapshot } from "@agent-pledge/shared";
 import { applyBoardMessage, initialBoardState, type BoardState } from "../board/state";
 import { ScenarioBuilder, seatHoldFlow } from "./scenario";
+import { FIXTURE_ERRANDS, LIVE_ERRAND_ROTATION, type FixtureErrandName } from "./tasks";
 
 const MIN = 60_000;
 
 /**
  * The events that happened before the page opened. Ends with:
- * - tsk_paid / sub_paid: done / done (claim code PAID)
- * - tsk_failed / sub_failed: failed / failed (claim code EXPD)
- * - tsk_seat / sub_seat: claimed / claimed, with a photo and one wrong PIN (claim code PHOT)
- * - tsk_posted / sub_posted: claimed / open, Yik Yak screenshot, NFT offer pending (claim code OPEN)
- * - tsk_open: open, task NFT mint pending
+ * - tsk_paid / sub_paid: done / done, a beer delivered (claim code PAID)
+ * - tsk_failed / sub_failed: failed / failed, a design choice nobody took (claim code EXPD)
+ * - tsk_seat / sub_seat: claimed / claimed, an essay edit with a photo and one wrong PIN (claim code PHOT)
+ * - tsk_posted / sub_posted: claimed / open, a seat hold with a Yik Yak screenshot, NFT offer pending (claim code OPEN)
+ * - tsk_open: open, two seats, task NFT mint pending
  */
 export function buildFixtureHistory(now: number): BoardEvent[] {
   const b = new ScenarioBuilder({ startSeq: 1, startTime: now - 40 * MIN, stepMs: 1200 });
@@ -23,8 +24,7 @@ export function buildFixtureHistory(now: number): BoardEvent[] {
     taskId: "tsk_paid",
     subtaskId: "sub_paid",
     claimCode: "PAID",
-    description: "Save me a seat at the front table",
-    place: "Main Stacks, front table",
+    ...errand("beer"),
     timeLimitMinutes: 10,
     price: "5",
     stopAt: "paid",
@@ -35,8 +35,7 @@ export function buildFixtureHistory(now: number): BoardEvent[] {
     taskId: "tsk_failed",
     subtaskId: "sub_failed",
     claimCode: "EXPD",
-    description: "Save me a seat by the window",
-    place: "Moffitt Library, 4th floor",
+    ...errand("design"),
     timeLimitMinutes: 5,
     price: "3",
     stopAt: "failed",
@@ -47,12 +46,10 @@ export function buildFixtureHistory(now: number): BoardEvent[] {
     taskId: "tsk_seat",
     subtaskId: "sub_seat",
     claimCode: "PHOT",
-    description: "Save me a seat near an outlet",
-    place: "Doe Library, North Reading Room",
+    ...errand("essay"),
     timeLimitMinutes: 20,
     price: "6",
     stopAt: "seat_saved",
-    photoNote: "Third table, next to the outlet",
   });
 
   b.at(now - 3 * MIN);
@@ -60,8 +57,7 @@ export function buildFixtureHistory(now: number): BoardEvent[] {
     taskId: "tsk_posted",
     subtaskId: "sub_posted",
     claimCode: "OPEN",
-    description: "Save me a seat at the big table",
-    place: "Main Stacks, level C",
+    ...errand("seat"),
     timeLimitMinutes: 15,
     price: "4.5",
     stopAt: "posted",
@@ -72,8 +68,7 @@ export function buildFixtureHistory(now: number): BoardEvent[] {
     taskId: "tsk_open",
     subtaskId: "sub_open",
     claimCode: "NEW1",
-    description: "Save me two seats together",
-    place: "Kresge Engineering Library",
+    ...errand("twoSeats"),
     timeLimitMinutes: 30,
     price: "10",
     stopAt: "escrowed",
@@ -93,8 +88,7 @@ export function buildLiveRun(opts: { run: number; startSeq: number; startTime: n
     taskId: `tsk_live${opts.run}`,
     subtaskId: `sub_live${opts.run}`,
     claimCode: `L${String(opts.run).padStart(3, "0")}`.slice(0, 4),
-    description: success ? "Save me a seat at the front table" : "Save me a seat in the quiet room",
-    place: success ? "Main Stacks, front table" : "Main Stacks, quiet room",
+    ...errand(LIVE_ERRAND_ROTATION[opts.run % LIVE_ERRAND_ROTATION.length]!),
     timeLimitMinutes: success ? 3 : 1,
     price: success ? "5" : "2",
     stopAt: success ? "paid" : "failed",
@@ -123,6 +117,12 @@ export function buildCreatedTaskRun(opts: {
     stopAt: "paid",
   });
   return b.events;
+}
+
+/** A fixture errand's text and proof, in the shape the scenario builder takes. */
+function errand(name: FixtureErrandName) {
+  const { description, subtaskDescription, place, photoUrl, photoNote } = FIXTURE_ERRANDS[name];
+  return { description, subtaskDescription, place, photoUrl, photoNote };
 }
 
 export function foldEvents(events: BoardEvent[], from: BoardState = initialBoardState): BoardState {
