@@ -51,7 +51,10 @@ export type TaskCreatedEvent = BoardEventBase<"task.created", { task: Task } & T
 /** The local agent accepted the task NFT offer. */
 export type TaskClaimedEvent = BoardEventBase<"task.claimed", { task: Task } & TaskExtras>;
 /** The local agent made a sub-task. The parent task's subtask_ids changed too. */
-export type SubtaskCreatedEvent = BoardEventBase<"subtask.created", { subtask: Subtask; task: Task }>;
+export type SubtaskCreatedEvent = BoardEventBase<
+  "subtask.created",
+  { subtask: Subtask; task: Task }
+>;
 /** A helper accepted the sub-task NFT offer. */
 export type SubtaskClaimedEvent = BoardEventBase<"subtask.claimed", { subtask: Subtask }>;
 /** A transaction was submitted. */
@@ -78,9 +81,15 @@ export type PinLockedEvent = BoardEventBase<"pin.locked", { subtask: Subtask }>;
 /** The helper entered the right PIN and was paid. Carries the sub-task's new state. */
 export type SubtaskPaidEvent = BoardEventBase<"subtask.paid", { subtask: Subtask }>;
 /** Helper and agent were paid. Carries the final state of the task and its sub-tasks. */
-export type TaskPaidEvent = BoardEventBase<"task.paid", { task: Task; subtasks: Subtask[]; txs?: LedgerTx[] }>;
+export type TaskPaidEvent = BoardEventBase<
+  "task.paid",
+  { task: Task; subtasks: Subtask[]; txs?: LedgerTx[] }
+>;
 /** The task failed and money was returned. Carries the final state of the task and its sub-tasks. */
-export type TaskFailedEvent = BoardEventBase<"task.failed", { task: Task; subtasks: Subtask[]; txs?: LedgerTx[] }>;
+export type TaskFailedEvent = BoardEventBase<
+  "task.failed",
+  { task: Task; subtasks: Subtask[]; txs?: LedgerTx[] }
+>;
 /** One line of the local agent's decision log. */
 export type AgentLogEvent = BoardEventBase<"agent.log", { line: AgentLogLine }>;
 

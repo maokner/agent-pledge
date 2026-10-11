@@ -39,7 +39,11 @@ type RoleButtonProps = {
 export function RoleButton({ href, icon: Icon, tone, children }: RoleButtonProps) {
   return (
     <Link href={href} className={roleButton({ tone })}>
-      <Icon aria-hidden className={cn("size-6 shrink-0 lg:size-7", iconColor[tone])} strokeWidth={1.75} />
+      <Icon
+        aria-hidden
+        className={cn("size-6 shrink-0 lg:size-7", iconColor[tone])}
+        strokeWidth={1.75}
+      />
       <span>{children}</span>
     </Link>
   );

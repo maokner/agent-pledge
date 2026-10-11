@@ -26,7 +26,10 @@ export interface BentoCell {
 export function bentoCells(subtasks: readonly OpenSubtaskSummary[], now: number): BentoCell[] {
   const ordered = openSubtasksToShow(subtasks, now);
   // Soonest deadline first already, so the first highest pay found has the sooner deadline.
-  const top = ordered.reduce<OpenSubtaskSummary | null>((best, s) => (best === null || pay(s) > pay(best) ? s : best), null);
+  const top = ordered.reduce<OpenSubtaskSummary | null>(
+    (best, s) => (best === null || pay(s) > pay(best) ? s : best),
+    null,
+  );
   if (top === null) return [];
   const rest = ordered.filter((s) => s !== top);
 

@@ -15,18 +15,24 @@ describe("planResize", () => {
   });
 
   it("keeps a portrait photo upright", () => {
-    expect(planResize({ width: 3024, height: 4032, bytes: 3.2 * MB, type: "image/jpeg" })).toMatchObject({
+    expect(
+      planResize({ width: 3024, height: 4032, bytes: 3.2 * MB, type: "image/jpeg" }),
+    ).toMatchObject({
       width: 1200,
       height: 1600,
     });
   });
 
   it("sends a small photo as it is", () => {
-    expect(planResize({ width: 800, height: 600, bytes: 200_000, type: "image/jpeg" })).toEqual({ resize: false });
+    expect(planResize({ width: 800, height: 600, bytes: 200_000, type: "image/jpeg" })).toEqual({
+      resize: false,
+    });
   });
 
   it("re-encodes a small but heavy image at its own size", () => {
-    expect(planResize({ width: 1200, height: 900, bytes: 3 * MB, type: "image/png" })).toMatchObject({
+    expect(
+      planResize({ width: 1200, height: 900, bytes: 3 * MB, type: "image/png" }),
+    ).toMatchObject({
       resize: true,
       width: 1200,
       height: 900,
@@ -35,13 +41,17 @@ describe("planResize", () => {
   });
 
   it("re-encodes a format the server may not read, like HEIC", () => {
-    expect(planResize({ width: 800, height: 600, bytes: 200_000, type: "image/heic" })).toMatchObject({
+    expect(
+      planResize({ width: 800, height: 600, bytes: 200_000, type: "image/heic" }),
+    ).toMatchObject({
       resize: true,
       type: "image/jpeg",
     });
   });
 
   it("sends the file as it is when the size is unknown", () => {
-    expect(planResize({ width: 0, height: 0, bytes: 200_000, type: "image/jpeg" })).toEqual({ resize: false });
+    expect(planResize({ width: 0, height: 0, bytes: 200_000, type: "image/jpeg" })).toEqual({
+      resize: false,
+    });
   });
 });

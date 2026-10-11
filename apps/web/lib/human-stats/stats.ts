@@ -20,8 +20,13 @@ export interface HumanStats {
 const DECIMAL = /^\d+(\.\d+)?$/;
 
 /** `now` is the server's clock if known (ms); `dayStart` is when "today" began (see startOfLocalDay). */
-export function humanStats(board: BoardSnapshot, { now, dayStart }: { now: number; dayStart: number }): HumanStats {
-  const openNow = board.subtasks.filter((s) => s.status === "open" && Date.parse(s.deadline_at) > now).length;
+export function humanStats(
+  board: BoardSnapshot,
+  { now, dayStart }: { now: number; dayStart: number },
+): HumanStats {
+  const openNow = board.subtasks.filter(
+    (s) => s.status === "open" && Date.parse(s.deadline_at) > now,
+  ).length;
 
   const payouts = board.txs.filter(
     (tx) =>

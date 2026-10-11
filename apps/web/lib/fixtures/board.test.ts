@@ -11,8 +11,12 @@ describe("fixture board data", () => {
 
   it("has a task and a sub-task in every status", () => {
     const snap = buildFixtureSnapshot(NOW);
-    expect(new Set(snap.tasks.map((t) => t.status))).toEqual(new Set(["open", "claimed", "done", "failed"]));
-    expect(new Set(snap.subtasks.map((s) => s.status))).toEqual(new Set(["open", "claimed", "done", "failed"]));
+    expect(new Set(snap.tasks.map((t) => t.status))).toEqual(
+      new Set(["open", "claimed", "done", "failed"]),
+    );
+    expect(new Set(snap.subtasks.map((s) => s.status))).toEqual(
+      new Set(["open", "claimed", "done", "failed"]),
+    );
   });
 
   it("has pending and validated transactions, a photo, a screenshot and agent log lines", () => {
@@ -28,6 +32,10 @@ describe("fixture board data", () => {
     expect(run[0]?.seq).toBe(101);
     expect(run.at(-1)?.seq).toBe(100 + run.length);
     expect(run.at(-1)?.type).toBe("agent.log");
-    expect(buildLiveRun({ run: 1, startSeq: 1, startTime: NOW, stepMs: 1000 }).some((e) => e.type === "task.failed")).toBe(true);
+    expect(
+      buildLiveRun({ run: 1, startSeq: 1, startTime: NOW, stepMs: 1000 }).some(
+        (e) => e.type === "task.failed",
+      ),
+    ).toBe(true);
   });
 });

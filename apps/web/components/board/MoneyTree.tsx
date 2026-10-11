@@ -25,7 +25,10 @@ import { ExplorerLink, SectionTitle } from "./term";
 export function MoneyTree({ view }: { view: TaskView }) {
   const root = buildMoneyTree(view);
   return (
-    <section aria-label="Money tree" className="border border-dashed border-term-line p-3 projector:text-lg">
+    <section
+      aria-label="Money tree"
+      className="border border-dashed border-term-line p-3 projector:text-lg"
+    >
       <SectionTitle className="projector:text-lg">Money tree</SectionTitle>
       <div className="mt-2 projector:mt-1">
         <TreeNode node={root} />
@@ -73,11 +76,20 @@ function NodeBox({ node }: { node: MoneyNode }) {
   const isNft = node.role === "task_nft" || node.role === "subtask_nft";
   const isVault = node.role === "vault";
   return (
-    <div className={cn("inline-flex min-w-0 flex-wrap items-baseline gap-x-2 border px-2", NODE_CLASS[node.role])}>
+    <div
+      className={cn(
+        "inline-flex min-w-0 flex-wrap items-baseline gap-x-2 border px-2",
+        NODE_CLASS[node.role],
+      )}
+    >
       <span className={cn("font-bold uppercase", !isVault && GLOW)}>
         {isNft ? `<${node.title}>` : node.title}
       </span>
-      {node.detail && <span className={cn("text-sm projector:text-lg", !isVault && "text-term-fg-dim")}>{node.detail}</span>}
+      {node.detail && (
+        <span className={cn("text-sm projector:text-lg", !isVault && "text-term-fg-dim")}>
+          {node.detail}
+        </span>
+      )}
       {node.nftId && <ExplorerLink nft={node.nftId} className="text-sm projector:hidden" />}
       {node.parentNftId && (
         <span className="text-sm text-term-fg-dim projector:hidden">
@@ -113,9 +125,20 @@ function EdgeDown({ edge }: { edge: MoneyEdge }) {
   const tone = edgeTag(edge.state).tone;
   return (
     <div className={cn("ml-3 border-l-2 py-1 pl-2 projector:py-0.5", TONE_BORDER[tone])}>
-      <span className={cn("inline-flex flex-wrap items-baseline gap-x-1.5 text-sm projector:text-lg", TONE_TEXT[tone])} title={EDGE_TITLE[edge.state]}>
+      <span
+        className={cn(
+          "inline-flex flex-wrap items-baseline gap-x-1.5 text-sm projector:text-lg",
+          TONE_TEXT[tone],
+        )}
+        title={EDGE_TITLE[edge.state]}
+      >
         {edge.txHash ? (
-          <a href={edge.explorerUrl ?? explorerTxUrl(edge.txHash)} target="_blank" rel="noopener noreferrer" className={cn(LINK, "inline-flex flex-wrap items-baseline gap-x-1.5")}>
+          <a
+            href={edge.explorerUrl ?? explorerTxUrl(edge.txHash)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={cn(LINK, "inline-flex flex-wrap items-baseline gap-x-1.5")}
+          >
             <EdgeLabel edge={edge} />
           </a>
         ) : (
@@ -136,10 +159,20 @@ function ReceivedChip({ edge }: { edge: MoneyEdge }) {
       <span className="sr-only">from the vault</span>
     </>
   );
-  const className = cn("inline-flex flex-wrap items-baseline gap-x-1.5 border px-1 text-sm projector:text-lg", TONE_BORDER[tone], TONE_TEXT[tone]);
+  const className = cn(
+    "inline-flex flex-wrap items-baseline gap-x-1.5 border px-1 text-sm projector:text-lg",
+    TONE_BORDER[tone],
+    TONE_TEXT[tone],
+  );
   const title = [edge.note, EDGE_TITLE[edge.state]].filter(Boolean).join(". ");
   return edge.txHash ? (
-    <a href={edge.explorerUrl ?? explorerTxUrl(edge.txHash)} target="_blank" rel="noopener noreferrer" title={title} className={cn(LINK, "no-underline", className)}>
+    <a
+      href={edge.explorerUrl ?? explorerTxUrl(edge.txHash)}
+      target="_blank"
+      rel="noopener noreferrer"
+      title={title}
+      className={cn(LINK, "no-underline", className)}
+    >
       {content}
     </a>
   ) : (
@@ -160,7 +193,8 @@ function MoneyResult({ view }: { view: TaskView }) {
     return (
       <p className="mt-3 text-sm projector:mt-2 projector:text-lg">
         <span className="font-bold text-term-fg-dim">PLAN: </span>
-        {formatRlusd(plan.in)} in, {formatRlusd(plan.toHelper)} to the helper, {formatRlusd(plan.toAgent)} to the agent.
+        {formatRlusd(plan.in)} in, {formatRlusd(plan.toHelper)} to the helper,{" "}
+        {formatRlusd(plan.toAgent)} to the agent.
       </p>
     );
   }
@@ -169,15 +203,25 @@ function MoneyResult({ view }: { view: TaskView }) {
   return (
     <div className="mt-3 flex flex-wrap items-baseline gap-x-3 gap-y-1 text-sm projector:mt-2 projector:text-lg">
       <span className="font-bold text-term-fg-dim">RESULT:</span>
-      {view.task.status === "done" && <span className={cn("font-bold", TONE_TEXT.validated, GLOW)}>[OK] Requester has a seat</span>}
+      {view.task.status === "done" && (
+        <span className={cn("font-bold", TONE_TEXT.validated, GLOW)}>
+          [OK] Requester has a seat
+        </span>
+      )}
       {rows.map((row) => {
         const net = Number(row.net);
         // On success the requester bought a seat: show what they paid, not a red loss (PRD 2.2).
         const boughtSeat = row.party === "requester" && view.task.status === "done";
-        const tone = boughtSeat || net === 0 ? "text-term-fg-dim" : net > 0 ? "text-term-fg" : "text-term-red";
+        const tone =
+          boughtSeat || net === 0 ? "text-term-fg-dim" : net > 0 ? "text-term-fg" : "text-term-red";
         return (
-          <span key={row.party} className={cn("font-bold tabular-nums", tone)} title={`Paid ${formatRlusd(row.paid)}, got ${formatRlusd(row.got)}`}>
-            {PARTY_NAME[row.party]} {boughtSeat ? `paid ${formatRlusd(row.paid)}` : formatSignedRlusd(row.net)}
+          <span
+            key={row.party}
+            className={cn("font-bold tabular-nums", tone)}
+            title={`Paid ${formatRlusd(row.paid)}, got ${formatRlusd(row.got)}`}
+          >
+            {PARTY_NAME[row.party]}{" "}
+            {boughtSeat ? `paid ${formatRlusd(row.paid)}` : formatSignedRlusd(row.net)}
           </span>
         );
       })}
@@ -187,7 +231,12 @@ function MoneyResult({ view }: { view: TaskView }) {
 
 function Legend() {
   const states: EdgeState[] = ["pending", "settled", "paid", "returned"];
-  const words: Record<string, string> = { pending: "pending", settled: "held in the vault", paid: "paid", returned: "returned" };
+  const words: Record<string, string> = {
+    pending: "pending",
+    settled: "held in the vault",
+    paid: "paid",
+    returned: "returned",
+  };
   return (
     <p className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-term-fg-dim projector:mt-1 projector:text-base">
       {states.map((state) => {

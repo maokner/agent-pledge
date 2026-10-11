@@ -5,7 +5,13 @@ import { cn } from "@/lib/cn";
  * everything (fainter in projector mode, see globals.css). The scanlines
  * never catch clicks. Projector mode fills the screen with no scrolling.
  */
-export function BoardShell({ projector = false, children }: { projector?: boolean; children: React.ReactNode }) {
+export function BoardShell({
+  projector = false,
+  children,
+}: {
+  projector?: boolean;
+  children: React.ReactNode;
+}) {
   return (
     <div className="relative min-h-dvh overflow-x-clip">
       <div aria-hidden className="term-scanlines fixed inset-0 z-40" />

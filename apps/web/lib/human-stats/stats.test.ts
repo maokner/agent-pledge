@@ -36,7 +36,13 @@ function subtask(id: string, status: Subtask["status"], deadlineFromNow: number)
 
 function tx(
   hash: string,
-  { kind = "helper_payout", status = "validated", amount = "4", at = NOW - MIN, subtaskId = "sub_1" }: {
+  {
+    kind = "helper_payout",
+    status = "validated",
+    amount = "4",
+    at = NOW - MIN,
+    subtaskId = "sub_1",
+  }: {
     kind?: TxKind;
     status?: TxStatus;
     amount?: string | null;
@@ -61,7 +67,13 @@ function tx(
   };
 }
 
-function snapshot({ subtasks = [], txs = [] }: { subtasks?: Subtask[]; txs?: LedgerTx[] }): BoardSnapshot {
+function snapshot({
+  subtasks = [],
+  txs = [],
+}: {
+  subtasks?: Subtask[];
+  txs?: LedgerTx[];
+}): BoardSnapshot {
   return { seq: 1, generated_at: iso(NOW), tasks: [], subtasks, txs, agent_log: [] };
 }
 
@@ -88,7 +100,10 @@ describe("humanStats", () => {
         tx("d", { amount: "0.2", subtaskId: "sub_4" }),
       ],
     });
-    expect(humanStats(board, { now: NOW, dayStart: DAY_START })).toMatchObject({ paidOutToday: "8.80", helpersPaid: 4 });
+    expect(humanStats(board, { now: NOW, dayStart: DAY_START })).toMatchObject({
+      paidOutToday: "8.80",
+      helpersPaid: 4,
+    });
   });
 
   it("leaves out payouts from before midnight, pending or failed ones, and other kinds of payment", () => {
@@ -102,14 +117,24 @@ describe("humanStats", () => {
         tx("escrow", { amount: "9", kind: "subtask_escrow", subtaskId: "sub_e" }),
       ],
     });
-    expect(humanStats(board, { now: NOW, dayStart: DAY_START })).toMatchObject({ paidOutToday: "4.00", helpersPaid: 1 });
+    expect(humanStats(board, { now: NOW, dayStart: DAY_START })).toMatchObject({
+      paidOutToday: "4.00",
+      helpersPaid: 1,
+    });
   });
 
   it("counts each paid sub-task once, and skips a malformed amount without breaking the total", () => {
     const board = snapshot({
-      txs: [tx("a", { amount: "4", subtaskId: "sub_1" }), tx("b", { amount: "oops", subtaskId: "sub_1" }), tx("c", { amount: null, subtaskId: "sub_2" })],
+      txs: [
+        tx("a", { amount: "4", subtaskId: "sub_1" }),
+        tx("b", { amount: "oops", subtaskId: "sub_1" }),
+        tx("c", { amount: null, subtaskId: "sub_2" }),
+      ],
     });
-    expect(humanStats(board, { now: NOW, dayStart: DAY_START })).toMatchObject({ paidOutToday: "4.00", helpersPaid: 2 });
+    expect(humanStats(board, { now: NOW, dayStart: DAY_START })).toMatchObject({
+      paidOutToday: "4.00",
+      helpersPaid: 2,
+    });
   });
 
   it("says zero for a quiet board", () => {
@@ -123,7 +148,9 @@ describe("humanStats", () => {
 
 describe("startOfLocalDay", () => {
   it("is local midnight of the same day", () => {
-    expect(startOfLocalDay(new Date(2026, 9, 11, 14, 30, 5).getTime())).toBe(new Date(2026, 9, 11).getTime());
+    expect(startOfLocalDay(new Date(2026, 9, 11, 14, 30, 5).getTime())).toBe(
+      new Date(2026, 9, 11).getTime(),
+    );
     expect(startOfLocalDay(new Date(2026, 9, 11).getTime())).toBe(new Date(2026, 9, 11).getTime());
   });
 });

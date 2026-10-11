@@ -57,7 +57,9 @@ export function PhotoForm({
       const prepared = await preparePhoto(file);
       setPicked({ file: prepared, previewUrl: URL.createObjectURL(prepared) });
     } catch (e) {
-      setError(e instanceof PhotoError ? e.message : "This photo could not be read. Try another one.");
+      setError(
+        e instanceof PhotoError ? e.message : "This photo could not be read. Try another one.",
+      );
     } finally {
       setPhase("idle");
     }
@@ -132,7 +134,13 @@ export function PhotoForm({
         <div className="flex flex-col gap-3">
           <label className={buttonVariants({ variant: "primary" })}>
             <Camera aria-hidden="true" className="size-6" /> Take a photo
-            <input type="file" accept="image/*" capture="environment" onChange={pick} className="sr-only" />
+            <input
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={pick}
+              className="sr-only"
+            />
           </label>
           <label className={buttonVariants({ variant: "secondary" })}>
             <Images aria-hidden="true" className="size-5" /> Choose from photos
@@ -162,7 +170,12 @@ export function PhotoForm({
               <Spinner className="text-human-accent" />
               {percent < 100 ? `Sending… ${percent}%` : "Almost done…"}
             </span>
-            <Button variant="ghost" size="sm" onClick={() => upload.current?.abort()} className="w-auto">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => upload.current?.abort()}
+              className="w-auto"
+            >
               Cancel
             </Button>
           </p>

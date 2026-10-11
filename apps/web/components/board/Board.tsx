@@ -72,9 +72,13 @@ export function Board() {
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <Pane title="Incoming tasks" inverted aria-label="Tasks" bodyClassName="gap-4 p-2 sm:p-3">
           {tasks.length === 0 ? (
-            <Waiting className="text-lg">No tasks yet. Call the Agent Pledge number to make one</Waiting>
+            <Waiting className="text-lg">
+              No tasks yet. Call the Agent Pledge number to make one
+            </Waiting>
           ) : (
-            tasks.map((view) => <TaskCard key={view.task.id} view={view} arrived={arrived.has(view.task.id)} />)
+            tasks.map((view) => (
+              <TaskCard key={view.task.id} view={view} arrived={arrived.has(view.task.id)} />
+            ))
           )}
         </Pane>
         <AgentLog entries={selectAgentLog(state)} />

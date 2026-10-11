@@ -5,7 +5,8 @@
  */
 import type { CreateTaskRequest } from "@/lib/contract";
 
-export type BackupTaskField = "description" | "place" | "time_limit_minutes" | "price_usd" | "caller_phone";
+export type BackupTaskField =
+  "description" | "place" | "time_limit_minutes" | "price_usd" | "caller_phone";
 
 /** A create_task request without the phone, which the route handler fills in if missing. */
 export interface BackupTaskInput extends Omit<CreateTaskRequest, "caller_phone"> {
@@ -26,13 +27,18 @@ export function validateBackupTask(input: unknown): BackupTaskValidation {
   const errors: Partial<Record<BackupTaskField, string>> = {};
 
   const description = text(raw.description);
-  if (description.length < 3 || description.length > 200) errors.description = "Say what to do, in 3 to 200 characters.";
+  if (description.length < 3 || description.length > 200)
+    errors.description = "Say what to do, in 3 to 200 characters.";
 
   const place = text(raw.place);
   if (place.length < 2 || place.length > 200) errors.place = "Say where, in 2 to 200 characters.";
 
   const minutes = number(raw.time_limit_minutes);
-  if (!Number.isInteger(minutes) || minutes < TIME_LIMIT_RANGE.min || minutes > TIME_LIMIT_RANGE.max) {
+  if (
+    !Number.isInteger(minutes) ||
+    minutes < TIME_LIMIT_RANGE.min ||
+    minutes > TIME_LIMIT_RANGE.max
+  ) {
     errors.time_limit_minutes = `Whole minutes, ${TIME_LIMIT_RANGE.min} to ${TIME_LIMIT_RANGE.max}.`;
   }
 
@@ -43,12 +49,19 @@ export function validateBackupTask(input: unknown): BackupTaskValidation {
   }
 
   const phone = text(raw.caller_phone);
-  if (phone && !E164.test(phone)) errors.caller_phone = "Leave empty, or use the +15105550123 form.";
+  if (phone && !E164.test(phone))
+    errors.caller_phone = "Leave empty, or use the +15105550123 form.";
 
   if (Object.keys(errors).length > 0) return { ok: false, errors };
   return {
     ok: true,
-    value: { description, place, time_limit_minutes: minutes, price_usd: price, caller_phone: phone || null },
+    value: {
+      description,
+      place,
+      time_limit_minutes: minutes,
+      price_usd: price,
+      caller_phone: phone || null,
+    },
   };
 }
 

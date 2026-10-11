@@ -109,7 +109,11 @@ export class ScenarioBuilder {
       ledger_index: 11_000_000 + this.seq,
       validated_at: this.now(),
     };
-    this.emit("tx.validated", { tx: done, task: changed.task ?? null, subtask: changed.subtask ?? null });
+    this.emit("tx.validated", {
+      tx: done,
+      task: changed.task ?? null,
+      subtask: changed.subtask ?? null,
+    });
     return done;
   }
 }
@@ -166,25 +170,61 @@ export function seatHoldFlow(b: ScenarioBuilder, spec: SeatHoldSpec): void {
     deadline_at: deadline,
   });
   b.emit("task.created", { task });
-  b.log(task, "info", `New task: "${spec.description}" for ${formatRlusd(spec.price)}, ${spec.timeLimitMinutes} min`);
+  b.log(
+    task,
+    "info",
+    `New task: "${spec.description}" for ${formatRlusd(spec.price)}, ${spec.timeLimitMinutes} min`,
+  );
 
-  const escrow = b.submit({ kind: "task_escrow", tx_type: "Payment", task, from: A.requester, to: A.vault, amount: spec.price });
+  const escrow = b.submit({
+    kind: "task_escrow",
+    tx_type: "Payment",
+    task,
+    from: A.requester,
+    to: A.vault,
+    amount: spec.price,
+  });
   b.validate(escrow);
-  const mint = b.submit({ kind: "task_nft_mint", tx_type: "NFTokenMint", task, from: A.vault, to: null, amount: null });
+  const mint = b.submit({
+    kind: "task_nft_mint",
+    tx_type: "NFTokenMint",
+    task,
+    from: A.vault,
+    to: null,
+    amount: null,
+  });
   if (spec.stopAt === "escrowed") return;
 
   task = { ...task, nft_id: b.nextHex() };
   b.validate(mint, { task });
-  const offer = b.submit({ kind: "task_nft_offer", tx_type: "NFTokenCreateOffer", task, from: A.vault, to: A.agent, amount: PLEDGE });
+  const offer = b.submit({
+    kind: "task_nft_offer",
+    tx_type: "NFTokenCreateOffer",
+    task,
+    from: A.vault,
+    to: A.agent,
+    amount: PLEDGE,
+  });
   b.validate(offer);
 
   b.log(task, "decision", `Claiming the task with a ${formatRlusd(PLEDGE)} pledge`);
-  const claim = b.submit({ kind: "task_claim", tx_type: "NFTokenAcceptOffer", task, from: A.agent, to: A.vault, amount: PLEDGE });
+  const claim = b.submit({
+    kind: "task_claim",
+    tx_type: "NFTokenAcceptOffer",
+    task,
+    from: A.agent,
+    to: A.vault,
+    amount: PLEDGE,
+  });
   b.validate(claim);
   task = { ...task, status: "claimed", agent_address: A.agent, claimed_at: b.now() };
   b.emit("task.claimed", { task });
 
-  b.log(task, "decision", `Sub-task price: ${formatRlusd(subPrice)} (80% of ${formatRlusd(spec.price)})`);
+  b.log(
+    task,
+    "decision",
+    `Sub-task price: ${formatRlusd(subPrice)} (80% of ${formatRlusd(spec.price)})`,
+  );
   let sub = makeSubtask({
     id: spec.subtaskId,
     task_id: task.id,
@@ -197,19 +237,50 @@ export function seatHoldFlow(b: ScenarioBuilder, spec: SeatHoldSpec): void {
     created_at: b.now(),
     deadline_at: deadline,
   });
-  const subEscrow = b.submit({ kind: "subtask_escrow", tx_type: "Payment", task, subtask: sub, from: A.agent, to: A.vault, amount: subPrice });
+  const subEscrow = b.submit({
+    kind: "subtask_escrow",
+    tx_type: "Payment",
+    task,
+    subtask: sub,
+    from: A.agent,
+    to: A.vault,
+    amount: subPrice,
+  });
   task = { ...task, subtask_ids: [...task.subtask_ids, sub.id] };
   b.emit("subtask.created", { subtask: sub, task });
   b.validate(subEscrow);
-  const subMint = b.submit({ kind: "subtask_nft_mint", tx_type: "NFTokenMint", task, subtask: sub, from: A.vault, to: null, amount: null });
+  const subMint = b.submit({
+    kind: "subtask_nft_mint",
+    tx_type: "NFTokenMint",
+    task,
+    subtask: sub,
+    from: A.vault,
+    to: null,
+    amount: null,
+  });
   sub = { ...sub, nft_id: b.nextHex(), parent_nft_id: task.nft_id };
   b.validate(subMint, { subtask: sub });
 
   const postText = `${formatRlusd(subPrice).replace(".00", "")} to ${sub.description.charAt(0).toLowerCase()}${sub.description.slice(1)} in the next ${spec.timeLimitMinutes} min. First to claim gets it: ${sub.claim_url}`;
   b.log(task, "info", "Posting the sub-task on Yik Yak", sub);
-  sub = { ...sub, yikyak_post: { text: postText, screenshot_url: "/fixtures/yikyak-screenshot.svg", posted_at: b.now() } };
+  sub = {
+    ...sub,
+    yikyak_post: {
+      text: postText,
+      screenshot_url: "/fixtures/yikyak-screenshot.svg",
+      posted_at: b.now(),
+    },
+  };
   b.emit("yikyak.posted", { subtask: sub });
-  const subOffer = b.submit({ kind: "subtask_nft_offer", tx_type: "NFTokenCreateOffer", task, subtask: sub, from: A.vault, to: null, amount: null });
+  const subOffer = b.submit({
+    kind: "subtask_nft_offer",
+    tx_type: "NFTokenCreateOffer",
+    task,
+    subtask: sub,
+    from: A.vault,
+    to: null,
+    amount: null,
+  });
   if (spec.stopAt === "posted") return;
   b.validate(subOffer);
 
@@ -217,11 +288,34 @@ export function seatHoldFlow(b: ScenarioBuilder, spec: SeatHoldSpec): void {
     b.at(Date.parse(deadline));
     b.log(task, "warning", "No helper claimed the sub-task in time. Returning the money.", sub);
     for (const nft of ["task", "subtask"] as const) {
-      const burn = b.submit({ kind: "nft_burn", tx_type: "NFTokenBurn", task, subtask: nft === "subtask" ? sub : undefined, from: A.vault, to: null, amount: null });
+      const burn = b.submit({
+        kind: "nft_burn",
+        tx_type: "NFTokenBurn",
+        task,
+        subtask: nft === "subtask" ? sub : undefined,
+        from: A.vault,
+        to: null,
+        amount: null,
+      });
       b.validate(burn);
     }
-    const refund = b.submit({ kind: "requester_refund", tx_type: "Payment", task, from: A.vault, to: A.requester, amount: add(spec.price, PLEDGE) });
-    const agentRefund = b.submit({ kind: "agent_refund", tx_type: "Payment", task, subtask: sub, from: A.vault, to: A.agent, amount: subPrice });
+    const refund = b.submit({
+      kind: "requester_refund",
+      tx_type: "Payment",
+      task,
+      from: A.vault,
+      to: A.requester,
+      amount: add(spec.price, PLEDGE),
+    });
+    const agentRefund = b.submit({
+      kind: "agent_refund",
+      tx_type: "Payment",
+      task,
+      subtask: sub,
+      from: A.vault,
+      to: A.agent,
+      amount: subPrice,
+    });
     b.validate(refund);
     b.validate(agentRefund);
     const finished_at = b.now();
@@ -231,28 +325,81 @@ export function seatHoldFlow(b: ScenarioBuilder, spec: SeatHoldSpec): void {
     return;
   }
 
-  const helperClaim = b.submit({ kind: "subtask_claim", tx_type: "NFTokenAcceptOffer", task, subtask: sub, from: A.helper, to: A.vault, amount: null });
+  const helperClaim = b.submit({
+    kind: "subtask_claim",
+    tx_type: "NFTokenAcceptOffer",
+    task,
+    subtask: sub,
+    from: A.helper,
+    to: A.vault,
+    amount: null,
+  });
   b.validate(helperClaim);
   sub = { ...sub, status: "claimed", helper_address: A.helper, claimed_at: b.now() };
   b.emit("subtask.claimed", { subtask: sub });
 
-  sub = { ...sub, photo: { url: spec.photoUrl ?? "/fixtures/seat-photo.svg", note: spec.photoNote ?? "Front table, left side", added_at: b.now() } };
+  sub = {
+    ...sub,
+    photo: {
+      url: spec.photoUrl ?? "/fixtures/seat-photo.svg",
+      note: spec.photoNote ?? "Front table, left side",
+      added_at: b.now(),
+    },
+  };
   b.emit("photo.added", { subtask: sub });
   sub = { ...sub, pin_attempts_left: sub.pin_attempts_left - 1 };
   b.emit("pin.failed", { subtask: sub });
   if (spec.stopAt === "seat_saved") return;
 
   b.log(task, "info", "PIN correct. Paying the helper and redeeming the task.", sub);
-  const helperOffer = b.submit({ kind: "helper_payout_offer", tx_type: "NFTokenCreateOffer", task, subtask: sub, from: A.helper, to: A.vault, amount: subPrice });
+  const helperOffer = b.submit({
+    kind: "helper_payout_offer",
+    tx_type: "NFTokenCreateOffer",
+    task,
+    subtask: sub,
+    from: A.helper,
+    to: A.vault,
+    amount: subPrice,
+  });
   b.validate(helperOffer);
-  const helperPayout = b.submit({ kind: "helper_payout", tx_type: "NFTokenAcceptOffer", task, subtask: sub, from: A.vault, to: A.helper, amount: subPrice });
+  const helperPayout = b.submit({
+    kind: "helper_payout",
+    tx_type: "NFTokenAcceptOffer",
+    task,
+    subtask: sub,
+    from: A.vault,
+    to: A.helper,
+    amount: subPrice,
+  });
   b.validate(helperPayout);
-  const agentOffer = b.submit({ kind: "agent_payout_offer", tx_type: "NFTokenCreateOffer", task, from: A.agent, to: A.vault, amount: add(spec.price, PLEDGE) });
+  const agentOffer = b.submit({
+    kind: "agent_payout_offer",
+    tx_type: "NFTokenCreateOffer",
+    task,
+    from: A.agent,
+    to: A.vault,
+    amount: add(spec.price, PLEDGE),
+  });
   b.validate(agentOffer);
-  const agentPayout = b.submit({ kind: "agent_payout", tx_type: "NFTokenAcceptOffer", task, from: A.vault, to: A.agent, amount: add(spec.price, PLEDGE) });
+  const agentPayout = b.submit({
+    kind: "agent_payout",
+    tx_type: "NFTokenAcceptOffer",
+    task,
+    from: A.vault,
+    to: A.agent,
+    amount: add(spec.price, PLEDGE),
+  });
   b.validate(agentPayout);
   for (const nft of ["task", "subtask"] as const) {
-    const burn = b.submit({ kind: "nft_burn", tx_type: "NFTokenBurn", task, subtask: nft === "subtask" ? sub : undefined, from: A.vault, to: null, amount: null });
+    const burn = b.submit({
+      kind: "nft_burn",
+      tx_type: "NFTokenBurn",
+      task,
+      subtask: nft === "subtask" ? sub : undefined,
+      from: A.vault,
+      to: null,
+      amount: null,
+    });
     b.validate(burn);
   }
   const finished_at = b.now();

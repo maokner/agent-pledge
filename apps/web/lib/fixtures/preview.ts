@@ -26,13 +26,20 @@ const DEMO = {
 export function buildPreviewState(layout: PreviewLayout, now: number): BoardState {
   const b = new ScenarioBuilder({ startSeq: 1, startTime: now - 20 * MIN, stepMs: 1000 });
   const stops: FlowStop[] =
-    layout === "one" ? ["seat_saved"] : layout === "three" ? ["paid", "failed", "posted"] : ["paid", "failed", "seat_saved", "posted", "escrowed"];
+    layout === "one"
+      ? ["seat_saved"]
+      : layout === "three"
+        ? ["paid", "failed", "posted"]
+        : ["paid", "failed", "seat_saved", "posted", "escrowed"];
 
   stops.forEach((stopAt, i) => {
     // Oldest first, so the newest (the last stop) is at the top of the board.
     b.at(now - (stops.length - i) * 2 * MIN);
     // "one" is the PRD's seat hold; the others show a mix of errands.
-    const errand = FIXTURE_ERRANDS[layout === "one" ? "seat" : LIVE_ERRAND_ROTATION[i % LIVE_ERRAND_ROTATION.length]!];
+    const errand =
+      FIXTURE_ERRANDS[
+        layout === "one" ? "seat" : LIVE_ERRAND_ROTATION[i % LIVE_ERRAND_ROTATION.length]!
+      ];
     seatHoldFlow(b, {
       ...DEMO,
       description: errand.description,

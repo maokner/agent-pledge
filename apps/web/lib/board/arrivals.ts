@@ -24,5 +24,8 @@ export function trackArrivals(prev: Arrivals, ids: readonly string[], ready: boo
   if (prev.known === null) return { known: new Set(ids), arrived: prev.arrived };
   const fresh = ids.filter((id) => !prev.known!.has(id));
   if (fresh.length === 0) return prev;
-  return { known: new Set([...prev.known, ...fresh]), arrived: new Set([...prev.arrived, ...fresh]) };
+  return {
+    known: new Set([...prev.known, ...fresh]),
+    arrived: new Set([...prev.arrived, ...fresh]),
+  };
 }

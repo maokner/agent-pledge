@@ -38,12 +38,21 @@ export type CardProps = React.HTMLAttributes<HTMLElement> &
  * card's content box, so layout classes like `flex flex-col gap-4` work for
  * every variant.
  */
-export function Card({ variant, padding, as: Tag = "div", className, children, ...props }: CardProps) {
+export function Card({
+  variant,
+  padding,
+  as: Tag = "div",
+  className,
+  children,
+  ...props
+}: CardProps) {
   if (variant === "featured") {
     // A gradient outer box with a white inner box: a 2px gradient border.
     return (
       <Tag className="rounded-2xl bg-human-gradient p-0.5 shadow-human-accent" {...props}>
-        <div className={cn(cardVariants({ variant, padding }), "rounded-[14px]", className)}>{children}</div>
+        <div className={cn(cardVariants({ variant, padding }), "rounded-[14px]", className)}>
+          {children}
+        </div>
       </Tag>
     );
   }
@@ -58,6 +67,15 @@ export function Card({ variant, padding, as: Tag = "div", className, children, .
 }
 
 /** A card title: Inter 600, tight tracking. */
-export function CardTitle({ as: Tag = "h2", className, ...props }: React.ComponentProps<"h2"> & { as?: "h2" | "h3" | "p" }) {
-  return <Tag className={cn("text-xl font-semibold leading-snug tracking-[-0.01em]", className)} {...props} />;
+export function CardTitle({
+  as: Tag = "h2",
+  className,
+  ...props
+}: React.ComponentProps<"h2"> & { as?: "h2" | "h3" | "p" }) {
+  return (
+    <Tag
+      className={cn("text-xl font-semibold leading-snug tracking-[-0.01em]", className)}
+      {...props}
+    />
+  );
 }

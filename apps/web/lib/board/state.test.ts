@@ -24,7 +24,13 @@ describe("applyBoardMessage", () => {
 
     const state = applyBoardMessage(initialBoardState, {
       type: "board.snapshot",
-      snapshot: snapshot({ seq: 12, tasks: [task], subtasks: [subtask], txs: [tx], agent_log: [line] }),
+      snapshot: snapshot({
+        seq: 12,
+        tasks: [task],
+        subtasks: [subtask],
+        txs: [tx],
+        agent_log: [line],
+      }),
     });
 
     expect(state.seq).toBe(12);
@@ -56,7 +62,10 @@ describe("applyBoardMessage sequencing", () => {
   });
 
   it("ignores an event it has already applied (replayed after a reconnect)", () => {
-    const stale = event(5, { type: "task.claimed", data: { task: makeTask({ id: "tsk_a", status: "claimed" }) } });
+    const stale = event(5, {
+      type: "task.claimed",
+      data: { task: makeTask({ id: "tsk_a", status: "claimed" }) },
+    });
 
     const state = applyBoardMessage(atSeq5, stale);
 
@@ -64,7 +73,10 @@ describe("applyBoardMessage sequencing", () => {
   });
 
   it("does not apply an event after a gap, and flags that it needs a resync", () => {
-    const afterGap = event(7, { type: "task.claimed", data: { task: makeTask({ id: "tsk_a", status: "claimed" }) } });
+    const afterGap = event(7, {
+      type: "task.claimed",
+      data: { task: makeTask({ id: "tsk_a", status: "claimed" }) },
+    });
 
     const state = applyBoardMessage(atSeq5, afterGap);
 
@@ -76,7 +88,10 @@ describe("applyBoardMessage sequencing", () => {
   it("clears the resync flag once the missing event arrives", () => {
     const gapped = applyBoardMessage(
       atSeq5,
-      event(7, { type: "task.claimed", data: { task: makeTask({ id: "tsk_a", status: "claimed" }) } }),
+      event(7, {
+        type: "task.claimed",
+        data: { task: makeTask({ id: "tsk_a", status: "claimed" }) },
+      }),
     );
 
     const state = applyBoardMessage(
@@ -97,11 +112,24 @@ describe("applyBoardMessage events", () => {
   });
 
   it("shows a transaction as pending, then validated, as one entry", () => {
-    const pending = makeTx({ hash: "MINT", kind: "task_nft_mint", tx_type: "NFTokenMint", status: "pending" });
-    const validated = { ...pending, status: "validated" as const, engine_result: "tesSUCCESS", ledger_index: 100 };
+    const pending = makeTx({
+      hash: "MINT",
+      kind: "task_nft_mint",
+      tx_type: "NFTokenMint",
+      status: "pending",
+    });
+    const validated = {
+      ...pending,
+      status: "validated" as const,
+      engine_result: "tesSUCCESS",
+      ledger_index: 100,
+    };
     const minted = { ...task, nft_id: "NFT_A" };
 
-    const afterPending = applyBoardMessage(start, event(2, { type: "tx.pending", data: { tx: pending } }));
+    const afterPending = applyBoardMessage(
+      start,
+      event(2, { type: "tx.pending", data: { tx: pending } }),
+    );
     const afterValidated = applyBoardMessage(
       afterPending,
       event(3, { type: "tx.validated", data: { tx: validated, task: minted, subtask: null } }),
@@ -115,9 +143,19 @@ describe("applyBoardMessage events", () => {
   it("follows a sub-task from creation to payout", () => {
     const claimedTask = { ...task, status: "claimed" as const, subtask_ids: ["sub_a"] };
     const sub = makeSubtask({ id: "sub_a", task_id: "tsk_a" });
-    const posted = { ...sub, yikyak_post: { text: "$4 to save a seat", screenshot_url: "/s.png", posted_at: sub.created_at } };
+    const posted = {
+      ...sub,
+      yikyak_post: {
+        text: "$4 to save a seat",
+        screenshot_url: "/s.png",
+        posted_at: sub.created_at,
+      },
+    };
     const claimed = { ...posted, status: "claimed" as const, helper_address: "rHelper" };
-    const withPhoto = { ...claimed, photo: { url: "/p.jpg", note: "Front table, left side", added_at: sub.created_at } };
+    const withPhoto = {
+      ...claimed,
+      photo: { url: "/p.jpg", note: "Front table, left side", added_at: sub.created_at },
+    };
     const wrongPin = { ...withPhoto, pin_attempts_left: 2 };
     const done = { ...wrongPin, status: "done" as const };
     const doneTask = { ...claimedTask, status: "done" as const };
@@ -146,8 +184,16 @@ describe("applyBoardMessage events", () => {
   });
 
   it("marks the task and its sub-tasks failed", () => {
-    const sub = makeSubtask({ id: "sub_a", task_id: "tsk_a", pin_locked: true, pin_attempts_left: 0 });
-    const locked = applyBoardMessage(start, event(2, { type: "pin.locked", data: { subtask: sub } }));
+    const sub = makeSubtask({
+      id: "sub_a",
+      task_id: "tsk_a",
+      pin_locked: true,
+      pin_attempts_left: 0,
+    });
+    const locked = applyBoardMessage(
+      start,
+      event(2, { type: "pin.locked", data: { subtask: sub } }),
+    );
 
     const failed = applyBoardMessage(
       locked,
@@ -173,10 +219,18 @@ describe("applyBoardMessage with the real server's extra events", () => {
   });
 
   it("ignores an unknown event type but still advances seq, so the next event is not a gap", () => {
-    const unknown = { type: "tx.unknown", seq: 6, at: "2026-10-11T19:00:00.000Z", data: { hash: "H" } } as unknown as BoardEvent;
+    const unknown = {
+      type: "tx.unknown",
+      seq: 6,
+      at: "2026-10-11T19:00:00.000Z",
+      data: { hash: "H" },
+    } as unknown as BoardEvent;
 
     const state = applyBoardMessage(atSeq5, unknown);
-    const next = applyBoardMessage(state, event(7, { type: "agent.log", data: { line: makeLogLine({ id: "l7" }) } }));
+    const next = applyBoardMessage(
+      state,
+      event(7, { type: "agent.log", data: { line: makeLogLine({ id: "l7" }) } }),
+    );
 
     expect(state.seq).toBe(6);
     expect(state.tasks).toEqual(atSeq5.tasks);
@@ -186,11 +240,17 @@ describe("applyBoardMessage with the real server's extra events", () => {
 
   it("applies tx.failed as an upsert of the failed transaction", () => {
     const pending = makeTx({ hash: "PAY", status: "pending" });
-    const withPending = applyBoardMessage(atSeq5, event(6, { type: "tx.pending", data: { tx: pending } }));
+    const withPending = applyBoardMessage(
+      atSeq5,
+      event(6, { type: "tx.pending", data: { tx: pending } }),
+    );
 
     const state = applyBoardMessage(
       withPending,
-      event(7, { type: "tx.failed", data: { tx: { ...pending, status: "failed", error: "tecUNFUNDED_PAYMENT" } } }),
+      event(7, {
+        type: "tx.failed",
+        data: { tx: { ...pending, status: "failed", error: "tecUNFUNDED_PAYMENT" } },
+      }),
     );
 
     expect(state.txs.PAY?.status).toBe("failed");
@@ -200,7 +260,10 @@ describe("applyBoardMessage with the real server's extra events", () => {
   it("applies subtask.paid as an upsert of the sub-task", () => {
     const sub = makeSubtask({ id: "sub_a", task_id: "tsk_a", status: "done" });
 
-    const state = applyBoardMessage(atSeq5, event(6, { type: "subtask.paid", data: { subtask: sub } }));
+    const state = applyBoardMessage(
+      atSeq5,
+      event(6, { type: "subtask.paid", data: { subtask: sub } }),
+    );
 
     expect(state.subtasks.sub_a?.status).toBe("done");
   });
@@ -211,7 +274,14 @@ describe("applyBoardMessage with the real server's extra events", () => {
 
     const state = applyBoardMessage(
       atSeq5,
-      event(6, { type: "task.created", data: { task: makeTask({ id: "tsk_a", subtask_ids: ["sub_a"] }), subtasks: [sub], txs: [tx] } }),
+      event(6, {
+        type: "task.created",
+        data: {
+          task: makeTask({ id: "tsk_a", subtask_ids: ["sub_a"] }),
+          subtasks: [sub],
+          txs: [tx],
+        },
+      }),
     );
 
     expect(state.subtasks.sub_a).toEqual(sub);

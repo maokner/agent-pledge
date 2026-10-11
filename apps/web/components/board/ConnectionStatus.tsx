@@ -17,7 +17,12 @@ const TAG: Record<Status, TermTag> = {
 export function ConnectionStatus({ status, seq }: { status: Status; seq: number }) {
   const waiting = status === "idle" || status === "connecting" || status === "reconnecting";
   return (
-    <span role="status" title={`Last event seq ${seq}`} data-status={status} className="inline-flex items-baseline">
+    <span
+      role="status"
+      title={`Last event seq ${seq}`}
+      data-status={status}
+      className="inline-flex items-baseline"
+    >
       <StatusTag tag={TAG[status]} size="sm" className="projector:text-lg">
         {waiting && <Cursor />}
       </StatusTag>

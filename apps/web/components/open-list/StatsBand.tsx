@@ -24,14 +24,21 @@ export function StatsBand() {
         <Badge tone="inverted" dot="pulse">
           Live from the board
         </Badge>
-        <h2 id="stats-title" className="text-3xl font-bold leading-[1.1] tracking-[-0.02em] sm:text-4xl">
+        <h2
+          id="stats-title"
+          className="text-3xl font-bold leading-[1.1] tracking-[-0.02em] sm:text-4xl"
+        >
           Today on yo pledge
         </h2>
       </div>
       <dl className="mt-10 grid grid-cols-1 gap-8 sm:grid-cols-3 sm:gap-6 lg:mt-12">
         <Stat label="Open now">{stats === null ? <Dash /> : stats.openNow}</Stat>
         <Stat label="Paid out today">
-          {stats === null ? <Dash /> : <PayAmount amount={stats.paidOutToday} tone="inverted" className={NUMBER} />}
+          {stats === null ? (
+            <Dash />
+          ) : (
+            <PayAmount amount={stats.paidOutToday} tone="inverted" className={NUMBER} />
+          )}
         </Stat>
         <Stat label="Helpers paid today">{stats === null ? <Dash /> : stats.helpersPaid}</Stat>
       </dl>
@@ -42,7 +49,9 @@ export function StatsBand() {
 function Stat({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col-reverse gap-3 border-t border-human-inverted-fg/15 pt-6">
-      <dt className="text-sm font-medium uppercase tracking-[0.15em] text-human-inverted-fg/80">{label}</dt>
+      <dt className="text-sm font-medium uppercase tracking-[0.15em] text-human-inverted-fg/80">
+        {label}
+      </dt>
       <dd className={NUMBER}>{children}</dd>
     </div>
   );

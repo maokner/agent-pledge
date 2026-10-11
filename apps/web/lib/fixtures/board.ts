@@ -81,8 +81,17 @@ export function buildFixtureHistory(now: number): BoardEvent[] {
  * One full live run after the history: even runs succeed, odd runs fail.
  * Event times start at `startTime` and step by `stepMs`.
  */
-export function buildLiveRun(opts: { run: number; startSeq: number; startTime: number; stepMs: number }): BoardEvent[] {
-  const b = new ScenarioBuilder({ startSeq: opts.startSeq, startTime: opts.startTime, stepMs: opts.stepMs });
+export function buildLiveRun(opts: {
+  run: number;
+  startSeq: number;
+  startTime: number;
+  stepMs: number;
+}): BoardEvent[] {
+  const b = new ScenarioBuilder({
+    startSeq: opts.startSeq,
+    startTime: opts.startTime,
+    stepMs: opts.stepMs,
+  });
   const success = opts.run % 2 === 0;
   seatHoldFlow(b, {
     taskId: `tsk_live${opts.run}`,
@@ -98,14 +107,24 @@ export function buildLiveRun(opts: { run: number; startSeq: number; startTime: n
 
 /** The task from a create_task call (the backup form, #38), run through to payout. */
 export function buildCreatedTaskRun(opts: {
-  task: { task_id: string; description: string; place: string; time_limit_minutes: number; price_usd: number };
+  task: {
+    task_id: string;
+    description: string;
+    place: string;
+    time_limit_minutes: number;
+    price_usd: number;
+  };
   claimCode: string;
   startSeq: number;
   startTime: number;
   stepMs: number;
 }): BoardEvent[] {
   const { task } = opts;
-  const b = new ScenarioBuilder({ startSeq: opts.startSeq, startTime: opts.startTime, stepMs: opts.stepMs });
+  const b = new ScenarioBuilder({
+    startSeq: opts.startSeq,
+    startTime: opts.startTime,
+    stepMs: opts.stepMs,
+  });
   seatHoldFlow(b, {
     taskId: task.task_id,
     subtaskId: task.task_id.replace(/^tsk_/, "sub_"),

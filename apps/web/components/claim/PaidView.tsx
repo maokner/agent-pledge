@@ -15,8 +15,14 @@ export function PaidView({ view }: { view: ClaimView }) {
   const amount = formatRlusd(payout?.amount ?? view.subtask.price);
   return (
     <section className="flex flex-col gap-4" aria-labelledby="paid-title">
-      <Card variant="inverted" className="flex flex-col items-center gap-5 py-12 text-center lg:py-16">
-        <span aria-hidden="true" className="grid size-16 place-items-center rounded-full bg-human-gradient shadow-human-accent-lg">
+      <Card
+        variant="inverted"
+        className="flex flex-col items-center gap-5 py-12 text-center lg:py-16"
+      >
+        <span
+          aria-hidden="true"
+          className="grid size-16 place-items-center rounded-full bg-human-gradient shadow-human-accent-lg"
+        >
           <Check className="size-8 text-human-accent-fg" strokeWidth={3} />
         </span>
         <h2

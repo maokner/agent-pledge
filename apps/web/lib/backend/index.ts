@@ -14,7 +14,12 @@
  * Fixture mode never does: the fixture client already speaks the web app's types.
  */
 export { boardMessageFromBackend, boardSnapshotFromBackend, subtasksOf } from "./board";
-export { claimStateOf, claimViewFromBackend, createHelperTokenStore, type HelperTokenStore } from "./claim";
+export {
+  claimStateOf,
+  claimViewFromBackend,
+  createHelperTokenStore,
+  type HelperTokenStore,
+} from "./claim";
 export { apiErrorFromBackend, attemptsLeftFrom, type ErrorContext } from "./errors";
 export { openSubtasksFromBackend } from "./open-subtasks";
 export { createTaskResponseFromBackend, taskNftDataFromBackend } from "./tasks";

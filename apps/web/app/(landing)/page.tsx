@@ -25,7 +25,10 @@ export default function LandingPage({ searchParams }: PageProps<"/">) {
         <h1 className="text-center text-[clamp(4rem,12vw,9rem)] leading-none font-bold tracking-[-0.015em]">
           yo pledge
         </h1>
-        <nav aria-label="Choose a side" className="flex w-full max-w-[52.5rem] flex-col gap-4 sm:flex-row sm:justify-center sm:gap-10">
+        <nav
+          aria-label="Choose a side"
+          className="flex w-full max-w-[52.5rem] flex-col gap-4 sm:flex-row sm:justify-center sm:gap-10"
+        >
           <RoleButton href="/human" tone="human" icon={User}>
             i’m a human
           </RoleButton>

@@ -3,7 +3,11 @@
 import type { CreateTaskResponse, TaskId } from "@/lib/contract";
 import { useRef, useState, type FormEvent } from "react";
 import { getFixtureTransport } from "@/lib/board/get-transport";
-import { BackupTaskError, submitBackupTask, type BackupTaskForm as FormValues } from "@/lib/backup-task/client";
+import {
+  BackupTaskError,
+  submitBackupTask,
+  type BackupTaskForm as FormValues,
+} from "@/lib/backup-task/client";
 import { validateBackupTask, type BackupTaskField } from "@/lib/backup-task/validate";
 import { cn } from "@/lib/cn";
 import { FIXTURE_MODE } from "@/lib/config";
@@ -12,7 +16,13 @@ import { Cursor, TermButton, WrapLine } from "./term";
 
 const PASSCODE_KEY = "agent-pledge:backup-passcode";
 
-const EMPTY: FormValues = { description: "", place: "", time_limit_minutes: "", price_usd: "", caller_phone: "" };
+const EMPTY: FormValues = {
+  description: "",
+  place: "",
+  time_limit_minutes: "",
+  price_usd: "",
+  caller_phone: "",
+};
 
 type Phase =
   | { kind: "editing"; errors: Partial<Record<BackupTaskField, string>>; message: string | null }
@@ -61,7 +71,10 @@ export function BackupTaskForm({ isOnBoard }: { isOnBoard: (taskId: TaskId) => b
       setPhase({
         kind: "editing",
         errors: error instanceof BackupTaskError ? error.fields : {},
-        message: error instanceof BackupTaskError ? error.message : "Could not reach the web server. Try again.",
+        message:
+          error instanceof BackupTaskError
+            ? error.message
+            : "Could not reach the web server. Try again.",
       });
     }
   }
@@ -69,7 +82,8 @@ export function BackupTaskForm({ isOnBoard }: { isOnBoard: (taskId: TaskId) => b
   const field = (name: BackupTaskField) => ({
     name,
     value: values[name],
-    onChange: (e: { target: { value: string } }) => setValues((v) => ({ ...v, [name]: e.target.value })),
+    onChange: (e: { target: { value: string } }) =>
+      setValues((v) => ({ ...v, [name]: e.target.value })),
     "aria-invalid": phase.kind === "editing" && Boolean(phase.errors[name]),
     "aria-describedby": `backup-${name}-error`,
     className: INPUT,
@@ -85,7 +99,11 @@ export function BackupTaskForm({ isOnBoard }: { isOnBoard: (taskId: TaskId) => b
 
   return (
     <>
-      <button type="button" onClick={open} className={cn(LINK, "text-sm text-term-fg-dim projector:text-base")}>
+      <button
+        type="button"
+        onClick={open}
+        className={cn(LINK, "text-sm text-term-fg-dim projector:text-base")}
+      >
         &gt; Phone call failed? Create the task here
       </button>
 
@@ -109,27 +127,71 @@ export function BackupTaskForm({ isOnBoard }: { isOnBoard: (taskId: TaskId) => b
           </button>
         </div>
         <div className="flex flex-col gap-4 p-4">
-          <p className="text-sm text-term-fg-dim"># The same create_task call the voice agent makes.</p>
+          <p className="text-sm text-term-fg-dim">
+            # The same create_task call the voice agent makes.
+          </p>
 
           {phase.kind === "created" ? (
-            <Created response={phase.response} onBoard={isOnBoard(phase.response.task_id)} onDone={close} />
+            <Created
+              response={phase.response}
+              onBoard={isOnBoard(phase.response.task_id)}
+              onDone={close}
+            />
           ) : (
             <form onSubmit={submit} noValidate className="flex flex-col gap-3">
-              <Field label="What to do" input={<input {...field("description")} placeholder="Save me a seat at the front table" autoComplete="off" />}>
+              <Field
+                label="What to do"
+                input={
+                  <input
+                    {...field("description")}
+                    placeholder="Save me a seat at the front table"
+                    autoComplete="off"
+                  />
+                }
+              >
                 {errorFor("description")}
               </Field>
-              <Field label="Where" input={<input {...field("place")} placeholder="Main Stacks, front table" autoComplete="off" />}>
+              <Field
+                label="Where"
+                input={
+                  <input
+                    {...field("place")}
+                    placeholder="Main Stacks, front table"
+                    autoComplete="off"
+                  />
+                }
+              >
                 {errorFor("place")}
               </Field>
               <div className="grid gap-3 sm:grid-cols-2">
-                <Field label="Time limit (minutes)" prompt="$" input={<input {...field("time_limit_minutes")} inputMode="numeric" placeholder="3" />}>
+                <Field
+                  label="Time limit (minutes)"
+                  prompt="$"
+                  input={
+                    <input {...field("time_limit_minutes")} inputMode="numeric" placeholder="3" />
+                  }
+                >
                   {errorFor("time_limit_minutes")}
                 </Field>
-                <Field label="Price (USD)" prompt="$" input={<input {...field("price_usd")} inputMode="decimal" placeholder="5" />}>
+                <Field
+                  label="Price (USD)"
+                  prompt="$"
+                  input={<input {...field("price_usd")} inputMode="decimal" placeholder="5" />}
+                >
                   {errorFor("price_usd")}
                 </Field>
               </div>
-              <Field label="Requester phone (optional)" input={<input {...field("caller_phone")} type="tel" placeholder="+15105550123" autoComplete="off" />}>
+              <Field
+                label="Requester phone (optional)"
+                input={
+                  <input
+                    {...field("caller_phone")}
+                    type="tel"
+                    placeholder="+15105550123"
+                    autoComplete="off"
+                  />
+                }
+              >
                 {errorFor("caller_phone")}
               </Field>
               <Field
@@ -157,7 +219,13 @@ export function BackupTaskForm({ isOnBoard }: { isOnBoard: (taskId: TaskId) => b
                   [ERR] {phase.message}
                 </p>
               )}
-              <TermButton type="submit" variant="solid" size="base" disabled={phase.kind === "sending"} className="w-full">
+              <TermButton
+                type="submit"
+                variant="solid"
+                size="base"
+                disabled={phase.kind === "sending"}
+                className="w-full"
+              >
                 {phase.kind === "sending" ? (
                   <>
                     [..] CREATING <Cursor />
@@ -211,13 +279,25 @@ function Field({
   );
 }
 
-function Created({ response, onBoard, onDone }: { response: CreateTaskResponse; onBoard: boolean; onDone: () => void }) {
+function Created({
+  response,
+  onBoard,
+  onDone,
+}: {
+  response: CreateTaskResponse;
+  onBoard: boolean;
+  onDone: () => void;
+}) {
   return (
     <div className="flex flex-col gap-3" role="status">
       <p className="text-sm">
-        <span className="font-bold text-term-status-validated">[OK]</span> Task created. Give the requester this PIN:
+        <span className="font-bold text-term-status-validated">[OK]</span> Task created. Give the
+        requester this PIN:
       </p>
-      <p className={cn("text-center text-4xl font-bold tracking-widest tabular-nums", GLOW)} data-testid="backup-pin">
+      <p
+        className={cn("text-center text-4xl font-bold tracking-widest tabular-nums", GLOW)}
+        data-testid="backup-pin"
+      >
         {response.pin}
       </p>
       <div className="text-sm">

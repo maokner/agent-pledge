@@ -57,4 +57,9 @@ export const FIXTURE_ERRANDS = {
 export type FixtureErrandName = keyof typeof FIXTURE_ERRANDS;
 
 /** The order the live fixture stream cycles through. */
-export const LIVE_ERRAND_ROTATION: readonly FixtureErrandName[] = ["seat", "beer", "design", "essay"];
+export const LIVE_ERRAND_ROTATION: readonly FixtureErrandName[] = [
+  "seat",
+  "beer",
+  "design",
+  "essay",
+];

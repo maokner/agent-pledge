@@ -125,7 +125,9 @@ export function backendTask(overrides: Partial<BackendTaskView> = {}): BackendTa
   };
 }
 
-export function backendLogEntry(overrides: Partial<BackendAgentLogEntry> = {}): BackendAgentLogEntry {
+export function backendLogEntry(
+  overrides: Partial<BackendAgentLogEntry> = {},
+): BackendAgentLogEntry {
   return {
     id: 1,
     at: "2026-10-11T18:00:10.000Z",

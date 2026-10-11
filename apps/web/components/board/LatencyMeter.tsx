@@ -50,7 +50,10 @@ export function LatencyMeter({ latency, seq }: { latency: LatencyTracker; seq: n
 
   return (
     <span
-      className={cn("text-sm whitespace-nowrap tabular-nums projector:text-base", slow ? "font-bold text-term-amber" : "text-term-fg-dim")}
+      className={cn(
+        "text-sm whitespace-nowrap tabular-nums projector:text-base",
+        slow ? "font-bold text-term-amber" : "text-term-fg-dim",
+      )}
       title={title}
       aria-label={`Board updates take ${ms(last.totalMs)}`}
       data-testid="latency-meter"

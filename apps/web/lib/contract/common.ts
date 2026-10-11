@@ -46,7 +46,12 @@ export type ClaimCode = string;
  */
 export type WorkStatus = "open" | "claimed" | "done" | "failed";
 
-export const WORK_STATUSES = ["open", "claimed", "done", "failed"] as const satisfies readonly WorkStatus[];
+export const WORK_STATUSES = [
+  "open",
+  "claimed",
+  "done",
+  "failed",
+] as const satisfies readonly WorkStatus[];
 
 /** Why a task or sub-task failed. */
 export type FailureReason =

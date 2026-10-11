@@ -10,7 +10,13 @@ const ICONS: Record<SubtaskIconName, LucideIcon> = {
 };
 
 /** The line icon for a sub-task, picked from what it asks for (lib/open-list/icon.ts). Decorative. */
-export function SubtaskIcon({ description, className }: { description: string; className?: string }) {
+export function SubtaskIcon({
+  description,
+  className,
+}: {
+  description: string;
+  className?: string;
+}) {
   const Icon = ICONS[subtaskIcon(description)];
   return <Icon aria-hidden="true" strokeWidth={1.75} className={className} />;
 }

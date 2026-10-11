@@ -5,7 +5,16 @@ import { formatMinutes } from "@/lib/format";
 import { failureText } from "@/lib/labels";
 import { Fact, Facts } from "./Facts";
 import { GLOW, LINK, WORK_BORDER } from "./term-style";
-import { ExplorerLink, Money, Pane, SectionTitle, TimeLeft, Waiting, WorkStatusTag, ZoomableImage } from "./term";
+import {
+  ExplorerLink,
+  Money,
+  Pane,
+  SectionTitle,
+  TimeLeft,
+  Waiting,
+  WorkStatusTag,
+  ZoomableImage,
+} from "./term";
 import { TxList } from "./TxList";
 
 /**
@@ -13,7 +22,15 @@ import { TxList } from "./TxList";
  * holder, the Yik Yak screenshot (step 9), the helper's photo (step 11), and
  * its own ledger transactions.
  */
-export function SubtaskCard({ subtask, txs, names }: { subtask: Subtask; txs: LedgerTx[]; names: Map<string, string> }) {
+export function SubtaskCard({
+  subtask,
+  txs,
+  names,
+}: {
+  subtask: Subtask;
+  txs: LedgerTx[];
+  names: Map<string, string>;
+}) {
   const active = subtask.status === "open" || subtask.status === "claimed";
   return (
     <Pane
@@ -42,7 +59,11 @@ export function SubtaskCard({ subtask, txs, names }: { subtask: Subtask; txs: Le
         <Fact label="Time limit">{formatMinutes(subtask.time_limit_minutes)}</Fact>
         {active && (
           <Fact label="Time left">
-            <TimeLeft deadline={subtask.deadline_at} limitMinutes={subtask.time_limit_minutes} className="font-bold" />
+            <TimeLeft
+              deadline={subtask.deadline_at}
+              limitMinutes={subtask.time_limit_minutes}
+              className="font-bold"
+            />
           </Fact>
         )}
         <Fact label="Held by">{subtaskHolder(subtask)}</Fact>
@@ -63,7 +84,11 @@ export function SubtaskCard({ subtask, txs, names }: { subtask: Subtask; txs: Le
         )}
         {subtask.status === "claimed" && (
           <Fact label="PIN tries left">
-            {subtask.pin_locked ? <span className="font-bold text-term-red">[ERR] LOCKED</span> : subtask.pin_attempts_left}
+            {subtask.pin_locked ? (
+              <span className="font-bold text-term-red">[ERR] LOCKED</span>
+            ) : (
+              subtask.pin_attempts_left
+            )}
           </Fact>
         )}
       </Facts>
@@ -95,7 +120,10 @@ function SubtaskMedia({ subtask }: { subtask: Subtask }) {
           <figcaption className="mb-1">
             <SectionTitle as="p">The Yik Yak post</SectionTitle>
           </figcaption>
-          <ZoomableImage src={post.screenshot_url} alt={`Screenshot of the Yik Yak post: ${post.text}`} />
+          <ZoomableImage
+            src={post.screenshot_url}
+            alt={`Screenshot of the Yik Yak post: ${post.text}`}
+          />
           <p className="mt-1 text-sm text-term-fg-dim wrap-anywhere">&quot;{post.text}&quot;</p>
         </figure>
       ) : (
@@ -106,8 +134,15 @@ function SubtaskMedia({ subtask }: { subtask: Subtask }) {
           <figcaption className="mb-1">
             <SectionTitle as="p">The helper&apos;s photo</SectionTitle>
           </figcaption>
-          <ZoomableImage src={photo.url} alt={photo.note ? `The saved seat: ${photo.note}` : "The helper's photo of the saved seat"} />
-          <p className={cn("mt-1 text-lg font-bold wrap-anywhere", GLOW)}>[OK] Seat saved{photo.note ? `: ${photo.note}` : ""}</p>
+          <ZoomableImage
+            src={photo.url}
+            alt={
+              photo.note ? `The saved seat: ${photo.note}` : "The helper's photo of the saved seat"
+            }
+          />
+          <p className={cn("mt-1 text-lg font-bold wrap-anywhere", GLOW)}>
+            [OK] Seat saved{photo.note ? `: ${photo.note}` : ""}
+          </p>
         </figure>
       ) : (
         waitingForPhoto && <Waiting>Waiting for the helper&apos;s photo</Waiting>

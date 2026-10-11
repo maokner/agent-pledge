@@ -64,12 +64,14 @@ type Variant = NonNullable<VariantProps<typeof buttonVariants>["variant"]>;
 const INACTIVE: Record<Variant, string> = {
   primary:
     "bg-none! bg-human-muted text-human-fg/70 shadow-none hover:brightness-100 hover:shadow-none motion-safe:hover:translate-y-0 motion-safe:active:scale-100",
-  secondary: "text-human-fg/70 hover:bg-transparent hover:border-human-border motion-safe:active:scale-100",
+  secondary:
+    "text-human-fg/70 hover:bg-transparent hover:border-human-border motion-safe:active:scale-100",
   ghost: "text-human-fg/60 hover:text-human-fg/60 no-underline",
 };
 
 /** Busy: keeps its look, shows a spinner, stops moving. */
-const BUSY = "cursor-progress hover:brightness-100 motion-safe:hover:translate-y-0 motion-safe:active:scale-100";
+const BUSY =
+  "cursor-progress hover:brightness-100 motion-safe:hover:translate-y-0 motion-safe:active:scale-100";
 
 export type ButtonProps = React.ComponentProps<"button"> &
   VariantProps<typeof buttonVariants> & {

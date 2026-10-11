@@ -22,7 +22,10 @@ export function selectAgentLog(state: BoardState): AgentLogEntry[] {
 
 /** A short, stable label for a task: the last 4 characters of its ID without the prefix (`task_` from the server, `tsk_` in the draft). */
 export function taskTag(taskId: TaskId): string {
-  return taskId.replace(/^(?:tsk|task)_/, "").slice(-4).toUpperCase();
+  return taskId
+    .replace(/^(?:tsk|task)_/, "")
+    .slice(-4)
+    .toUpperCase();
 }
 
 /** How far from the bottom still counts as "at the bottom", for rounding and touch scrolling. */
@@ -32,7 +35,11 @@ const BOTTOM_SLACK_PX = 24;
  * Whether a scroll container is at (or near) its bottom. The log follows
  * new lines while this is true, and holds still once the reader scrolls up.
  */
-export function isAtBottom(el: { scrollTop: number; clientHeight: number; scrollHeight: number }): boolean {
+export function isAtBottom(el: {
+  scrollTop: number;
+  clientHeight: number;
+  scrollHeight: number;
+}): boolean {
   return el.scrollHeight - el.scrollTop - el.clientHeight <= BOTTOM_SLACK_PX;
 }
 

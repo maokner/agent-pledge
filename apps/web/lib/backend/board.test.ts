@@ -14,7 +14,11 @@ import {
 
 describe("boardSnapshotFromBackend (GET /board/state, and the socket's snapshot)", () => {
   it("flattens nested tasks into tasks, sub-tasks and transactions", () => {
-    const sub = backendSubtask({ status: "claimed", helper_address: ADDRESSES.helper, nft_id: "SUBNFT" });
+    const sub = backendSubtask({
+      status: "claimed",
+      helper_address: ADDRESSES.helper,
+      nft_id: "SUBNFT",
+    });
     const task = backendTask({
       status: "claimed",
       nft_id: "TASKNFT",
@@ -22,11 +26,19 @@ describe("boardSnapshotFromBackend (GET /board/state, and the socket's snapshot)
       subtasks: [sub],
       transactions: [
         backendTx({ hash: hash(1), kind: "task_funding" }),
-        backendTx({ hash: hash(2), kind: "subtask_claim", subtask_id: sub.id, amount: null, currency: null }),
+        backendTx({
+          hash: hash(2),
+          kind: "subtask_claim",
+          subtask_id: sub.id,
+          amount: null,
+          currency: null,
+        }),
       ],
     });
 
-    const snapshot = boardSnapshotFromBackend(backendBoardState({ seq: 1760205600042, tasks: [task] }));
+    const snapshot = boardSnapshotFromBackend(
+      backendBoardState({ seq: 1760205600042, tasks: [task] }),
+    );
 
     expect(snapshot.seq).toBe(1760205600042);
     expect(snapshot.tasks).toEqual([
@@ -48,7 +60,12 @@ describe("boardSnapshotFromBackend (GET /board/state, and the socket's snapshot)
       }),
     ]);
     expect(snapshot.subtasks).toEqual([
-      expect.objectContaining({ id: "sub_a1b2c3d4e5f6g7h8", task_id: task.id, status: "claimed", helper_address: ADDRESSES.helper }),
+      expect.objectContaining({
+        id: "sub_a1b2c3d4e5f6g7h8",
+        task_id: task.id,
+        status: "claimed",
+        helper_address: ADDRESSES.helper,
+      }),
     ]);
     expect(snapshot.txs.map((tx) => tx.hash)).toEqual([hash(1), hash(2)]);
   });
@@ -57,7 +74,12 @@ describe("boardSnapshotFromBackend (GET /board/state, and the socket's snapshot)
     const task = backendTask({
       nft_id: "TASKNFT",
       pin: { attempts: 1, attempts_left: 2, locked: false, verified: false },
-      subtasks: [backendSubtask({ created_at: "2026-10-11T18:00:30.000Z", deadline: "2026-10-11T18:03:00.000Z" })],
+      subtasks: [
+        backendSubtask({
+          created_at: "2026-10-11T18:00:30.000Z",
+          deadline: "2026-10-11T18:03:00.000Z",
+        }),
+      ],
     });
 
     const [sub] = boardSnapshotFromBackend(backendBoardState({ tasks: [task] })).subtasks;
@@ -130,11 +152,18 @@ describe("boardSnapshotFromBackend (GET /board/state, and the socket's snapshot)
 
 describe("transactions from the real server", () => {
   const snapshotWith = (...txs: Partial<BackendTxView>[]) =>
-    boardSnapshotFromBackend(backendBoardState({ tasks: [backendTask({ transactions: txs.map((tx) => backendTx(tx)) })] })).txs;
+    boardSnapshotFromBackend(
+      backendBoardState({ tasks: [backendTask({ transactions: txs.map((tx) => backendTx(tx)) })] }),
+    ).txs;
 
   it("renames the server's kinds to the board's, and adds the XRPL transaction type", () => {
     const txs = snapshotWith(
-      { hash: hash(1), kind: "requester_funding", from: ADDRESSES.treasury, to: ADDRESSES.requester },
+      {
+        hash: hash(1),
+        kind: "requester_funding",
+        from: ADDRESSES.treasury,
+        to: ADDRESSES.requester,
+      },
       { hash: hash(2), kind: "task_funding" },
       { hash: hash(3), kind: "task_nft_mint", amount: null, currency: null },
       { hash: hash(4), kind: "task_offer", amount: "1.00" },
@@ -209,7 +238,12 @@ describe("transactions from the real server", () => {
   it("leaves out XRP amounts, which are not dollars", () => {
     const [tx] = snapshotWith({ kind: "wallet_setup", amount: "10.00", currency: "XRP" });
 
-    expect(tx).toMatchObject({ kind: "wallet_setup", tx_type: "TrustSet", amount: null, currency: "XRP" });
+    expect(tx).toMatchObject({
+      kind: "wallet_setup",
+      tx_type: "TrustSet",
+      amount: null,
+      currency: "XRP",
+    });
   });
 });
 
@@ -230,7 +264,10 @@ describe("a failed task", () => {
       fail_reason: "No helper claimed the sub-task in time",
       finished_at: "2026-10-11T18:03:01.000Z",
     });
-    expect(snapshot.subtasks[0]).toMatchObject({ status: "failed", failure_reason: "no_claim_in_time" });
+    expect(snapshot.subtasks[0]).toMatchObject({
+      status: "failed",
+      failure_reason: "no_claim_in_time",
+    });
   });
 
   it("says the PIN locked it when the task's PIN is locked", () => {
@@ -240,7 +277,9 @@ describe("a failed task", () => {
       pin: { attempts: 3, attempts_left: 0, locked: true, verified: false },
     });
 
-    expect(boardSnapshotFromBackend(backendBoardState({ tasks: [task] })).tasks[0]?.failure_reason).toBe("pin_locked");
+    expect(
+      boardSnapshotFromBackend(backendBoardState({ tasks: [task] })).tasks[0]?.failure_reason,
+    ).toBe("pin_locked");
   });
 
   it("has no enum reason for text it does not recognise, but keeps the text", () => {

@@ -30,7 +30,10 @@ describe("selectAgentLog", () => {
     });
 
     expect(selectAgentLog(state)).toEqual([
-      expect.objectContaining({ id: "a", task: { tag: "7Q2K", description: "Save me a seat at the front table" } }),
+      expect.objectContaining({
+        id: "a",
+        task: { tag: "7Q2K", description: "Save me a seat at the front table" },
+      }),
       expect.objectContaining({ id: "b", task: null }),
     ]);
   });

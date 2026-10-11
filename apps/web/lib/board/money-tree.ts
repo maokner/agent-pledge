@@ -9,7 +9,16 @@
  * Money that the vault pays back out (payouts and refunds) is attached to the
  * node that receives it, as `receives` edges.
  */
-import type { LedgerTx, NftId, RlusdAmount, Subtask, Task, TxHash, TxKind, XrplAddress } from "@/lib/contract";
+import type {
+  LedgerTx,
+  NftId,
+  RlusdAmount,
+  Subtask,
+  Task,
+  TxHash,
+  TxKind,
+  XrplAddress,
+} from "@/lib/contract";
 import { formatRlusd } from "../format";
 import type { TaskView } from "./selectors";
 
@@ -58,7 +67,9 @@ export function buildMoneyTree({ task, subtasks, txs }: TaskView): MoneyNode {
   const pledge = formatRlusd(task.pledge);
   const vaultAddress = txs.find((tx) => tx.kind === "task_escrow")?.to ?? null;
 
-  const branches = subtasks.filter((sub) => belongsTo(sub, task)).map((sub) => subtaskBranch(sub, edges));
+  const branches = subtasks
+    .filter((sub) => belongsTo(sub, task))
+    .map((sub) => subtaskBranch(sub, edges));
 
   const agent = node({
     id: `${task.id}:agent`,
@@ -95,7 +106,9 @@ export function buildMoneyTree({ task, subtasks, txs }: TaskView): MoneyNode {
     detail: `pays ${formatRlusd(task.price)}`,
     address: task.requester_address,
     receives: edges.received(["requester_refund"]),
-    children: [{ edge: edges.down("task_escrow", null, `${formatRlusd(task.price)} in`), node: vault }],
+    children: [
+      { edge: edges.down("task_escrow", null, `${formatRlusd(task.price)} in`), node: vault },
+    ],
   });
 }
 
@@ -110,7 +123,11 @@ export interface MoneyPlan {
 export function moneyPlan({ task, subtasks }: TaskView): MoneyPlan | null {
   const sub = subtasks.at(-1);
   if (!sub) return null;
-  return { in: task.price, toHelper: sub.price, toAgent: fromUnits(toUnits(task.price) - toUnits(sub.price)) };
+  return {
+    in: task.price,
+    toHelper: sub.price,
+    toAgent: fromUnits(toUnits(task.price) - toUnits(sub.price)),
+  };
 }
 
 /** One row of the PRD 2.2 / 2.3 "who pays, who gets" table, from validated payments only. */
@@ -143,7 +160,12 @@ export function summarizeMoney({ txs }: TaskView): PartyResult[] {
 /* ---------- internals ---------- */
 
 const INTO_VAULT: TxKind[] = ["task_escrow", "task_claim", "subtask_escrow"];
-const OUT_OF_VAULT: TxKind[] = ["helper_payout", "agent_payout", "requester_refund", "agent_refund"];
+const OUT_OF_VAULT: TxKind[] = [
+  "helper_payout",
+  "agent_payout",
+  "requester_refund",
+  "agent_refund",
+];
 const REFUNDS: TxKind[] = ["requester_refund", "agent_refund"];
 const PAYOUTS: TxKind[] = ["helper_payout", "agent_payout"];
 
@@ -178,7 +200,12 @@ function subtaskBranch(sub: Subtask, edges: EdgeFactory): { edge: MoneyEdge; nod
 }
 
 function plannedBranch(task: Task, edges: EdgeFactory): { edge: MoneyEdge; node: MoneyNode } {
-  const helper = node({ id: `${task.id}:helper`, role: "helper", title: "Helper", detail: "not claimed yet" });
+  const helper = node({
+    id: `${task.id}:helper`,
+    role: "helper",
+    title: "Helper",
+    detail: "not claimed yet",
+  });
   return {
     edge: edges.planned("subtask_escrow", `${task.id}:subtask_escrow`, "funds a sub-task"),
     node: node({
@@ -186,7 +213,12 @@ function plannedBranch(task: Task, edges: EdgeFactory): { edge: MoneyEdge; node:
       role: "subtask_nft",
       title: "Sub-task NFT",
       detail: "not made yet",
-      children: [{ edge: edges.planned("subtask_claim", `${task.id}:subtask_claim`, "claims"), node: helper }],
+      children: [
+        {
+          edge: edges.planned("subtask_claim", `${task.id}:subtask_claim`, "claims"),
+          node: helper,
+        },
+      ],
     }),
   };
 }
@@ -197,7 +229,15 @@ function helperDetail(sub: Subtask): string | null {
 }
 
 function node(fields: Partial<MoneyNode> & Pick<MoneyNode, "id" | "role" | "title">): MoneyNode {
-  return { detail: null, nftId: null, parentNftId: null, address: null, receives: [], children: [], ...fields };
+  return {
+    detail: null,
+    nftId: null,
+    parentNftId: null,
+    address: null,
+    receives: [],
+    children: [],
+    ...fields,
+  };
 }
 
 class EdgeFactory {
@@ -210,7 +250,15 @@ class EdgeFactory {
   down(kind: TxKind, subtaskId: string | null, label: string): MoneyEdge {
     const tx = this.latest(kind, subtaskId);
     if (!tx) return this.planned(kind, `${subtaskId ?? this.task.id}:${kind}`, label);
-    return { id: tx.hash, kind, label, note: null, state: this.stateOf(tx), txHash: tx.hash, explorerUrl: tx.explorer_url ?? null };
+    return {
+      id: tx.hash,
+      kind,
+      label,
+      note: null,
+      state: this.stateOf(tx),
+      txHash: tx.hash,
+      explorerUrl: tx.explorer_url ?? null,
+    };
   }
 
   planned(kind: TxKind, id: string, label: string): MoneyEdge {
@@ -220,7 +268,9 @@ class EdgeFactory {
   /** Payouts and refunds of these kinds that exist so far, oldest first. */
   received(kinds: TxKind[], subtaskId?: string): MoneyEdge[] {
     return this.txs
-      .filter((tx) => kinds.includes(tx.kind) && (subtaskId === undefined || tx.subtask_id === subtaskId))
+      .filter(
+        (tx) => kinds.includes(tx.kind) && (subtaskId === undefined || tx.subtask_id === subtaskId),
+      )
       .map((tx) => ({
         id: tx.hash,
         kind: tx.kind,
@@ -242,7 +292,9 @@ class EdgeFactory {
   }
 
   private latest(kind: TxKind, subtaskId: string | null): LedgerTx | undefined {
-    return this.txs.filter((tx) => tx.kind === kind && (subtaskId === null || tx.subtask_id === subtaskId)).at(-1);
+    return this.txs
+      .filter((tx) => tx.kind === kind && (subtaskId === null || tx.subtask_id === subtaskId))
+      .at(-1);
   }
 
   private stateOf(tx: LedgerTx): EdgeState {

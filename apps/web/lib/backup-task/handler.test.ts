@@ -1,7 +1,13 @@
 import type { CreateTaskRequest, CreateTaskResponse } from "@/lib/contract";
 import { describe, expect, it, vi } from "vitest";
 import { ApiError } from "../api/client";
-import { BACKUP_PASSCODE_HEADER, createTaskSender, handleBackupTask, readBackupTaskConfig, type BackupTaskConfig } from "./handler";
+import {
+  BACKUP_PASSCODE_HEADER,
+  createTaskSender,
+  handleBackupTask,
+  readBackupTaskConfig,
+  type BackupTaskConfig,
+} from "./handler";
 
 const body = {
   description: "Save me a seat at the front table",
@@ -29,17 +35,28 @@ function post(json: unknown, passcode?: string): Request {
 }
 
 function created() {
-  return vi.fn<(req: CreateTaskRequest) => Promise<CreateTaskResponse>>(async () => ({ task_id: "tsk_1", pin: "4821", board_url: "https://board.example" }));
+  return vi.fn<(req: CreateTaskRequest) => Promise<CreateTaskResponse>>(async () => ({
+    task_id: "tsk_1",
+    pin: "4821",
+    board_url: "https://board.example",
+  }));
 }
 
 describe("handleBackupTask", () => {
   it("with the right passcode, sends the same create_task call as the voice agent and returns the PIN", async () => {
     const createTask = created();
 
-    const response = await handleBackupTask(post(body, "open sesame"), { config: serverConfig, createTask });
+    const response = await handleBackupTask(post(body, "open sesame"), {
+      config: serverConfig,
+      createTask,
+    });
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ task_id: "tsk_1", pin: "4821", board_url: "https://board.example" });
+    expect(await response.json()).toEqual({
+      task_id: "tsk_1",
+      pin: "4821",
+      board_url: "https://board.example",
+    });
     expect(createTask).toHaveBeenCalledWith({ ...body, caller_phone: "+15555550100" });
   });
 
@@ -47,7 +64,10 @@ describe("handleBackupTask", () => {
     const createTask = created();
 
     const missing = await handleBackupTask(post(body), { config: serverConfig, createTask });
-    const wrong = await handleBackupTask(post(body, "open sesame!"), { config: serverConfig, createTask });
+    const wrong = await handleBackupTask(post(body, "open sesame!"), {
+      config: serverConfig,
+      createTask,
+    });
 
     expect(missing.status).toBe(401);
     expect(wrong.status).toBe(401);
@@ -58,15 +78,24 @@ describe("handleBackupTask", () => {
   it("says which fields are wrong", async () => {
     const createTask = created();
 
-    const response = await handleBackupTask(post({ ...body, price_usd: -1 }, "open sesame"), { config: serverConfig, createTask });
+    const response = await handleBackupTask(post({ ...body, price_usd: -1 }, "open sesame"), {
+      config: serverConfig,
+      createTask,
+    });
 
     expect(response.status).toBe(400);
-    expect(await response.json()).toMatchObject({ error: "bad_request", fields: { price_usd: expect.any(String) } });
+    expect(await response.json()).toMatchObject({
+      error: "bad_request",
+      fields: { price_usd: expect.any(String) },
+    });
     expect(createTask).not.toHaveBeenCalled();
   });
 
   it("rejects a body that is not JSON", async () => {
-    const response = await handleBackupTask(post("{nope", "open sesame"), { config: serverConfig, createTask: created() });
+    const response = await handleBackupTask(post("{nope", "open sesame"), {
+      config: serverConfig,
+      createTask: created(),
+    });
 
     expect(response.status).toBe(400);
   });
@@ -74,7 +103,10 @@ describe("handleBackupTask", () => {
   it("is switched off until the passcode, server URL and voice secret are all set", async () => {
     const createTask = created();
 
-    const response = await handleBackupTask(post(body, ""), { config: { ...serverConfig, passcode: null }, createTask });
+    const response = await handleBackupTask(post(body, ""), {
+      config: { ...serverConfig, passcode: null },
+      createTask,
+    });
 
     expect(response.status).toBe(503);
     expect((await response.json()).message).toMatch(/BACKUP_FORM_PASSCODE/);
@@ -82,10 +114,19 @@ describe("handleBackupTask", () => {
   });
 
   it("in fixture mode needs no passcode unless one is set", async () => {
-    const fixtures: BackupTaskConfig = { ...serverConfig, mode: "fixtures", passcode: null, serverUrl: null, voiceSecret: null };
+    const fixtures: BackupTaskConfig = {
+      ...serverConfig,
+      mode: "fixtures",
+      passcode: null,
+      serverUrl: null,
+      voiceSecret: null,
+    };
 
     const open = await handleBackupTask(post(body), { config: fixtures, createTask: created() });
-    const locked = await handleBackupTask(post(body), { config: { ...fixtures, passcode: "pw" }, createTask: created() });
+    const locked = await handleBackupTask(post(body), {
+      config: { ...fixtures, passcode: "pw" },
+      createTask: created(),
+    });
 
     expect(open.status).toBe(200);
     expect(locked.status).toBe(401);
@@ -109,7 +150,10 @@ describe("handleBackupTask", () => {
     });
 
     expect(invalid.status).toBe(400);
-    expect(await invalid.json()).toEqual({ error: "bad_request", message: "Right now I can only save seats." });
+    expect(await invalid.json()).toEqual({
+      error: "bad_request",
+      message: "Right now I can only save seats.",
+    });
     expect(badSecret.status).toBe(502);
     expect((await badSecret.json()).message).toMatch(/AGENT_PLEDGE_VOICE_SECRET/);
     expect(down.status).toBe(502);
@@ -118,7 +162,10 @@ describe("handleBackupTask", () => {
   it("sends no caller_phone when neither the form nor the env has one (the server's is optional)", async () => {
     const createTask = created();
 
-    await handleBackupTask(post(body, "open sesame"), { config: { ...serverConfig, callerPhone: null }, createTask });
+    await handleBackupTask(post(body, "open sesame"), {
+      config: { ...serverConfig, callerPhone: null },
+      createTask,
+    });
 
     expect(createTask).toHaveBeenCalledWith(body);
   });
@@ -131,7 +178,11 @@ describe("handleBackupTask", () => {
     });
 
     expect(response.status).toBe(422);
-    expect(await response.json()).toEqual({ error: "not_seat_hold", message, fields: { description: message } });
+    expect(await response.json()).toEqual({
+      error: "not_seat_hold",
+      message,
+      fields: { description: message },
+    });
   });
 });
 
@@ -176,7 +227,9 @@ describe("readBackupTaskConfig", () => {
       passcode: null,
       callerPhone: null,
     });
-    expect(readBackupTaskConfig({ NEXT_PUBLIC_API_URL: "" }).serverUrl).toBe("http://localhost:3001");
+    expect(readBackupTaskConfig({ NEXT_PUBLIC_API_URL: "" }).serverUrl).toBe(
+      "http://localhost:3001",
+    );
     expect(readBackupTaskConfig({}).serverUrl).toBe("http://localhost:3001");
     expect(readBackupTaskConfig({ NEXT_PUBLIC_FIXTURES: "1" }).mode).toBe("fixtures");
   });

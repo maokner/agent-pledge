@@ -4,7 +4,9 @@ import { cn } from "./cn";
 describe("cn", () => {
   it("keeps a background image next to a background color", () => {
     expect(cn("bg-human-inverted", "bg-human-dots")).toBe("bg-human-inverted bg-human-dots");
-    expect(cn("bg-human-muted", "bg-human-gradient-button")).toBe("bg-human-muted bg-human-gradient-button");
+    expect(cn("bg-human-muted", "bg-human-gradient-button")).toBe(
+      "bg-human-muted bg-human-gradient-button",
+    );
   });
 
   it("still lets a later color win over an earlier one", () => {

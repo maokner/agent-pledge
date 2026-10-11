@@ -39,7 +39,11 @@ export function useClaim(code: string) {
       if (error instanceof ApiError && error.code === "not_found") {
         setLoad({ status: "not_found" });
       } else {
-        setLoad((prev) => (prev.status === "ready" ? prev : { status: "error", message: plainMessage(errorMessage(error)) }));
+        setLoad((prev) =>
+          prev.status === "ready"
+            ? prev
+            : { status: "error", message: plainMessage(errorMessage(error)) },
+        );
       }
       return null;
     }
@@ -51,7 +55,10 @@ export function useClaim(code: string) {
 
   const state = load.status === "ready" ? load.view.state : null;
   /** Milliseconds left on the server's clock; null until loaded and mounted. */
-  const left = load.status === "ready" && now !== null ? msLeft(load.view.subtask.deadline_at, now, load.offsetMs) : null;
+  const left =
+    load.status === "ready" && now !== null
+      ? msLeft(load.view.subtask.deadline_at, now, load.offsetMs)
+      : null;
   const timeUp = (state === "open" || state === "claimed_by_you") && left === 0;
   const pollMs = state === "paying" ? PAYING_POLL_MS : timeUp ? TIME_UP_POLL_MS : null;
   useEffect(() => {

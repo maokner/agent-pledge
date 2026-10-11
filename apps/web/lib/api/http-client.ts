@@ -3,7 +3,13 @@
  * speaks the server's shapes on the wire and returns the web app's own types,
  * mapping everything through lib/backend.
  */
-import { apiPaths, HELPER_TOKEN_HEADER, type ClaimCode, type ClaimView, type SubmitPinRequest } from "@/lib/contract";
+import {
+  apiPaths,
+  HELPER_TOKEN_HEADER,
+  type ClaimCode,
+  type ClaimView,
+  type SubmitPinRequest,
+} from "@/lib/contract";
 import {
   apiErrorFromBackend,
   attemptsLeftFrom,
@@ -55,7 +61,11 @@ export function createHttpApiClient({
   tokens = createHelperTokenStore(),
   now = Date.now,
 }: HttpApiClientOptions): ApiClient {
-  async function request<T>(method: "GET" | "POST", path: string, { body, headers, helper }: RequestOptions = {}): Promise<T> {
+  async function request<T>(
+    method: "GET" | "POST",
+    path: string,
+    { body, headers, helper }: RequestOptions = {},
+  ): Promise<T> {
     // No timeout: the right PIN is answered only after the payout is on the ledger, which can take a while.
     const init: RequestInit = { method, credentials: "include", headers: { ...headers } };
     if (body instanceof FormData) {
@@ -65,7 +75,8 @@ export function createHttpApiClient({
       init.headers = { ...headers, "content-type": "application/json" };
     }
     const response = await fetch(`${baseUrl}${path}`, init);
-    if (!response.ok) throw apiErrorFromBackend(response.status, await response.text().catch(() => ""), { helper });
+    if (!response.ok)
+      throw apiErrorFromBackend(response.status, await response.text().catch(() => ""), { helper });
     return (await response.json()) as T;
   }
 
@@ -75,7 +86,8 @@ export function createHttpApiClient({
     return token ? { [HELPER_TOKEN_HEADER]: token } : {};
   }
 
-  const getRawClaim = (code: ClaimCode) => request<BackendClaimView>("GET", apiPaths.claim(code), { headers: helperHeaders(code) });
+  const getRawClaim = (code: ClaimCode) =>
+    request<BackendClaimView>("GET", apiPaths.claim(code), { headers: helperHeaders(code) });
 
   /**
    * The claim view has no time limit, so it comes from the sub-task on the
@@ -86,7 +98,9 @@ export function createHttpApiClient({
     let limit = timeLimits.get(subtaskId);
     if (!limit) {
       limit = request<BackendBoardState>("GET", apiPaths.boardState()).then(
-        (state) => state.tasks.flatMap(subtasksOf).find((sub) => sub.id === subtaskId)?.time_limit_minutes ?? null,
+        (state) =>
+          state.tasks.flatMap(subtasksOf).find((sub) => sub.id === subtaskId)?.time_limit_minutes ??
+          null,
         () => {
           timeLimits.delete(subtaskId);
           return null;
@@ -98,14 +112,21 @@ export function createHttpApiClient({
   }
 
   async function toClaimView(view: BackendClaimView): Promise<ClaimView> {
-    return claimViewFromBackend(view, { now: now(), timeLimitMinutes: await timeLimitFor(view.subtask_id) });
+    return claimViewFromBackend(view, {
+      now: now(),
+      timeLimitMinutes: await timeLimitFor(view.subtask_id),
+    });
   }
 
   return {
-    getBoardState: async () => boardSnapshotFromBackend(await request<BackendBoardState>("GET", apiPaths.boardState())),
-    getTaskJson: async (id) => taskNftDataFromBackend(await request<BackendNftUriData>("GET", apiPaths.taskJson(id))),
+    getBoardState: async () =>
+      boardSnapshotFromBackend(await request<BackendBoardState>("GET", apiPaths.boardState())),
+    getTaskJson: async (id) =>
+      taskNftDataFromBackend(await request<BackendNftUriData>("GET", apiPaths.taskJson(id))),
     createTask: async (body) =>
-      createTaskResponseFromBackend(await request<BackendCreateTaskResponse>("POST", apiPaths.createTask(), { body })),
+      createTaskResponseFromBackend(
+        await request<BackendCreateTaskResponse>("POST", apiPaths.createTask(), { body }),
+      ),
 
     getClaim: async (code) => toClaimView(await getRawClaim(code)),
 
@@ -113,7 +134,10 @@ export function createHttpApiClient({
       // The server answers 409 even to the phone that already holds the claim, so look first.
       const current = await getRawClaim(code);
       if (current.claimed_by_you) return toClaimView(current);
-      const { helper_token, claim } = await request<BackendClaimSubtaskResponse>("POST", apiPaths.claimSubtask(code));
+      const { helper_token, claim } = await request<BackendClaimSubtaskResponse>(
+        "POST",
+        apiPaths.claimSubtask(code),
+      );
       tokens.set(code, helper_token);
       return toClaimView(claim);
     },
@@ -139,16 +163,25 @@ export function createHttpApiClient({
         });
         return { result: "correct", claim: await toClaimView(claim) };
       } catch (error) {
-        if (!(error instanceof ApiError) || (error.code !== "wrong_pin" && error.code !== "locked")) throw error;
+        if (!(error instanceof ApiError) || (error.code !== "wrong_pin" && error.code !== "locked"))
+          throw error;
         // A wrong PIN is an error response with no claim in it: reload the claim to show it.
         const fresh = await getRawClaim(code).then(toClaimView, () => null);
         if (!fresh) throw error;
-        if (error.code === "locked") return { result: "locked", claim: { ...fresh, state: "locked", pin_attempts_left: 0 } };
-        return { result: "wrong", claim: { ...fresh, pin_attempts_left: attemptsLeftFrom(error) ?? fresh.pin_attempts_left } };
+        if (error.code === "locked")
+          return { result: "locked", claim: { ...fresh, state: "locked", pin_attempts_left: 0 } };
+        return {
+          result: "wrong",
+          claim: {
+            ...fresh,
+            pin_attempts_left: attemptsLeftFrom(error) ?? fresh.pin_attempts_left,
+          },
+        };
       }
     },
 
-    listOpenSubtasks: async () => openSubtasksFromBackend(await request<BackendBoardState>("GET", apiPaths.boardState())),
+    listOpenSubtasks: async () =>
+      openSubtasksFromBackend(await request<BackendBoardState>("GET", apiPaths.boardState())),
   };
 }
 
@@ -180,7 +213,9 @@ function send<T>(
         try {
           resolve(JSON.parse(req.responseText) as T);
         } catch {
-          reject(new ApiError(req.status, "internal", "The server sent a reply this page cannot read."));
+          reject(
+            new ApiError(req.status, "internal", "The server sent a reply this page cannot read."),
+          );
         }
       } else {
         reject(apiErrorFromBackend(req.status, req.responseText, { helper: true }));

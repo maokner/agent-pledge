@@ -30,14 +30,19 @@ describe("fixture API client", () => {
 
   it("rejects an unknown code as not_found", async () => {
     const api = createFixtureApiClient();
-    await expect(settle(api.getClaim("ZZZZ"))).rejects.toMatchObject({ status: 404, code: "not_found" });
+    await expect(settle(api.getClaim("ZZZZ"))).rejects.toMatchObject({
+      status: 404,
+      code: "not_found",
+    });
   });
 
   it("walks a helper from claim to paid", async () => {
     const api = createFixtureApiClient();
 
     expect((await settle(api.claimSubtask("OPEN"))).state).toBe("claimed_by_you");
-    expect((await settle(api.uploadPhoto("OPEN", new Blob(["x"]), "Front table"))).photo?.note).toBe("Front table");
+    expect(
+      (await settle(api.uploadPhoto("OPEN", new Blob(["x"]), "Front table"))).photo?.note,
+    ).toBe("Front table");
     const wrong = await settle(api.submitPin("OPEN", "0000"));
     expect(wrong.result).toBe("wrong");
     expect(wrong.claim.pin_attempts_left).toBe(2);
@@ -59,7 +64,10 @@ describe("fixture API client", () => {
 
   it("refuses a claim that someone else already has", async () => {
     const api = createFixtureApiClient();
-    await expect(settle(api.claimSubtask("TAKN"))).rejects.toMatchObject({ status: 409, code: "already_claimed" });
+    await expect(settle(api.claimSubtask("TAKN"))).rejects.toMatchObject({
+      status: 409,
+      code: "already_claimed",
+    });
   });
 
   it("takes about one ledger close to claim, so the page shows its claiming state", async () => {
@@ -76,7 +84,10 @@ describe("fixture API client", () => {
   it("RACE: another phone wins while this one taps Claim", async () => {
     const api = createFixtureApiClient();
     expect((await settle(api.getClaim("RACE"))).state).toBe("open");
-    await expect(settle(api.claimSubtask("RACE"))).rejects.toMatchObject({ status: 409, code: "already_claimed" });
+    await expect(settle(api.claimSubtask("RACE"))).rejects.toMatchObject({
+      status: 409,
+      code: "already_claimed",
+    });
     expect((await settle(api.getClaim("RACE"))).state).toBe("already_claimed");
   });
 
@@ -91,22 +102,30 @@ describe("fixture API client", () => {
     await settle(api.claimSubtask("FLAK")).catch(() => undefined);
     const progress: number[] = [];
 
-    await expect(settle(api.uploadPhoto("FLAK", new Blob(["x"]), "", { onProgress: (p) => progress.push(p) }))).rejects.toBeInstanceOf(TypeError);
+    await expect(
+      settle(api.uploadPhoto("FLAK", new Blob(["x"]), "", { onProgress: (p) => progress.push(p) })),
+    ).rejects.toBeInstanceOf(TypeError);
     expect(Math.max(...progress)).toBeLessThan(1);
 
-    expect((await settle(api.uploadPhoto("FLAK", new Blob(["x"]), "Left side"))).photo?.note).toBe("Left side");
+    expect((await settle(api.uploadPhoto("FLAK", new Blob(["x"]), "Left side"))).photo?.note).toBe(
+      "Left side",
+    );
   });
 
   it("reports upload progress up to 1 and can be cancelled", async () => {
     const api = createFixtureApiClient();
     await settle(api.claimSubtask("MINE"));
     const progress: number[] = [];
-    await settle(api.uploadPhoto("MINE", new Blob(["x"]), "", { onProgress: (p) => progress.push(p) }));
+    await settle(
+      api.uploadPhoto("MINE", new Blob(["x"]), "", { onProgress: (p) => progress.push(p) }),
+    );
     expect(progress.at(-1)).toBe(1);
     expect(progress).toEqual([...progress].sort((a, b) => a - b));
 
     const controller = new AbortController();
-    const upload = settle(api.uploadPhoto("MINE", new Blob(["x"]), "", { signal: controller.signal }));
+    const upload = settle(
+      api.uploadPhoto("MINE", new Blob(["x"]), "", { signal: controller.signal }),
+    );
     controller.abort();
     await expect(upload).rejects.toMatchObject({ name: "AbortError" });
   });
@@ -116,7 +135,10 @@ describe("fixture API client", () => {
     expect((await settle(api.getClaim("SOON"))).state).toBe("open");
     await vi.advanceTimersByTimeAsync(30_000);
     expect((await settle(api.getClaim("SOON"))).state).toBe("expired");
-    await expect(settle(api.claimSubtask("SOON"))).rejects.toMatchObject({ status: 410, code: "expired" });
+    await expect(settle(api.claimSubtask("SOON"))).rejects.toMatchObject({
+      status: 410,
+      code: "expired",
+    });
   });
 
   describe("listOpenSubtasks (DRAFT GET /subtasks/open)", () => {
@@ -128,7 +150,12 @@ describe("fixture API client", () => {
       const list = await settle(api.listOpenSubtasks());
 
       expect(list.server_time).toBe("2026-10-11T19:00:00.000Z");
-      expect(list.subtasks.map((s) => s.claim_code).sort()).toEqual(["FLAK", "OPEN", "RACE", "SOON"]);
+      expect(list.subtasks.map((s) => s.claim_code).sort()).toEqual([
+        "FLAK",
+        "OPEN",
+        "RACE",
+        "SOON",
+      ]);
     });
 
     it("lists only codes whose claim page opens in the open state", async () => {
@@ -141,10 +168,16 @@ describe("fixture API client", () => {
 
     it("shows the same pay, place and deadline as the claim page", async () => {
       const api = createFixtureApiClient();
-      const open = (await settle(api.listOpenSubtasks())).subtasks.find((s) => s.claim_code === "OPEN");
+      const open = (await settle(api.listOpenSubtasks())).subtasks.find(
+        (s) => s.claim_code === "OPEN",
+      );
       const claim = await settle(api.getClaim("OPEN"));
 
-      expect(open).toMatchObject({ price: "3.5", place: "Main Stacks, level C", deadline_at: "2026-10-11T19:12:00.000Z" });
+      expect(open).toMatchObject({
+        price: "3.5",
+        place: "Main Stacks, level C",
+        deadline_at: "2026-10-11T19:12:00.000Z",
+      });
       expect(open).toMatchObject({
         price: claim.subtask.price,
         description: claim.subtask.description,
@@ -158,7 +191,9 @@ describe("fixture API client", () => {
       const api = createFixtureApiClient();
       for (const s of (await settle(api.listOpenSubtasks())).subtasks) {
         expect(Date.parse(s.created_at), s.claim_code).toBeLessThan(Date.parse(s.deadline_at));
-        expect(Date.parse(s.created_at), s.claim_code).toBeLessThanOrEqual(Date.parse("2026-10-11T19:00:00.000Z"));
+        expect(Date.parse(s.created_at), s.claim_code).toBeLessThanOrEqual(
+          Date.parse("2026-10-11T19:00:00.000Z"),
+        );
       }
     });
 
@@ -193,7 +228,9 @@ describe("fixture API client", () => {
       }
       vi.stubGlobal("window", { location: { search: "?other=1" } });
       try {
-        expect((await settle(createFixtureApiClient().listOpenSubtasks())).subtasks).not.toEqual([]);
+        expect((await settle(createFixtureApiClient().listOpenSubtasks())).subtasks).not.toEqual(
+          [],
+        );
       } finally {
         vi.unstubAllGlobals();
       }
@@ -204,11 +241,17 @@ describe("fixture API client", () => {
     const api = createFixtureApiClient();
     const board = await settle(api.getBoardState());
     const sub = board.subtasks.find((s) => s.claim_code === "PAID");
-    const payoutTx = board.txs.find((tx) => tx.kind === "helper_payout" && tx.subtask_id === sub?.id);
+    const payoutTx = board.txs.find(
+      (tx) => tx.kind === "helper_payout" && tx.subtask_id === sub?.id,
+    );
 
     const claim = await settle(api.getClaim("PAID"));
 
     expect(payoutTx).toBeDefined();
-    expect(claim.payout).toEqual({ amount: sub?.price, tx_hash: payoutTx?.hash, status: "validated" });
+    expect(claim.payout).toEqual({
+      amount: sub?.price,
+      tx_hash: payoutTx?.hash,
+      status: "validated",
+    });
   });
 });

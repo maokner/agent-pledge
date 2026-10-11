@@ -33,7 +33,11 @@ export function SiteNav({ current }: { current?: "/human" }) {
     <ul className={className}>
       {LINKS.map(({ href, label, page }) => (
         <li key={href}>
-          <Link href={href} aria-current={page !== null && page === current ? "page" : undefined} className={cn(LINK_CLASS)}>
+          <Link
+            href={href}
+            aria-current={page !== null && page === current ? "page" : undefined}
+            className={cn(LINK_CLASS)}
+          >
             {label}
           </Link>
         </li>
@@ -49,7 +53,10 @@ export function SiteNav({ current }: { current?: "/human" }) {
             href="/"
             className="-mx-1 inline-flex min-h-11 items-center gap-2.5 justify-self-start rounded-lg px-1 text-lg font-bold tracking-[-0.02em] text-human-fg outline-none focus-visible:ring-2 focus-visible:ring-human-ring focus-visible:ring-offset-2 focus-visible:ring-offset-human-bg"
           >
-            <span aria-hidden="true" className="grid size-8 place-items-center rounded-full bg-human-fg">
+            <span
+              aria-hidden="true"
+              className="grid size-8 place-items-center rounded-full bg-human-fg"
+            >
               <span className="size-2.5 rounded-full bg-human-gradient" />
             </span>
             yo pledge

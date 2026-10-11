@@ -33,7 +33,10 @@ import type {
 } from "./types";
 
 /** GET /board/state, or the `state` of the socket's `{type: "snapshot"}` message. */
-export function boardSnapshotFromBackend(state: BackendBoardState, seq: number = state.seq): BoardSnapshot {
+export function boardSnapshotFromBackend(
+  state: BackendBoardState,
+  seq: number = state.seq,
+): BoardSnapshot {
   const tasks = state.tasks ?? [];
   return {
     seq,
@@ -59,15 +62,24 @@ export function boardSnapshotFromBackend(state: BackendBoardState, seq: number =
  *   which the reducer skips while still counting its seq.
  * - Something that is not a message at all (no type or no seq) returns null.
  */
-export function boardMessageFromBackend(wire: unknown, state: BoardState): BoardServerMessage | null {
+export function boardMessageFromBackend(
+  wire: unknown,
+  state: BoardState,
+): BoardServerMessage | null {
   if (!isRecord(wire) || typeof wire.type !== "string") return null;
   if (wire.type === "snapshot") {
     const message = wire as unknown as BackendBoardSnapshotMessage;
     if (!isRecord(message.state)) return null;
-    return { type: "board.snapshot", snapshot: boardSnapshotFromBackend(message.state, message.seq ?? message.state.seq) };
+    return {
+      type: "board.snapshot",
+      snapshot: boardSnapshotFromBackend(message.state, message.seq ?? message.state.seq),
+    };
   }
   if (typeof wire.seq !== "number" || !isRecord(wire.data)) return null;
-  return eventFromBackend(wire as unknown as BackendBoardEvent, state) ?? skipped(wire.seq, wire.at, wire.type);
+  return (
+    eventFromBackend(wire as unknown as BackendBoardEvent, state) ??
+    skipped(wire.seq, wire.at, wire.type)
+  );
 }
 
 function eventFromBackend(event: BackendBoardEvent, state: BoardState): BoardEvent | null {
@@ -85,7 +97,9 @@ function eventFromBackend(event: BackendBoardEvent, state: BoardState): BoardEve
       const parent = state.tasks[event.data.subtask.task_id];
       if (!parent) return null;
       const subtask = subtaskFromBackend(event.data.subtask, parent);
-      const task = parent.subtask_ids.includes(subtask.id) ? parent : { ...parent, subtask_ids: [...parent.subtask_ids, subtask.id] };
+      const task = parent.subtask_ids.includes(subtask.id)
+        ? parent
+        : { ...parent, subtask_ids: [...parent.subtask_ids, subtask.id] };
       return { type: "subtask.created", seq, at, data: { subtask, task } };
     }
     case "subtask.claimed":
@@ -105,7 +119,9 @@ function eventFromBackend(event: BackendBoardEvent, state: BoardState): BoardEve
     case "photo.added": {
       const { subtask_id, media, helper_note } = event.data;
       return patchSubtask(state, subtask_id, (sub) => {
-        const photo = media ? photoFrom(media, helper_note) : sub.photo && { ...sub.photo, note: helper_note ?? sub.photo.note };
+        const photo = media
+          ? photoFrom(media, helper_note)
+          : sub.photo && { ...sub.photo, note: helper_note ?? sub.photo.note };
         return { type: "photo.added", seq, at, data: { subtask: { ...sub, photo } } };
       });
     }
@@ -115,7 +131,12 @@ function eventFromBackend(event: BackendBoardEvent, state: BoardState): BoardEve
         type: "yikyak.posted",
         seq,
         at,
-        data: { subtask: { ...sub, yikyak_post: { text: post_text, screenshot_url: media.url, posted_at } } },
+        data: {
+          subtask: {
+            ...sub,
+            yikyak_post: { text: post_text, screenshot_url: media.url, posted_at },
+          },
+        },
       }));
     }
     case "pin.failed": {
@@ -143,7 +164,11 @@ function eventFromBackend(event: BackendBoardEvent, state: BoardState): BoardEve
 
 /** A full TaskView as the task, its sub-tasks and its transactions. */
 function taskParts(view: BackendTaskView): { task: Task; subtasks: Subtask[]; txs: LedgerTx[] } {
-  return { task: taskFromBackend(view), subtasks: subtasksOf(view), txs: txsFromBackend(view.transactions ?? []) };
+  return {
+    task: taskFromBackend(view),
+    subtasks: subtasksOf(view),
+    txs: txsFromBackend(view.transactions ?? []),
+  };
 }
 
 /** A whole SubtaskView from an event, with the text and PIN state the board already has for it. */
@@ -151,13 +176,24 @@ function refreshSubtask(view: BackendSubtaskView, state: BoardState): Subtask | 
   const known = state.subtasks[view.id];
   const parent: SubtaskParent | undefined =
     state.tasks[view.task_id] ??
-    (known && { description: known.description, place: known.place, nft_id: known.parent_nft_id, failure_reason: known.failure_reason });
+    (known && {
+      description: known.description,
+      place: known.place,
+      nft_id: known.parent_nft_id,
+      failure_reason: known.failure_reason,
+    });
   if (!parent) return null;
-  const pin = known ? { pin_attempts_left: known.pin_attempts_left, pin_locked: known.pin_locked } : DEFAULT_PIN;
+  const pin = known
+    ? { pin_attempts_left: known.pin_attempts_left, pin_locked: known.pin_locked }
+    : DEFAULT_PIN;
   return subtaskFromBackend(view, parent, pin);
 }
 
-function patchSubtask(state: BoardState, id: string, patch: (sub: Subtask) => BoardEvent): BoardEvent | null {
+function patchSubtask(
+  state: BoardState,
+  id: string,
+  patch: (sub: Subtask) => BoardEvent,
+): BoardEvent | null {
   const sub = state.subtasks[id];
   return sub ? patch(sub) : null;
 }
@@ -167,7 +203,12 @@ function patchSubtask(state: BoardState, id: string, patch: (sub: Subtask) => Bo
  * Its type keeps the server's, prefixed, for debugging.
  */
 function skipped(seq: number, at: unknown, type: string): BoardServerMessage {
-  return { type: `skipped:${type}`, seq, at: typeof at === "string" ? at : "", data: null } as unknown as BoardServerMessage;
+  return {
+    type: `skipped:${type}`,
+    seq,
+    at: typeof at === "string" ? at : "",
+    data: null,
+  } as unknown as BoardServerMessage;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -212,7 +253,11 @@ export type SubtaskParent = Pick<Task, "description" | "place" | "nft_id" | "fai
 export type PinFields = Pick<Subtask, "pin_attempts_left" | "pin_locked">;
 
 /** The server's sub-task has no description, place or PIN state: they live on the parent task. */
-export function subtaskFromBackend(sub: BackendSubtaskView, parent: SubtaskParent, pin: PinFields = DEFAULT_PIN): Subtask {
+export function subtaskFromBackend(
+  sub: BackendSubtaskView,
+  parent: SubtaskParent,
+  pin: PinFields = DEFAULT_PIN,
+): Subtask {
   return {
     id: sub.id,
     task_id: sub.task_id,
@@ -282,7 +327,13 @@ export function logLineFromBackend(entry: BackendAgentLogEntry): AgentLogLine {
 
 export function photoFrom(media: BackendMediaView | null, note: string | null): Photo | null {
   if (!media) return null;
-  return { url: media.url, note, added_at: media.created_at, width: media.width, height: media.height };
+  return {
+    url: media.url,
+    note,
+    added_at: media.created_at,
+    width: media.width,
+    height: media.height,
+  };
 }
 
 export function pinFields(pin: BackendPinState): PinFields {
@@ -290,7 +341,10 @@ export function pinFields(pin: BackendPinState): PinFields {
 }
 
 /** The server's free-text reason (services/settlement.ts deadlineReason, services/tasks.ts) as the board's enum. */
-export function failureReasonFrom(reason: string | null, pin?: BackendPinState): FailureReason | null {
+export function failureReasonFrom(
+  reason: string | null,
+  pin?: BackendPinState,
+): FailureReason | null {
   if (pin?.locked) return "pin_locked";
   if (!reason) return null;
   const text = reason.toLowerCase();
@@ -348,7 +402,12 @@ const TX_TYPE: Record<TxKind, XrplTxType> = {
 };
 
 const TX_STATUSES: ReadonlySet<string> = new Set<TxStatus>(["pending", "validated", "failed"]);
-const LOG_LEVELS: ReadonlySet<string> = new Set<AgentLogLevel>(["info", "decision", "warning", "error"]);
+const LOG_LEVELS: ReadonlySet<string> = new Set<AgentLogLevel>([
+  "info",
+  "decision",
+  "warning",
+  "error",
+]);
 
 function yikyakFrom(sub: BackendSubtaskView): YikYakPost | null {
   if (!sub.yikyak_screenshot) return null;

@@ -25,7 +25,8 @@ export type ResizePlan =
 export function planResize({ width, height, bytes, type }: ImageInfo): ResizePlan {
   if (width <= 0 || height <= 0) return { resize: false };
   const longEdge = Math.max(width, height);
-  if (longEdge <= MAX_EDGE_PX && bytes <= KEEP_MAX_BYTES && WEB_TYPES.has(type)) return { resize: false };
+  if (longEdge <= MAX_EDGE_PX && bytes <= KEEP_MAX_BYTES && WEB_TYPES.has(type))
+    return { resize: false };
   const scale = Math.min(1, MAX_EDGE_PX / longEdge);
   return {
     resize: true,

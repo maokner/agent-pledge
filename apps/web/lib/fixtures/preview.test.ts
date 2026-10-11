@@ -12,7 +12,11 @@ describe("buildPreviewState", () => {
 
   it("has three tasks: done, failed and in progress", () => {
     const state = buildPreviewState("three", NOW);
-    expect(Object.values(state.tasks).map((t) => t.status).sort()).toEqual(["claimed", "done", "failed"]);
+    expect(
+      Object.values(state.tasks)
+        .map((t) => t.status)
+        .sort(),
+    ).toEqual(["claimed", "done", "failed"]);
   });
 
   it("covers every work status for tasks and sub-tasks", () => {

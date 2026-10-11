@@ -35,7 +35,6 @@ import { validateBackupTask } from "./validate";
 
 export { BACKUP_PASSCODE_HEADER };
 
-
 export interface BackupTaskConfig {
   mode: "server" | "fixtures";
   passcode: string | null;
@@ -64,7 +63,10 @@ export interface BackupTaskDeps {
   createTask: (request: CreateTaskRequest) => Promise<CreateTaskResponse>;
 }
 
-export async function handleBackupTask(request: Request, { config, createTask }: BackupTaskDeps): Promise<Response> {
+export async function handleBackupTask(
+  request: Request,
+  { config, createTask }: BackupTaskDeps,
+): Promise<Response> {
   if (config.mode === "server") {
     const missing = [
       !config.passcode && "BACKUP_FORM_PASSCODE",
@@ -72,10 +74,17 @@ export async function handleBackupTask(request: Request, { config, createTask }:
       !config.voiceSecret && "AGENT_PLEDGE_VOICE_SECRET",
     ].filter(Boolean);
     if (missing.length > 0) {
-      return error(503, "internal", `The backup form is off. Set ${missing.join(", ")} on the web server.`);
+      return error(
+        503,
+        "internal",
+        `The backup form is off. Set ${missing.join(", ")} on the web server.`,
+      );
     }
   }
-  if (config.passcode && !samePasscode(request.headers.get(BACKUP_PASSCODE_HEADER) ?? "", config.passcode)) {
+  if (
+    config.passcode &&
+    !samePasscode(request.headers.get(BACKUP_PASSCODE_HEADER) ?? "", config.passcode)
+  ) {
     return error(401, "unauthorized", "Wrong passcode.");
   }
 
@@ -95,13 +104,18 @@ export async function handleBackupTask(request: Request, { config, createTask }:
     return Response.json(response);
   } catch (cause) {
     if (cause instanceof ApiError && cause.status === 401) {
-      return error(502, "internal", "The server rejected the voice secret. Check AGENT_PLEDGE_VOICE_SECRET.");
+      return error(
+        502,
+        "internal",
+        "The server rejected the voice secret. Check AGENT_PLEDGE_VOICE_SECRET.",
+      );
     }
     if (cause instanceof ApiError && cause.code === "not_seat_hold") {
       // Only seat holds exist on the server; say so next to the description, where the operator can fix it.
       return error(cause.status, cause.code, cause.message, { description: cause.message });
     }
-    if (cause instanceof ApiError && cause.status < 500) return error(cause.status, cause.code, cause.message);
+    if (cause instanceof ApiError && cause.status < 500)
+      return error(cause.status, cause.code, cause.message);
     console.error("backup-task: create_task failed", cause);
     const message = cause instanceof ApiError ? cause.message : "Could not reach the server.";
     return error(502, cause instanceof ApiError ? cause.code : "internal", message);
@@ -136,6 +150,8 @@ function error(
   message: string,
   fields?: BackupTaskErrorBody["fields"],
 ): Response {
-  const body: BackupTaskErrorBody = fields ? { error: code, message, fields } : { error: code, message };
+  const body: BackupTaskErrorBody = fields
+    ? { error: code, message, fields }
+    : { error: code, message };
   return Response.json(body, { status });
 }

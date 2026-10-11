@@ -17,7 +17,11 @@ export function openSubtasksFromBackend(state: BackendBoardState): ListOpenSubta
   const serverTime = Date.parse(state.generated_at);
   const subtasks = (state.tasks ?? []).flatMap((task) => {
     const claimable = new Set(
-      (task.subtasks ?? []).filter((sub) => sub.status === "open" && sub.offer_id && Date.parse(sub.deadline) > serverTime).map((sub) => sub.id),
+      (task.subtasks ?? [])
+        .filter(
+          (sub) => sub.status === "open" && sub.offer_id && Date.parse(sub.deadline) > serverTime,
+        )
+        .map((sub) => sub.id),
     );
     return subtasksOf(task)
       .filter((sub) => claimable.has(sub.id))

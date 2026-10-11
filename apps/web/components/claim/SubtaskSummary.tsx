@@ -18,7 +18,15 @@ const LABEL = "text-xs font-medium uppercase tracking-[0.15em] text-human-muted-
  * on phones, where the step's form matters most, and full size on desktop,
  * where it fills the left column.
  */
-export function SubtaskSummary({ view, left, compact = false }: { view: ClaimView; left: number | null; compact?: boolean }) {
+export function SubtaskSummary({
+  view,
+  left,
+  compact = false,
+}: {
+  view: ClaimView;
+  left: number | null;
+  compact?: boolean;
+}) {
   const { subtask } = view;
   const live = view.state === "open" || view.state === "claimed_by_you";
   return (
@@ -29,7 +37,10 @@ export function SubtaskSummary({ view, left, compact = false }: { view: ClaimVie
       aria-label="The sub-task"
       className={cn("overflow-hidden", compact ? "p-5 sm:p-6 lg:p-10" : "p-6 sm:p-8 lg:p-10")}
     >
-      <span aria-hidden="true" className="pointer-events-none absolute inset-0 bg-human-corner-glow" />
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 bg-human-corner-glow"
+      />
 
       <div className="relative flex items-start justify-between gap-3">
         <IconTile
@@ -50,7 +61,9 @@ export function SubtaskSummary({ view, left, compact = false }: { view: ClaimVie
         )}
       </div>
 
-      <p className={cn("relative", LABEL, compact ? "mt-4 lg:mt-8" : "mt-6 lg:mt-8")}>{live ? "You get" : "Pay"}</p>
+      <p className={cn("relative", LABEL, compact ? "mt-4 lg:mt-8" : "mt-6 lg:mt-8")}>
+        {live ? "You get" : "Pay"}
+      </p>
       <PayAmount
         amount={subtask.price}
         size={compact ? "md" : "hero"}
@@ -60,7 +73,9 @@ export function SubtaskSummary({ view, left, compact = false }: { view: ClaimVie
       <h2
         className={cn(
           "relative font-semibold tracking-[-0.01em] break-words",
-          compact ? "mt-2 text-lg leading-snug lg:mt-4 lg:text-2xl" : "mt-4 text-xl leading-snug lg:text-2xl",
+          compact
+            ? "mt-2 text-lg leading-snug lg:mt-4 lg:text-2xl"
+            : "mt-4 text-xl leading-snug lg:text-2xl",
         )}
       >
         {subtask.description}
@@ -89,7 +104,15 @@ export function SubtaskSummary({ view, left, compact = false }: { view: ClaimVie
   );
 }
 
-function Detail({ icon, term, children }: { icon: React.ReactNode; term: string; children: React.ReactNode }) {
+function Detail({
+  icon,
+  term,
+  children,
+}: {
+  icon: React.ReactNode;
+  term: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="flex min-w-0 items-start gap-3">
       <span aria-hidden="true" className="mt-0.5 text-human-accent">

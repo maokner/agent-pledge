@@ -17,7 +17,8 @@ export class PhotoError extends Error {
 
 /** The photo as picked, if the server will take it. */
 function original(file: File): File {
-  if (file.size > MAX_ORIGINAL_BYTES) throw new PhotoError("This photo is too big to send. Try taking a new one.");
+  if (file.size > MAX_ORIGINAL_BYTES)
+    throw new PhotoError("This photo is too big to send. Try taking a new one.");
   return file;
 }
 
@@ -35,7 +36,12 @@ export async function preparePhoto(file: File): Promise<File> {
   }
 
   try {
-    const plan = planResize({ width: bitmap.width, height: bitmap.height, bytes: file.size, type: file.type });
+    const plan = planResize({
+      width: bitmap.width,
+      height: bitmap.height,
+      bytes: file.size,
+      type: file.type,
+    });
     if (!plan.resize) return original(file);
 
     const canvas = document.createElement("canvas");
@@ -45,7 +51,9 @@ export async function preparePhoto(file: File): Promise<File> {
     if (!context) return original(file);
     context.drawImage(bitmap, 0, 0, plan.width, plan.height);
 
-    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, plan.type, plan.quality));
+    const blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob(resolve, plan.type, plan.quality),
+    );
     if (!blob) return original(file);
     return new File([blob], "seat-photo.jpg", { type: plan.type, lastModified: Date.now() });
   } finally {

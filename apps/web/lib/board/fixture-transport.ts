@@ -15,7 +15,13 @@ import type {
   CreateTaskRequest,
   CreateTaskResponse,
 } from "@/lib/contract";
-import { buildCreatedTaskRun, buildFixtureSnapshot, buildLiveRun, foldEvents, toSnapshot } from "../fixtures/board";
+import {
+  buildCreatedTaskRun,
+  buildFixtureSnapshot,
+  buildLiveRun,
+  foldEvents,
+  toSnapshot,
+} from "../fixtures/board";
 import { applyBoardMessage, initialBoardState } from "./state";
 import type { BoardConnectionHandlers, BoardTransport } from "./transport";
 
@@ -35,7 +41,8 @@ export interface FixtureTransport extends BoardTransport {
 }
 
 /** The create_task request plus the task_id it returned. */
-export type FixtureCreatedTask = Omit<CreateTaskRequest, "caller_phone"> & Pick<CreateTaskResponse, "task_id">;
+export type FixtureCreatedTask = Omit<CreateTaskRequest, "caller_phone"> &
+  Pick<CreateTaskResponse, "task_id">;
 
 export interface FixtureTransportOptions {
   intervalMs?: number;
@@ -61,14 +68,23 @@ export function createFixtureTransport(options: FixtureTransportOptions = {}): F
 
   function publishNext() {
     if (queue.length === 0) {
-      queue = buildLiveRun({ run: run++, startSeq: lastSeq() + 1, startTime: now(), stepMs: intervalMs });
+      queue = buildLiveRun({
+        run: run++,
+        startSeq: lastSeq() + 1,
+        startTime: now(),
+        stepMs: intervalMs,
+      });
     }
     publish(queue.shift()!);
   }
 
   /** Stamps seq and `at` at publish time, so queued events stay in order after an insert. */
   function publish(queued: BoardEvent) {
-    const event = { ...queued, seq: lastSeq() + 1, at: new Date(now()).toISOString() } as BoardEvent;
+    const event = {
+      ...queued,
+      seq: lastSeq() + 1,
+      at: new Date(now()).toISOString(),
+    } as BoardEvent;
     published.push(event);
     if (skipNext) {
       skipNext = false;
@@ -131,7 +147,10 @@ export function createFixtureTransport(options: FixtureTransportOptions = {}): F
     },
     async loadSnapshot() {
       const snap = ensureStarted();
-      const state = foldEvents(published, applyBoardMessage(initialBoardState, { type: "board.snapshot", snapshot: snap }));
+      const state = foldEvents(
+        published,
+        applyBoardMessage(initialBoardState, { type: "board.snapshot", snapshot: snap }),
+      );
       return toSnapshot(state, new Date(now()).toISOString());
     },
   };

@@ -4,7 +4,11 @@ import { openSubtasksToShow } from "./open-subtasks";
 
 const NOW = Date.parse("2026-10-11T19:00:00.000Z");
 
-function item(claim_code: string, deadline_at: string, created_at = "2026-10-11T18:50:00.000Z"): OpenSubtaskSummary {
+function item(
+  claim_code: string,
+  deadline_at: string,
+  created_at = "2026-10-11T18:50:00.000Z",
+): OpenSubtaskSummary {
   return {
     claim_code,
     price: "4",
@@ -52,7 +56,10 @@ describe("openSubtasksToShow", () => {
   });
 
   it("does not change the list it was given", () => {
-    const list = [item("LATE", "2026-10-11T19:20:00.000Z"), item("SOON", "2026-10-11T19:01:00.000Z")];
+    const list = [
+      item("LATE", "2026-10-11T19:20:00.000Z"),
+      item("SOON", "2026-10-11T19:01:00.000Z"),
+    ];
     openSubtasksToShow(list, NOW);
     expect(codes(list)).toEqual(["LATE", "SOON"]);
   });

@@ -24,7 +24,10 @@ export function HumanShell({
       >
         Skip to content
       </a>
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 hidden overflow-hidden lg:block">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 -z-10 hidden overflow-hidden lg:block"
+      >
         <div className="absolute inset-x-0 top-0 h-[44rem] bg-human-corner-glow" />
         <div className="absolute inset-x-0 top-0 h-[36rem] -scale-x-100 bg-human-corner-glow opacity-60" />
       </div>
@@ -32,7 +35,10 @@ export function HumanShell({
       <main
         id="main"
         tabIndex={-1}
-        className={cn("mx-auto w-full max-w-6xl flex-1 px-4 pt-8 pb-20 outline-none sm:px-6 lg:px-8 lg:pt-14", className)}
+        className={cn(
+          "mx-auto w-full max-w-6xl flex-1 px-4 pt-8 pb-20 outline-none sm:px-6 lg:px-8 lg:pt-14",
+          className,
+        )}
       >
         {children}
       </main>

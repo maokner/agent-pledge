@@ -45,7 +45,10 @@ describe("projectorFocus", () => {
   });
 
   it("gives the big card to the task the operator picked, and keeps the rest in board order", () => {
-    const { focus, others } = projectorFocus([view("tsk_c"), view("tsk_b"), view("tsk_a")], "tsk_b");
+    const { focus, others } = projectorFocus(
+      [view("tsk_c"), view("tsk_b"), view("tsk_a")],
+      "tsk_b",
+    );
     expect(focus?.task.id).toBe("tsk_b");
     expect(ids(others)).toEqual(["tsk_c", "tsk_a"]);
   });

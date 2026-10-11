@@ -13,7 +13,10 @@ function attempts(n: number): string {
 }
 
 /** The message after a PIN answer from the server, or null when there is nothing to say. */
-export function pinFeedback(result: SubmitPinResponse["result"], attemptsLeft: number): string | null {
+export function pinFeedback(
+  result: SubmitPinResponse["result"],
+  attemptsLeft: number,
+): string | null {
   switch (result) {
     case "wrong":
       return `Wrong PIN, ${attempts(attemptsLeft)}`;

@@ -50,7 +50,11 @@ export function TaskCard({ view, arrived = false }: { view: TaskView; arrived?: 
         <Fact label="Time limit">{formatMinutes(task.time_limit_minutes)}</Fact>
         <Fact label="Time left">
           {active ? (
-            <TimeLeft deadline={task.deadline_at} limitMinutes={task.time_limit_minutes} className={cn("text-lg font-bold", GLOW)} />
+            <TimeLeft
+              deadline={task.deadline_at}
+              limitMinutes={task.time_limit_minutes}
+              className={cn("text-lg font-bold", GLOW)}
+            />
           ) : (
             <span className="text-term-fg-dim">Finished</span>
           )}
@@ -67,10 +71,14 @@ export function TaskCard({ view, arrived = false }: { view: TaskView; arrived?: 
       </Facts>
 
       {task.status === "failed" && (
-        <p role="status" className="mt-3 border border-term-red px-3 py-2 text-lg font-bold text-term-red">
+        <p
+          role="status"
+          className="mt-3 border border-term-red px-3 py-2 text-lg font-bold text-term-red"
+        >
           [ERR] FAILED{failureText(task) ? `: ${failureText(task)}.` : "."}{" "}
           <span className="text-term-amber">
-            <span aria-hidden>↩ </span>The requester gets {formatRlusd(task.price)} back plus the agent&apos;s {formatRlusd(task.pledge)} pledge.
+            <span aria-hidden>↩ </span>The requester gets {formatRlusd(task.price)} back plus the
+            agent&apos;s {formatRlusd(task.pledge)} pledge.
           </span>
         </p>
       )}
@@ -82,10 +90,19 @@ export function TaskCard({ view, arrived = false }: { view: TaskView; arrived?: 
         </div>
         <div className="flex min-w-0 flex-col gap-3">
           {subtasks.length === 0 ? (
-            <Waiting>{task.status === "open" ? "The local agent has not claimed this task yet" : "No sub-task yet"}</Waiting>
+            <Waiting>
+              {task.status === "open"
+                ? "The local agent has not claimed this task yet"
+                : "No sub-task yet"}
+            </Waiting>
           ) : (
             subtasks.map((subtask) => (
-              <SubtaskCard key={subtask.id} subtask={subtask} txs={txs.bySubtask.get(subtask.id) ?? []} names={names} />
+              <SubtaskCard
+                key={subtask.id}
+                subtask={subtask}
+                txs={txs.bySubtask.get(subtask.id) ?? []}
+                names={names}
+              />
             ))
           )}
         </div>

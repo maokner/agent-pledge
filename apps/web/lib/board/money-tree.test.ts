@@ -6,7 +6,14 @@ import { buildMoneyTree, moneyPlan, summarizeMoney, type MoneyNode } from "./mon
 import { selectPartyNames, selectTaskViews, type TaskView } from "./selectors";
 import { applyBoardMessage, initialBoardState } from "./state";
 import { boardSnapshotFromBackend } from "../backend";
-import { ADDRESSES, backendBoardState, backendSubtask, backendTask, backendTx, hash } from "../backend/test-payloads";
+import {
+  ADDRESSES,
+  backendBoardState,
+  backendSubtask,
+  backendTask,
+  backendTx,
+  hash,
+} from "../backend/test-payloads";
 import type { BackendTxKind } from "../backend/types";
 
 const NOW = Date.parse("2026-10-11T19:00:00.000Z");
@@ -54,7 +61,14 @@ describe("buildMoneyTree", () => {
   it("draws the PRD 2.2 tree for a paid task, with every edge green", () => {
     const tree = buildMoneyTree(demoView("paid"));
 
-    expect(spine(tree).map((n) => n.role)).toEqual(["requester", "vault", "task_nft", "agent", "subtask_nft", "helper"]);
+    expect(spine(tree).map((n) => n.role)).toEqual([
+      "requester",
+      "vault",
+      "task_nft",
+      "agent",
+      "subtask_nft",
+      "helper",
+    ]);
     expect(edgesDown(tree).map((e) => e.label)).toEqual([
       "$5.00 in",
       "mints the task NFT",
@@ -64,8 +78,12 @@ describe("buildMoneyTree", () => {
     ]);
     expect(edgesDown(tree).every((e) => e.state === "paid")).toBe(true);
 
-    expect(find(tree, "helper").receives.map((e) => [e.label, e.state])).toEqual([["$4.00 to helper", "paid"]]);
-    expect(find(tree, "agent").receives.map((e) => [e.label, e.state])).toEqual([["$6.00 to agent", "paid"]]);
+    expect(find(tree, "helper").receives.map((e) => [e.label, e.state])).toEqual([
+      ["$4.00 to helper", "paid"],
+    ]);
+    expect(find(tree, "agent").receives.map((e) => [e.label, e.state])).toEqual([
+      ["$6.00 to agent", "paid"],
+    ]);
     expect(find(tree, "requester").receives).toEqual([]);
     expect(find(tree, "vault").detail).toBe("holds $0.00");
   });
@@ -73,8 +91,12 @@ describe("buildMoneyTree", () => {
   it("shows refunds back to the requester and the agent in the return color on failure", () => {
     const tree = buildMoneyTree(demoView("failed"));
 
-    expect(find(tree, "requester").receives.map((e) => [e.label, e.state])).toEqual([["$6.00 back", "returned"]]);
-    expect(find(tree, "agent").receives.map((e) => [e.label, e.state])).toEqual([["$4.00 back", "returned"]]);
+    expect(find(tree, "requester").receives.map((e) => [e.label, e.state])).toEqual([
+      ["$6.00 back", "returned"],
+    ]);
+    expect(find(tree, "agent").receives.map((e) => [e.label, e.state])).toEqual([
+      ["$4.00 back", "returned"],
+    ]);
     expect(find(tree, "helper").receives).toEqual([]);
     expect(find(tree, "helper").detail).toBe("nobody claimed");
     expect(find(tree, "vault").detail).toBe("holds $0.00");
@@ -115,15 +137,46 @@ describe("buildMoneyTree", () => {
   });
 
   it("hangs each sub-task under the task NFT named by its parent_nft_id", () => {
-    const task = makeTask({ id: "tsk_1", status: "claimed", nft_id: "TASKNFT", subtask_ids: ["sub_a", "sub_b"] });
-    const subA = makeSubtask({ id: "sub_a", task_id: "tsk_1", price: "4", nft_id: "NFTA", parent_nft_id: "TASKNFT" });
-    const subB = makeSubtask({ id: "sub_b", task_id: "tsk_1", price: "3.5", nft_id: null, parent_nft_id: null });
+    const task = makeTask({
+      id: "tsk_1",
+      status: "claimed",
+      nft_id: "TASKNFT",
+      subtask_ids: ["sub_a", "sub_b"],
+    });
+    const subA = makeSubtask({
+      id: "sub_a",
+      task_id: "tsk_1",
+      price: "4",
+      nft_id: "NFTA",
+      parent_nft_id: "TASKNFT",
+    });
+    const subB = makeSubtask({
+      id: "sub_b",
+      task_id: "tsk_1",
+      price: "3.5",
+      nft_id: null,
+      parent_nft_id: null,
+    });
     const tree = buildMoneyTree({
       task,
       subtasks: [subA, subB],
       txs: [
-        makeTx({ hash: "FA", kind: "subtask_escrow", task_id: "tsk_1", subtask_id: "sub_a", amount: "4", status: "validated" }),
-        makeTx({ hash: "FB", kind: "subtask_escrow", task_id: "tsk_1", subtask_id: "sub_b", amount: "3.5", status: "pending" }),
+        makeTx({
+          hash: "FA",
+          kind: "subtask_escrow",
+          task_id: "tsk_1",
+          subtask_id: "sub_a",
+          amount: "4",
+          status: "validated",
+        }),
+        makeTx({
+          hash: "FB",
+          kind: "subtask_escrow",
+          task_id: "tsk_1",
+          subtask_id: "sub_b",
+          amount: "3.5",
+          status: "pending",
+        }),
       ],
     });
     const branches = find(tree, "agent").children;
@@ -192,9 +245,21 @@ describe("summarizeMoney", () => {
       task,
       subtasks: [],
       txs: [
-        makeTx({ hash: "A", kind: "task_escrow", task_id: "tsk_1", amount: "4.5", status: "validated" }),
+        makeTx({
+          hash: "A",
+          kind: "task_escrow",
+          task_id: "tsk_1",
+          amount: "4.5",
+          status: "validated",
+        }),
         makeTx({ hash: "B", kind: "task_claim", task_id: "tsk_1", amount: "1", status: "pending" }),
-        makeTx({ hash: "C", kind: "subtask_escrow", task_id: "tsk_1", amount: "3.5", status: "failed" }),
+        makeTx({
+          hash: "C",
+          kind: "subtask_escrow",
+          task_id: "tsk_1",
+          amount: "3.5",
+          status: "failed",
+        }),
       ],
     });
 
@@ -209,9 +274,28 @@ describe("summarizeMoney", () => {
 describe("the money tree from the real server's transactions", () => {
   /** A paid task as GET /board/state sends it, with the server's tx kind names (FakeLedger amounts). */
   function realPaidView(): TaskView {
-    const sub = backendSubtask({ status: "done", nft_id: "SUBNFT", helper_address: ADDRESSES.helper });
-    const tx = (n: number, kind: BackendTxKind, from: string | null, to: string | null, amount: string | null, subtask = false) =>
-      backendTx({ hash: hash(n), kind, from, to, amount, currency: amount ? "RLUSD" : null, subtask_id: subtask ? sub.id : null });
+    const sub = backendSubtask({
+      status: "done",
+      nft_id: "SUBNFT",
+      helper_address: ADDRESSES.helper,
+    });
+    const tx = (
+      n: number,
+      kind: BackendTxKind,
+      from: string | null,
+      to: string | null,
+      amount: string | null,
+      subtask = false,
+    ) =>
+      backendTx({
+        hash: hash(n),
+        kind,
+        from,
+        to,
+        amount,
+        currency: amount ? "RLUSD" : null,
+        subtask_id: subtask ? sub.id : null,
+      });
     const { vault, requester, agent, helper, treasury } = ADDRESSES;
     const task = backendTask({
       status: "done",
@@ -245,7 +329,14 @@ describe("the money tree from the real server's transactions", () => {
   it("draws the paid tree with every edge green", () => {
     const tree = buildMoneyTree(realPaidView());
 
-    expect(spine(tree).map((n) => n.role)).toEqual(["requester", "vault", "task_nft", "agent", "subtask_nft", "helper"]);
+    expect(spine(tree).map((n) => n.role)).toEqual([
+      "requester",
+      "vault",
+      "task_nft",
+      "agent",
+      "subtask_nft",
+      "helper",
+    ]);
     expect(edgesDown(tree).every((e) => e.state === "paid")).toBe(true);
     expect(find(tree, "vault")).toMatchObject({ address: ADDRESSES.vault, detail: "holds $0.00" });
     expect(find(tree, "helper").receives.map((e) => e.label)).toEqual(["$4.00 to helper"]);
@@ -255,8 +346,12 @@ describe("the money tree from the real server's transactions", () => {
   it("links each edge to the server's explorer URL", () => {
     const tree = buildMoneyTree(realPaidView());
 
-    expect(edgesDown(tree)[0]?.explorerUrl).toBe(`https://testnet.xrpl.org/transactions/${hash(2)}`);
-    expect(find(tree, "helper").receives[0]?.explorerUrl).toBe(`https://testnet.xrpl.org/transactions/${hash(11)}`);
+    expect(edgesDown(tree)[0]?.explorerUrl).toBe(
+      `https://testnet.xrpl.org/transactions/${hash(2)}`,
+    );
+    expect(find(tree, "helper").receives[0]?.explorerUrl).toBe(
+      `https://testnet.xrpl.org/transactions/${hash(11)}`,
+    );
   });
 
   it("matches the PRD 2.2 table, not counting the demo treasury's funding", () => {

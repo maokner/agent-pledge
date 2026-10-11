@@ -61,7 +61,10 @@ export function applyBoardMessage(state: BoardState, message: BoardServerMessage
   switch (message.type) {
     case "task.created":
     case "task.claimed":
-      return withTxs(withSubtasks(withTasks(next, [message.data.task]), message.data.subtasks ?? []), message.data.txs ?? []);
+      return withTxs(
+        withSubtasks(withTasks(next, [message.data.task]), message.data.subtasks ?? []),
+        message.data.txs ?? [],
+      );
     case "subtask.created":
       return withSubtasks(withTasks(next, [message.data.task]), [message.data.subtask]);
     case "subtask.claimed":
@@ -73,13 +76,19 @@ export function applyBoardMessage(state: BoardState, message: BoardServerMessage
       return withSubtasks(next, [message.data.subtask]);
     case "task.paid":
     case "task.failed":
-      return withTxs(withSubtasks(withTasks(next, [message.data.task]), message.data.subtasks), message.data.txs ?? []);
+      return withTxs(
+        withSubtasks(withTasks(next, [message.data.task]), message.data.subtasks),
+        message.data.txs ?? [],
+      );
     case "tx.pending":
     case "tx.failed":
       return withTxs(next, [message.data.tx]);
     case "tx.validated": {
       const { tx, task, subtask } = message.data;
-      return withSubtasks(withTasks(withTxs(next, [tx]), task ? [task] : []), subtask ? [subtask] : []);
+      return withSubtasks(
+        withTasks(withTxs(next, [tx]), task ? [task] : []),
+        subtask ? [subtask] : [],
+      );
     }
     case "agent.log":
       return { ...next, agentLog: [...state.agentLog, message.data.line].slice(-AGENT_LOG_LIMIT) };

@@ -4,10 +4,15 @@
  * lib/backup-task/handler.ts for the env vars and the rules.
  */
 import { createFixtureApiClient } from "@/lib/api/fixture-client";
-import { createTaskSender, handleBackupTask, readBackupTaskConfig } from "@/lib/backup-task/handler";
+import {
+  createTaskSender,
+  handleBackupTask,
+  readBackupTaskConfig,
+} from "@/lib/backup-task/handler";
 
 export async function POST(request: Request): Promise<Response> {
   const config = readBackupTaskConfig(process.env);
-  const createTask = config.mode === "fixtures" ? createFixtureApiClient().createTask : createTaskSender(config);
+  const createTask =
+    config.mode === "fixtures" ? createFixtureApiClient().createTask : createTaskSender(config);
   return handleBackupTask(request, { config, createTask });
 }

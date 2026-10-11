@@ -12,23 +12,26 @@ import { formatRlusd } from "@/lib/format";
  * - tone: `default` (foreground), `gradient` (blue gradient text, `hero`/`xl`
  *   only: it needs 24px+), `inverted` (on a slate block).
  */
-export const payAmountVariants = cva("inline-block font-sans font-bold leading-[1.05] tracking-[-0.02em] tabular-nums", {
-  variants: {
-    size: {
-      hero: "text-[clamp(3rem,17vw,4.5rem)]",
-      xl: "text-6xl",
-      lg: "text-5xl",
-      md: "text-4xl",
-      sm: "text-2xl",
+export const payAmountVariants = cva(
+  "inline-block font-sans font-bold leading-[1.05] tracking-[-0.02em] tabular-nums",
+  {
+    variants: {
+      size: {
+        hero: "text-[clamp(3rem,17vw,4.5rem)]",
+        xl: "text-6xl",
+        lg: "text-5xl",
+        md: "text-4xl",
+        sm: "text-2xl",
+      },
+      tone: {
+        default: "text-human-fg",
+        gradient: "text-human-gradient",
+        inverted: "text-human-inverted-fg",
+      },
     },
-    tone: {
-      default: "text-human-fg",
-      gradient: "text-human-gradient",
-      inverted: "text-human-inverted-fg",
-    },
+    defaultVariants: { size: "md", tone: "default" },
   },
-  defaultVariants: { size: "md", tone: "default" },
-});
+);
 
 export type PayAmountProps = Omit<React.ComponentProps<"span">, "children"> &
   VariantProps<typeof payAmountVariants> & {

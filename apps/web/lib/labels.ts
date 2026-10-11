@@ -1,5 +1,12 @@
 /** Plain-English labels for contract enums, in the PRD's words. */
-import type { ClaimState, FailureReason, TxKind, TxStatus, WorkStatus, XrplTxType } from "@/lib/contract";
+import type {
+  ClaimState,
+  FailureReason,
+  TxKind,
+  TxStatus,
+  WorkStatus,
+  XrplTxType,
+} from "@/lib/contract";
 
 /** The short transaction type the board shows (#34): payment, mint, offer, accept, burn. */
 export const TX_TYPE_LABEL: Record<XrplTxType, string> = {
@@ -20,7 +27,13 @@ export const FAILURE_REASON_LABEL: Record<FailureReason, string> = {
 };
 
 /** Why a task or sub-task failed: the board's words for a known reason, else the server's own text. Null if neither. */
-export function failureText({ failure_reason, fail_reason }: { failure_reason: FailureReason | null; fail_reason?: string | null }): string | null {
+export function failureText({
+  failure_reason,
+  fail_reason,
+}: {
+  failure_reason: FailureReason | null;
+  fail_reason?: string | null;
+}): string | null {
   if (failure_reason) return FAILURE_REASON_LABEL[failure_reason];
   return fail_reason || null;
 }

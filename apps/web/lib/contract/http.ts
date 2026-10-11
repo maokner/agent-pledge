@@ -207,13 +207,7 @@ export interface AgentLogResponse {
  * - paid: payout validated; show "Paid $4.00" with the explorer link
  */
 export type ClaimState =
-  | "open"
-  | "claimed_by_you"
-  | "already_claimed"
-  | "expired"
-  | "locked"
-  | "paying"
-  | "paid";
+  "open" | "claimed_by_you" | "already_claimed" | "expired" | "locked" | "paying" | "paid";
 
 export const CLAIM_STATES = [
   "open",

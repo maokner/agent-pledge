@@ -49,7 +49,11 @@ export function Notice({ tone, title, action, className, children, role, ...prop
   const t = tone ?? "info";
   const Icon = ICON[t];
   return (
-    <div role={role ?? (t === "danger" ? "alert" : "status")} className={cn(noticeVariants({ tone }), className)} {...props}>
+    <div
+      role={role ?? (t === "danger" ? "alert" : "status")}
+      className={cn(noticeVariants({ tone }), className)}
+      {...props}
+    >
       <Icon aria-hidden="true" className={cn("mt-0.5 size-5 shrink-0", TONE_TEXT[t])} />
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         {title && <p className={cn("text-lg font-semibold leading-snug", TONE_TEXT[t])}>{title}</p>}

@@ -28,7 +28,8 @@ export const inputVariants = cva(FIELD_BASE, {
   defaultVariants: { size: "lg" },
 });
 
-export type InputProps = Omit<React.ComponentProps<"input">, "size"> & VariantProps<typeof inputVariants>;
+export type InputProps = Omit<React.ComponentProps<"input">, "size"> &
+  VariantProps<typeof inputVariants>;
 
 /** A text input. See `inputVariants`. */
 export function Input({ size, className, ...props }: InputProps) {

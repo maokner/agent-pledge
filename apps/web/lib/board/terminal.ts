@@ -37,7 +37,9 @@ export function txTag(tx: Pick<LedgerTx, "status" | "kind">): TermTag {
     case "failed":
       return { tag: "[ERR]", word: "FAILED", tone: "failed" };
     case "validated":
-      return REFUND_KINDS.has(tx.kind) ? { tag: "[RFND]", word: "↩", tone: "refund" } : { tag: "[OK]", word: null, tone: "validated" };
+      return REFUND_KINDS.has(tx.kind)
+        ? { tag: "[RFND]", word: "↩", tone: "refund" }
+        : { tag: "[OK]", word: null, tone: "validated" };
   }
 }
 
@@ -61,7 +63,11 @@ export function edgeTag(state: EdgeState): EdgeTag {
 }
 
 /** The share of a time limit still left before `deadline`; 1 before the clock starts. */
-export function timeLeftFraction(deadline: string, limitMinutes: number, now: number | null): number {
+export function timeLeftFraction(
+  deadline: string,
+  limitMinutes: number,
+  now: number | null,
+): number {
   if (now === null) return 1;
   const left = (Date.parse(deadline) - now) / (limitMinutes * 60_000);
   return Number.isFinite(left) ? Math.min(1, Math.max(0, left)) : 0;
@@ -69,7 +75,11 @@ export function timeLeftFraction(deadline: string, limitMinutes: number, now: nu
 
 /** An ASCII progress bar: `asciiBar(0.375, 8)` -> "[|||.....]". */
 export function asciiBar(fraction: number, width: number): string {
-  const clamped = Number.isFinite(fraction) ? Math.min(1, Math.max(0, fraction)) : fraction > 0 ? 1 : 0;
+  const clamped = Number.isFinite(fraction)
+    ? Math.min(1, Math.max(0, fraction))
+    : fraction > 0
+      ? 1
+      : 0;
   const filled = Math.round(clamped * width);
   return `[${"|".repeat(filled)}${".".repeat(width - filled)}]`;
 }

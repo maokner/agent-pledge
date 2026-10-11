@@ -24,13 +24,27 @@ describe("validateBackupTask", () => {
   });
 
   it("accepts numbers from a JSON body and a phone number in E.164 form", () => {
-    const result = validateBackupTask({ ...good, time_limit_minutes: 10, price_usd: 4.5, caller_phone: "+15105550123" });
+    const result = validateBackupTask({
+      ...good,
+      time_limit_minutes: 10,
+      price_usd: 4.5,
+      caller_phone: "+15105550123",
+    });
 
-    expect(result).toMatchObject({ ok: true, value: { time_limit_minutes: 10, price_usd: 4.5, caller_phone: "+15105550123" } });
+    expect(result).toMatchObject({
+      ok: true,
+      value: { time_limit_minutes: 10, price_usd: 4.5, caller_phone: "+15105550123" },
+    });
   });
 
   it("names every field that is wrong", () => {
-    const result = validateBackupTask({ description: " ", place: "", time_limit_minutes: "2.5", price_usd: "0", caller_phone: "510-555" });
+    const result = validateBackupTask({
+      description: " ",
+      place: "",
+      time_limit_minutes: "2.5",
+      price_usd: "0",
+      caller_phone: "510-555",
+    });
 
     expect(result.ok).toBe(false);
     expect(Object.keys(result.ok ? {} : result.errors).sort()).toEqual(

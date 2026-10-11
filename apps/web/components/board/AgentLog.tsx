@@ -77,11 +77,18 @@ export function AgentLog({ entries }: { entries: AgentLogEntry[] }) {
             return (
               <li key={entry.id} className={level.className}>
                 <time className="mr-2 text-term-fg-dim tabular-nums" dateTime={entry.at}>
-                  {new Date(entry.at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+                  {new Date(entry.at).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    second: "2-digit",
+                  })}
                 </time>
                 <span className="mr-2">{level.tag}</span>
                 {entry.task && (
-                  <span className="mr-2 text-term-amber" title={entry.task.description ?? undefined}>
+                  <span
+                    className="mr-2 text-term-amber"
+                    title={entry.task.description ?? undefined}
+                  >
                     {entry.task.tag}
                   </span>
                 )}
@@ -100,7 +107,9 @@ export function AgentLog({ entries }: { entries: AgentLogEntry[] }) {
           onClick={() => setPausedAt(null)}
           className="absolute bottom-3 left-1/2 -translate-x-1/2 px-2 text-sm projector:text-base"
         >
-          {unseen > 0 ? `[ ${unseen} NEW ${unseen === 1 ? "LINE" : "LINES"}, JUMP TO LATEST ]` : "[ JUMP TO LATEST ]"}
+          {unseen > 0
+            ? `[ ${unseen} NEW ${unseen === 1 ? "LINE" : "LINES"}, JUMP TO LATEST ]`
+            : "[ JUMP TO LATEST ]"}
         </TermButton>
       )}
     </aside>

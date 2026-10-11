@@ -41,7 +41,11 @@ export function useOpenList() {
 
   const fetchIfPlanned = useCallback(
     (trigger: FetchTrigger) => {
-      const plan = planFetch(stateRef.current, { trigger, visible: isVisible(), inFlight: inFlight.current });
+      const plan = planFetch(stateRef.current, {
+        trigger,
+        visible: isVisible(),
+        inFlight: inFlight.current,
+      });
       if (plan.kind === "now") void fetchNow();
     },
     [fetchNow],

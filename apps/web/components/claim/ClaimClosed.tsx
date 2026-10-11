@@ -7,7 +7,10 @@ import { BoardLink } from "./parts";
 
 export type ClosedReason = "already_claimed" | "expired" | "locked" | "not_found";
 
-const MESSAGE: Record<ClosedReason, { title: string; body: string; icon: LucideIcon; tone: string }> = {
+const MESSAGE: Record<
+  ClosedReason,
+  { title: string; body: string; icon: LucideIcon; tone: string }
+> = {
   already_claimed: {
     title: "Already claimed",
     body: "Another Helper tapped Claim first. Only one person can hold a sub-task, so there is nothing to do here.",
@@ -40,10 +43,16 @@ export function ClaimClosed({ reason }: { reason: ClosedReason }) {
   return (
     <section className="flex flex-col gap-4" aria-labelledby="claim-closed-title">
       <Card className="flex flex-col items-start gap-3 sm:p-8 lg:p-10">
-        <span aria-hidden="true" className={cn("grid size-14 place-items-center rounded-full bg-human-muted", tone)}>
+        <span
+          aria-hidden="true"
+          className={cn("grid size-14 place-items-center rounded-full bg-human-muted", tone)}
+        >
           <Icon className="size-7" />
         </span>
-        <h2 id="claim-closed-title" className="mt-2 text-4xl font-bold leading-[1.1] tracking-[-0.02em]">
+        <h2
+          id="claim-closed-title"
+          className="mt-2 text-4xl font-bold leading-[1.1] tracking-[-0.02em]"
+        >
           {title}
         </h2>
         <p className="text-lg leading-relaxed text-human-muted-fg">{body}</p>

@@ -25,10 +25,17 @@ const STEPS = [
  */
 export function HowItWorks() {
   return (
-    <section id="how-it-works" aria-labelledby="how-it-works-title" className="scroll-mt-32 lg:scroll-mt-24">
+    <section
+      id="how-it-works"
+      aria-labelledby="how-it-works-title"
+      className="scroll-mt-32 lg:scroll-mt-24"
+    >
       <div className="flex flex-col items-start gap-4">
         <Badge dot>How it works</Badge>
-        <h2 id="how-it-works-title" className="text-3xl font-bold leading-[1.1] tracking-[-0.02em] sm:text-4xl lg:text-5xl">
+        <h2
+          id="how-it-works-title"
+          className="text-3xl font-bold leading-[1.1] tracking-[-0.02em] sm:text-4xl lg:text-5xl"
+        >
           Three steps to <span className="text-human-gradient">get paid</span>
         </h2>
       </div>
@@ -38,10 +45,15 @@ export function HowItWorks() {
             key={step.title}
             className="relative flex flex-col gap-3 rounded-2xl border border-human-border bg-human-card p-6 shadow-human-md lg:p-8"
           >
-            <span aria-hidden="true" className="text-5xl font-bold leading-none tracking-[-0.03em] text-human-gradient lg:text-6xl">
+            <span
+              aria-hidden="true"
+              className="text-5xl font-bold leading-none tracking-[-0.03em] text-human-gradient lg:text-6xl"
+            >
               {index + 1}
             </span>
-            <h3 className="mt-2 text-xl font-semibold leading-snug tracking-[-0.01em]">{step.title}</h3>
+            <h3 className="mt-2 text-xl font-semibold leading-snug tracking-[-0.01em]">
+              {step.title}
+            </h3>
             <p className="text-base leading-relaxed text-human-muted-fg lg:text-lg">{step.body}</p>
             {index < STEPS.length - 1 && <Connector />}
           </li>

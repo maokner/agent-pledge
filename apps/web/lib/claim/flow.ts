@@ -9,7 +9,8 @@ import { plainMessage } from "./plain-words";
 export const OFFLINE_MESSAGE = "No connection. Check your signal and try again.";
 
 /** The screen the claim page shows. */
-export type ClaimStep = "claim" | "photo" | "pin" | "paying" | "paid" | "already_claimed" | "expired" | "locked";
+export type ClaimStep =
+  "claim" | "photo" | "pin" | "paying" | "paid" | "already_claimed" | "expired" | "locked";
 
 export function stepFor(view: ClaimView, { photoSkipped }: { photoSkipped: boolean }): ClaimStep {
   switch (view.state) {

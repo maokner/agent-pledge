@@ -71,7 +71,8 @@ export function PinForm({
         <div className="flex flex-col gap-2">
           <StepHeading id="pin-step" step={3} title="Enter the PIN" />
           <p className="text-lg leading-relaxed text-human-muted-fg">
-            When the requester arrives, ask them for their 4-digit PIN. You get paid when it is right.
+            When the requester arrives, ask them for their 4-digit PIN. You get paid when it is
+            right.
           </p>
         </div>
         <Input
@@ -96,7 +97,12 @@ export function PinForm({
           {feedback && <Notice tone="danger" role="none" title={feedback} />}
           {hint && <p className="text-lg font-semibold text-human-warning">{hint}</p>}
         </div>
-        <Button type="submit" disabled={pin.length !== PIN_LENGTH} busy={busy} busyLabel="Checking…">
+        <Button
+          type="submit"
+          disabled={pin.length !== PIN_LENGTH}
+          busy={busy}
+          busyLabel="Checking…"
+        >
           Check PIN
         </Button>
         {error && <Notice tone="danger">{error}</Notice>}

@@ -68,9 +68,15 @@ export function ProjectorBoard({
       <div className="grid gap-4 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <main className="flex flex-col gap-4 lg:min-h-0">
           {focus ? (
-            <ProjectorTaskCard key={focus.task.id} view={focus} arrived={arrived.has(focus.task.id)} />
+            <ProjectorTaskCard
+              key={focus.task.id}
+              view={focus}
+              arrived={arrived.has(focus.task.id)}
+            />
           ) : (
-            <Waiting className="flex-1 text-4xl font-bold">No tasks yet. Call the Agent Pledge number to make one</Waiting>
+            <Waiting className="flex-1 text-4xl font-bold">
+              No tasks yet. Call the Agent Pledge number to make one
+            </Waiting>
           )}
           {tiles.length > 0 && (
             <section aria-label="Other tasks" className="flex shrink-0 gap-4">
@@ -97,7 +103,15 @@ export function ProjectorBoard({
 }
 
 /** A small window for a task that is not in the big one: status, amount, time left or result, in two rows. */
-function TaskTile({ view, arrived, onSelect }: { view: TaskView; arrived: boolean; onSelect: () => void }) {
+function TaskTile({
+  view,
+  arrived,
+  onSelect,
+}: {
+  view: TaskView;
+  arrived: boolean;
+  onSelect: () => void;
+}) {
   const { task } = view;
   const subtask = view.subtasks.at(-1);
   const active = task.status === "open" || task.status === "claimed";
@@ -144,7 +158,12 @@ function TaskTile({ view, arrived, onSelect }: { view: TaskView; arrived: boolea
           {subtask?.status === "claimed" && (
             <span className="shrink-0 text-term-fg-dim">
               PIN tries left{" "}
-              <span className={cn("text-2xl font-bold", subtask.pin_locked ? "text-term-red" : "text-term-fg")}>
+              <span
+                className={cn(
+                  "text-2xl font-bold",
+                  subtask.pin_locked ? "text-term-red" : "text-term-fg",
+                )}
+              >
                 {subtask.pin_locked ? "[ERR] LOCKED" : subtask.pin_attempts_left}
               </span>
             </span>

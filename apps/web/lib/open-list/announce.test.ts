@@ -24,12 +24,17 @@ describe("arrivalAnnouncement", () => {
   });
 
   it("names one new sub-task by its pay and what to do", () => {
-    expect(arrivalAnnouncement(["OPEN"], [item("OPEN"), item("NEW1", "Bring a cold beer to Memorial Glade", "4.8")])).toBe(
-      "New sub-task: $4.80, Bring a cold beer to Memorial Glade",
-    );
+    expect(
+      arrivalAnnouncement(
+        ["OPEN"],
+        [item("OPEN"), item("NEW1", "Bring a cold beer to Memorial Glade", "4.8")],
+      ),
+    ).toBe("New sub-task: $4.80, Bring a cold beer to Memorial Glade");
   });
 
   it("counts several new sub-tasks instead of reading them all", () => {
-    expect(arrivalAnnouncement([], [item("NEW1"), item("NEW2"), item("NEW3")])).toBe("3 new sub-tasks");
+    expect(arrivalAnnouncement([], [item("NEW1"), item("NEW2"), item("NEW3")])).toBe(
+      "3 new sub-tasks",
+    );
   });
 });

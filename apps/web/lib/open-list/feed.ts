@@ -42,14 +42,18 @@ export function openListReducer(state: OpenListState, event: OpenListEvent): Ope
         subtasks: event.response.subtasks,
         offsetMs: clockOffsetMs(event.response.server_time, event.receivedAt),
         failures: 0,
-        entering: state.status === "ready" ? state.entering : event.response.subtasks.map((s) => s.claim_code),
+        entering:
+          state.status === "ready"
+            ? state.entering
+            : event.response.subtasks.map((s) => s.claim_code),
         announcement: arrivalAnnouncement(
           state.status === "ready" ? state.subtasks.map((s) => s.claim_code) : null,
           event.response.subtasks,
         ),
       };
     case "failed":
-      if (state.status === "ready") return { ...state, failures: state.failures + 1, announcement: null };
+      if (state.status === "ready")
+        return { ...state, failures: state.failures + 1, announcement: null };
       return { status: "error", failures: state.status === "error" ? state.failures + 1 : 1 };
     case "retry":
       return state.status === "error" ? INITIAL_OPEN_LIST : state;

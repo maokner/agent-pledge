@@ -30,15 +30,25 @@ function loaded(state: OpenListState, res: ListOpenSubtasksResponse): OpenListSt
 describe("openListReducer", () => {
   it("shows the first list with the server clock offset", () => {
     const state = loaded(INITIAL_OPEN_LIST, response(item("OPEN"), item("RACE")));
-    expect(state).toMatchObject({ status: "ready", offsetMs: 2000, failures: 0, announcement: null });
-    expect(state.status === "ready" && state.subtasks.map((s) => s.claim_code)).toEqual(["OPEN", "RACE"]);
+    expect(state).toMatchObject({
+      status: "ready",
+      offsetMs: 2000,
+      failures: 0,
+      announcement: null,
+    });
+    expect(state.status === "ready" && state.subtasks.map((s) => s.claim_code)).toEqual([
+      "OPEN",
+      "RACE",
+    ]);
   });
 
   it("announces a sub-task that arrives on a later load, and clears the message when nothing is new", () => {
     const first = loaded(INITIAL_OPEN_LIST, response(item("OPEN")));
     const second = loaded(first, response(item("OPEN"), item("NEW1", "Bring a cold beer")));
     expect(second).toMatchObject({ announcement: "New sub-task: $4.00, Bring a cold beer" });
-    expect(loaded(second, response(item("OPEN"), item("NEW1", "Bring a cold beer")))).toMatchObject({ announcement: null });
+    expect(loaded(second, response(item("OPEN"), item("NEW1", "Bring a cold beer")))).toMatchObject(
+      { announcement: null },
+    );
   });
 
   it("lets only the first list fade in, not sub-tasks that arrive later", () => {
@@ -66,6 +76,9 @@ describe("openListReducer", () => {
 
   it("does not announce the list that finally loads after an error", () => {
     const failed = openListReducer(INITIAL_OPEN_LIST, { type: "failed" });
-    expect(loaded(failed, response(item("OPEN")))).toMatchObject({ status: "ready", announcement: null });
+    expect(loaded(failed, response(item("OPEN")))).toMatchObject({
+      status: "ready",
+      announcement: null,
+    });
   });
 });

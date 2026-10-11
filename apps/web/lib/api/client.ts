@@ -33,7 +33,12 @@ export interface ApiClient {
   /** POST /claim/:code/claim. Throws ApiError "already_claimed" if another phone won. */
   claimSubtask(code: ClaimCode): Promise<ClaimView>;
   /** POST /claim/:code/photo (multipart). Reports upload progress; aborts with an "AbortError". */
-  uploadPhoto(code: ClaimCode, photo: Blob, note: string, options?: UploadOptions): Promise<ClaimView>;
+  uploadPhoto(
+    code: ClaimCode,
+    photo: Blob,
+    note: string,
+    options?: UploadOptions,
+  ): Promise<ClaimView>;
   /** POST /claim/:code/pin */
   submitPin(code: ClaimCode, pin: string): Promise<SubmitPinResponse>;
 

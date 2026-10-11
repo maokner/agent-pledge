@@ -1,16 +1,35 @@
 import { describe, expect, it } from "vitest";
 import { makeSubtask, makeTask, makeTx } from "../fixtures/factories";
-import { compactTxs, selectPartyNames, selectTaskViews, splitTxs, subtaskHolder, taskHolder } from "./selectors";
+import {
+  compactTxs,
+  selectPartyNames,
+  selectTaskViews,
+  splitTxs,
+  subtaskHolder,
+  taskHolder,
+} from "./selectors";
 import { applyBoardMessage, initialBoardState } from "./state";
 
 describe("selectTaskViews", () => {
   it("lists tasks newest first, each with its sub-tasks and transactions in order", () => {
-    const older = makeTask({ id: "tsk_old", created_at: "2026-10-11T18:00:00.000Z", subtask_ids: ["sub_2", "sub_1"] });
+    const older = makeTask({
+      id: "tsk_old",
+      created_at: "2026-10-11T18:00:00.000Z",
+      subtask_ids: ["sub_2", "sub_1"],
+    });
     const newer = makeTask({ id: "tsk_new", created_at: "2026-10-11T19:00:00.000Z" });
     const sub1 = makeSubtask({ id: "sub_1", task_id: "tsk_old" });
     const sub2 = makeSubtask({ id: "sub_2", task_id: "tsk_old" });
-    const txLate = makeTx({ hash: "LATE", task_id: "tsk_old", submitted_at: "2026-10-11T18:00:09.000Z" });
-    const txEarly = makeTx({ hash: "EARLY", task_id: "tsk_old", submitted_at: "2026-10-11T18:00:01.000Z" });
+    const txLate = makeTx({
+      hash: "LATE",
+      task_id: "tsk_old",
+      submitted_at: "2026-10-11T18:00:09.000Z",
+    });
+    const txEarly = makeTx({
+      hash: "EARLY",
+      task_id: "tsk_old",
+      submitted_at: "2026-10-11T18:00:01.000Z",
+    });
     const txOther = makeTx({ hash: "OTHER", task_id: "tsk_new" });
     const state = applyBoardMessage(initialBoardState, {
       type: "board.snapshot",
@@ -46,10 +65,18 @@ describe("taskHolder", () => {
 describe("subtaskHolder", () => {
   it("is open until a helper claims it", () => {
     expect(subtaskHolder(makeSubtask({ status: "open" }))).toBe("Open to anyone");
-    expect(subtaskHolder(makeSubtask({ status: "claimed", helper_address: "rHelper" }))).toBe("A helper");
-    expect(subtaskHolder(makeSubtask({ status: "done", helper_address: "rHelper" }))).toBe("A helper (paid)");
-    expect(subtaskHolder(makeSubtask({ status: "failed", helper_address: null }))).toBe("Nobody claimed it");
-    expect(subtaskHolder(makeSubtask({ status: "failed", helper_address: "rHelper" }))).toBe("A helper (not paid)");
+    expect(subtaskHolder(makeSubtask({ status: "claimed", helper_address: "rHelper" }))).toBe(
+      "A helper",
+    );
+    expect(subtaskHolder(makeSubtask({ status: "done", helper_address: "rHelper" }))).toBe(
+      "A helper (paid)",
+    );
+    expect(subtaskHolder(makeSubtask({ status: "failed", helper_address: null }))).toBe(
+      "Nobody claimed it",
+    );
+    expect(subtaskHolder(makeSubtask({ status: "failed", helper_address: "rHelper" }))).toBe(
+      "A helper (not paid)",
+    );
   });
 });
 
@@ -57,7 +84,10 @@ describe("selectPartyNames", () => {
   it("names the requester, vault, local agent and helpers by address", () => {
     const view = {
       task: makeTask({ requester_address: "rReq", agent_address: "rAgent" }),
-      subtasks: [makeSubtask({ helper_address: "rHelp" }), makeSubtask({ id: "sub_2", helper_address: null })],
+      subtasks: [
+        makeSubtask({ helper_address: "rHelp" }),
+        makeSubtask({ id: "sub_2", helper_address: null }),
+      ],
       txs: [makeTx({ kind: "task_escrow", from: "rReq", to: "rVault" })],
     };
 
@@ -73,7 +103,15 @@ describe("selectPartyNames", () => {
     const view = {
       task: makeTask({ requester_address: "rReq" }),
       subtasks: [],
-      txs: [makeTx({ kind: "task_nft_mint", tx_type: "NFTokenMint", from: "rVault", to: null, amount: null })],
+      txs: [
+        makeTx({
+          kind: "task_nft_mint",
+          tx_type: "NFTokenMint",
+          from: "rVault",
+          to: null,
+          amount: null,
+        }),
+      ],
     };
 
     expect(selectPartyNames(view).get("rVault")).toBe("Vault");
@@ -81,7 +119,8 @@ describe("selectPartyNames", () => {
 });
 
 describe("compactTxs", () => {
-  const tx = (hash: string, status: "pending" | "validated" = "validated") => makeTx({ hash, status });
+  const tx = (hash: string, status: "pending" | "validated" = "validated") =>
+    makeTx({ hash, status });
 
   it("keeps the newest rows", () => {
     const txs = [tx("A"), tx("B"), tx("C"), tx("D"), tx("E")];

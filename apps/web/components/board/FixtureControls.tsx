@@ -9,10 +9,16 @@ export function FixtureControls() {
   if (!transport) return null;
   return (
     <span className="flex flex-wrap gap-x-2">
-      <TermButton className="text-term-amber projector:text-base" onClick={() => transport.dropConnections()}>
+      <TermButton
+        className="text-term-amber projector:text-base"
+        onClick={() => transport.dropConnections()}
+      >
         DROP CONNECTION
       </TermButton>
-      <TermButton className="text-term-amber projector:text-base" onClick={() => transport.skipNextEvent()}>
+      <TermButton
+        className="text-term-amber projector:text-base"
+        onClick={() => transport.skipNextEvent()}
+      >
         SKIP NEXT EVENT
       </TermButton>
     </span>

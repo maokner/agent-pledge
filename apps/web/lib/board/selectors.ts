@@ -25,7 +25,9 @@ export function selectTaskViews(state: BoardState): TaskView[] {
     .map((task) => ({
       task,
       subtasks: task.subtask_ids.flatMap((id) => state.subtasks[id] ?? []),
-      txs: (txsByTask.get(task.id) ?? []).sort((a, b) => a.submitted_at.localeCompare(b.submitted_at)),
+      txs: (txsByTask.get(task.id) ?? []).sort((a, b) =>
+        a.submitted_at.localeCompare(b.submitted_at),
+      ),
     }));
 }
 
@@ -82,7 +84,10 @@ export function compactTxs(txs: LedgerTx[], rows: number): LedgerTx[] {
 }
 
 /** The task's own transactions, and each sub-task's, keeping the view's order. */
-export function splitTxs({ subtasks, txs }: TaskView): { task: LedgerTx[]; bySubtask: Map<string, LedgerTx[]> } {
+export function splitTxs({ subtasks, txs }: TaskView): {
+  task: LedgerTx[];
+  bySubtask: Map<string, LedgerTx[]>;
+} {
   const bySubtask = new Map<string, LedgerTx[]>(subtasks.map((sub) => [sub.id, []]));
   const task: LedgerTx[] = [];
   for (const tx of txs) {

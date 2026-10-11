@@ -11,7 +11,12 @@ import { formatRlusd } from "../format";
  * minutes, so the name changes once a minute, not every second.
  */
 export function openSubtaskLabel(subtask: OpenSubtaskSummary, msLeft: number): string {
-  return [formatRlusd(subtask.price), subtask.description, subtask.place, timeLeftWords(msLeft)].join(", ");
+  return [
+    formatRlusd(subtask.price),
+    subtask.description,
+    subtask.place,
+    timeLeftWords(msLeft),
+  ].join(", ");
 }
 
 /** "3 minutes left", "1 hour 5 minutes left", "under a minute left". Rounds down. */
@@ -20,7 +25,10 @@ export function timeLeftWords(msLeft: number): string {
   if (totalMinutes === 0) return "under a minute left";
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
-  const parts = [hours > 0 && plural(hours, "hour"), minutes > 0 && plural(minutes, "minute")].filter(Boolean);
+  const parts = [
+    hours > 0 && plural(hours, "hour"),
+    minutes > 0 && plural(minutes, "minute"),
+  ].filter(Boolean);
   return `${parts.join(" ")} left`;
 }
 

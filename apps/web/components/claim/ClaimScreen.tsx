@@ -38,7 +38,10 @@ export function ClaimScreen({ code }: { code: string }) {
         <h1 className="sr-only">Claim a sub-task</h1>
         <Link
           href="/human"
-          className={cn(buttonVariants({ variant: "ghost", size: "sm", block: false }), "-ml-3 w-auto gap-2 no-underline")}
+          className={cn(
+            buttonVariants({ variant: "ghost", size: "sm", block: false }),
+            "-ml-3 w-auto gap-2 no-underline",
+          )}
         >
           <ArrowLeft aria-hidden="true" className="size-4" />
           All open tasks
@@ -59,7 +62,11 @@ export function ClaimScreen({ code }: { code: string }) {
           title="This sub-task did not load"
           className="mx-auto w-full max-w-xl"
           action={
-            <Button variant="secondary" onClick={retry} icon={<RotateCw aria-hidden="true" className="size-5" />}>
+            <Button
+              variant="secondary"
+              onClick={retry}
+              icon={<RotateCw aria-hidden="true" className="size-5" />}
+            >
               Try again
             </Button>
           }
@@ -67,13 +74,27 @@ export function ClaimScreen({ code }: { code: string }) {
           {load.message}
         </Notice>
       )}
-      {load.status === "ready" && <ClaimFlow view={load.view} left={left} timeUp={timeUp} onUpdate={accept} refresh={refresh} />}
+      {load.status === "ready" && (
+        <ClaimFlow
+          view={load.view}
+          left={left}
+          timeUp={timeUp}
+          onUpdate={accept}
+          refresh={refresh}
+        />
+      )}
     </div>
   );
 }
 
 /** Steps where the outcome matters more than the sub-task: on phones they come first. */
-const OUTCOME_FIRST: readonly ClaimStep[] = ["paying", "paid", "already_claimed", "expired", "locked"];
+const OUTCOME_FIRST: readonly ClaimStep[] = [
+  "paying",
+  "paid",
+  "already_claimed",
+  "expired",
+  "locked",
+];
 
 function ClaimFlow({
   view,
@@ -116,7 +137,12 @@ function ClaimFlow({
             Finish it before the time runs out.
           </Notice>
           {step === "photo" ? (
-            <PhotoForm view={view} onUpdate={onUpdate} refresh={refresh} onSkip={() => setPhotoSkipped(true)} />
+            <PhotoForm
+              view={view}
+              onUpdate={onUpdate}
+              refresh={refresh}
+              onSkip={() => setPhotoSkipped(true)}
+            />
           ) : (
             <>
               <PhotoRecap view={view} onAddPhoto={() => setPhotoSkipped(false)} />
@@ -160,13 +186,19 @@ function PhotoRecap({ view, onAddPhoto }: { view: ClaimView; onAddPhoto: () => v
   if (view.photo) {
     return (
       <Card padding="sm" className="flex items-center gap-4">
-        <img src={view.photo.url} alt="Your photo" className="size-20 shrink-0 rounded-xl border border-human-border object-cover" />
+        <img
+          src={view.photo.url}
+          alt="Your photo"
+          className="size-20 shrink-0 rounded-xl border border-human-border object-cover"
+        />
         <div className="min-w-0">
           <p className="flex items-center gap-2 text-lg font-semibold">
             <CircleCheck aria-hidden="true" className="size-5 text-human-success" />
             Photo sent
           </p>
-          {view.photo.note && <p className="break-words text-base text-human-muted-fg">{view.photo.note}</p>}
+          {view.photo.note && (
+            <p className="break-words text-base text-human-muted-fg">{view.photo.note}</p>
+          )}
         </div>
       </Card>
     );
@@ -186,7 +218,12 @@ function PhotoRecap({ view, onAddPhoto }: { view: ClaimView; onAddPhoto: () => v
 function LoadingLayout() {
   const bar = "rounded-lg bg-human-muted motion-safe:animate-pulse";
   return (
-    <div aria-busy="true" aria-label="Loading the sub-task" role="group" className="flex flex-col gap-5">
+    <div
+      aria-busy="true"
+      aria-label="Loading the sub-task"
+      role="group"
+      className="flex flex-col gap-5"
+    >
       <div aria-hidden="true" className={COLUMNS}>
         <div className="rounded-2xl border border-human-border bg-human-card p-6 shadow-human-md sm:p-8 lg:p-10">
           <div className={cn(bar, "size-18 rounded-3xl sm:size-22")} />

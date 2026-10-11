@@ -7,7 +7,15 @@ import { compactTxs } from "@/lib/board/selectors";
 import { txTag } from "@/lib/board/terminal";
 import { TX_KIND_LABEL, TX_STATUS_LABEL, TX_TYPE_LABEL } from "@/lib/labels";
 import { useChangeCount } from "@/lib/use-change-count";
-import { ExplorerLink, Money, PendingBar, SectionTitle, StatusTag, TermButton, ViewTxLink } from "./term";
+import {
+  ExplorerLink,
+  Money,
+  PendingBar,
+  SectionTitle,
+  StatusTag,
+  TermButton,
+  ViewTxLink,
+} from "./term";
 
 /**
  * Ledger transactions, oldest first, each with an explorer link (PRD R4, 9.1).
@@ -42,7 +50,10 @@ export function TxList({
           {title}{" "}
           <span className="font-normal">
             ({txs.length}
-            {pending > 0 && <span className="font-bold text-term-status-pending">, {pending} pending</span>})
+            {pending > 0 && (
+              <span className="font-bold text-term-status-pending">, {pending} pending</span>
+            )}
+            )
           </span>
         </SectionTitle>
         {canToggle && (
@@ -62,12 +73,21 @@ export function TxList({
 
 function TxRow({ tx, names }: { tx: LedgerTx; names: Map<string, string> }) {
   const changes = useChangeCount(tx.status);
-  const flash = changes > 0 && tx.status === "validated" ? "motion-safe:animate-term-validated" : "";
+  const flash =
+    changes > 0 && tx.status === "validated" ? "motion-safe:animate-term-validated" : "";
   return (
     <li>
-      <div key={changes} className={cn("flex flex-wrap items-baseline gap-x-3 gap-y-0.5 py-1.5 text-sm projector:py-1 projector:text-lg", flash)}>
+      <div
+        key={changes}
+        className={cn(
+          "flex flex-wrap items-baseline gap-x-3 gap-y-0.5 py-1.5 text-sm projector:py-1 projector:text-lg",
+          flash,
+        )}
+      >
         <TxStatusMark tx={tx} />
-        <span className="w-14 shrink-0 text-term-fg-dim uppercase projector:hidden">{TX_TYPE_LABEL[tx.tx_type]}</span>
+        <span className="w-14 shrink-0 text-term-fg-dim uppercase projector:hidden">
+          {TX_TYPE_LABEL[tx.tx_type]}
+        </span>
         <span className="min-w-0 flex-1 basis-48 projector:basis-56">
           <span className="block wrap-anywhere">{TX_KIND_LABEL[tx.kind]}</span>
           <span className="block text-term-fg-dim projector:text-base">
@@ -91,11 +111,17 @@ function TxRow({ tx, names }: { tx: LedgerTx; names: Map<string, string> }) {
 
 function TxStatusMark({ tx }: { tx: LedgerTx }) {
   const label =
-    tx.status === "failed" && tx.engine_result ? `${TX_STATUS_LABEL[tx.status]}: ${tx.engine_result}` : TX_STATUS_LABEL[tx.status];
+    tx.status === "failed" && tx.engine_result
+      ? `${TX_STATUS_LABEL[tx.status]}: ${tx.engine_result}`
+      : TX_STATUS_LABEL[tx.status];
   const tag = txTag(tx);
   return (
     <span className="inline-flex w-36 shrink-0 items-baseline gap-1 projector:w-auto" title={label}>
-      <StatusTag tag={tx.status === "pending" ? { ...tag, word: null } : tag} size="sm" className="projector:text-base" />
+      <StatusTag
+        tag={tx.status === "pending" ? { ...tag, word: null } : tag}
+        size="sm"
+        className="projector:text-base"
+      />
       {tx.status === "pending" && <PendingBar tx={tx} className="projector:text-base" />}
       <span className="sr-only">{label}</span>
     </span>

@@ -6,11 +6,16 @@ import "./globals.css";
 // side, JetBrains Mono for the board. Each sets a CSS variable that the
 // Tailwind theme in globals.css maps to font-sans and font-mono.
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
-const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jetbrains-mono", display: "swap" });
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-jetbrains-mono",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Agent Pledge",
-  description: "Call an AI agent with a task. It finds a person to do it, and the money moves only when the work is done.",
+  description:
+    "Call an AI agent with a task. It finds a person to do it, and the money moves only when the work is done.",
 };
 
 export const viewport: Viewport = {

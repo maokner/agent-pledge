@@ -9,9 +9,16 @@ import type { OpenSubtaskSummary } from "@/lib/contract";
  * still ahead, soonest deadline first. Ties go to the newer sub-task, then
  * by claim code, so the order is stable between refreshes. Returns a new array.
  */
-export function openSubtasksToShow(subtasks: readonly OpenSubtaskSummary[], now: number): OpenSubtaskSummary[] {
+export function openSubtasksToShow(
+  subtasks: readonly OpenSubtaskSummary[],
+  now: number,
+): OpenSubtaskSummary[] {
   return subtasks
-    .map((subtask) => ({ subtask, deadline: Date.parse(subtask.deadline_at), created: Date.parse(subtask.created_at) }))
+    .map((subtask) => ({
+      subtask,
+      deadline: Date.parse(subtask.deadline_at),
+      created: Date.parse(subtask.created_at),
+    }))
     .filter(({ deadline }) => deadline > now)
     .sort(
       (a, b) =>

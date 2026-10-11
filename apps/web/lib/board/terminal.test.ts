@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { asciiBar, edgeTag, pendingFraction, timeLeftFraction, txTag, workTag, wrapWithContinuation } from "./terminal";
+import {
+  asciiBar,
+  edgeTag,
+  pendingFraction,
+  timeLeftFraction,
+  txTag,
+  workTag,
+  wrapWithContinuation,
+} from "./terminal";
 
 describe("edgeTag", () => {
   it("names each money-tree edge state in text, so the tree never relies on color", () => {
@@ -41,14 +49,34 @@ describe("workTag", () => {
 
 describe("txTag", () => {
   it("shows pending as [..], validated as [OK] and failed as [ERR] FAILED", () => {
-    expect(txTag({ status: "pending", kind: "task_escrow" })).toEqual({ tag: "[..]", word: "PENDING", tone: "pending" });
-    expect(txTag({ status: "validated", kind: "helper_payout" })).toEqual({ tag: "[OK]", word: null, tone: "validated" });
-    expect(txTag({ status: "failed", kind: "helper_payout" })).toEqual({ tag: "[ERR]", word: "FAILED", tone: "failed" });
+    expect(txTag({ status: "pending", kind: "task_escrow" })).toEqual({
+      tag: "[..]",
+      word: "PENDING",
+      tone: "pending",
+    });
+    expect(txTag({ status: "validated", kind: "helper_payout" })).toEqual({
+      tag: "[OK]",
+      word: null,
+      tone: "validated",
+    });
+    expect(txTag({ status: "failed", kind: "helper_payout" })).toEqual({
+      tag: "[ERR]",
+      word: "FAILED",
+      tone: "failed",
+    });
   });
 
   it("marks a validated refund [RFND] with a return arrow", () => {
-    expect(txTag({ status: "validated", kind: "requester_refund" })).toEqual({ tag: "[RFND]", word: "↩", tone: "refund" });
-    expect(txTag({ status: "validated", kind: "agent_refund" })).toEqual({ tag: "[RFND]", word: "↩", tone: "refund" });
+    expect(txTag({ status: "validated", kind: "requester_refund" })).toEqual({
+      tag: "[RFND]",
+      word: "↩",
+      tone: "refund",
+    });
+    expect(txTag({ status: "validated", kind: "agent_refund" })).toEqual({
+      tag: "[RFND]",
+      word: "↩",
+      tone: "refund",
+    });
   });
 
   it("still shows a refund that is pending or failed by its tx status", () => {

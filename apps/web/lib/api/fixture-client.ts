@@ -9,7 +9,12 @@
  */
 import { type ClaimView, type SubmitPinResponse } from "@/lib/contract";
 import { buildFixtureSnapshot } from "../fixtures/board";
-import { buildFixtureClaim, FIXTURE_PIN, OPEN_FIXTURE_CLAIM_CODES, toOpenSubtaskSummary } from "../fixtures/claims";
+import {
+  buildFixtureClaim,
+  FIXTURE_PIN,
+  OPEN_FIXTURE_CLAIM_CODES,
+  toOpenSubtaskSummary,
+} from "../fixtures/claims";
 import { fakeHex } from "../fixtures/factories";
 import { ApiError, type ApiClient, type UploadOptions } from "./client";
 
@@ -72,8 +77,10 @@ export function createFixtureApiClient(
   }
 
   function requireMine(view: ClaimView): void {
-    if (view.state === "expired") throw new ApiError(410, "expired", "Time ran out for this sub-task.");
-    if (view.state !== "claimed_by_you") throw new ApiError(403, "not_your_claim", "This phone did not claim this sub-task.");
+    if (view.state === "expired")
+      throw new ApiError(410, "expired", "Time ran out for this sub-task.");
+    if (view.state !== "claimed_by_you")
+      throw new ApiError(403, "not_your_claim", "This phone did not claim this sub-task.");
   }
 
   return {
@@ -108,15 +115,20 @@ export function createFixtureApiClient(
       const view = load(code);
       if (code === "RACE" && view.state === "open") {
         save({ ...view, state: "already_claimed" });
-        return delayThenFail(new ApiError(409, "already_claimed", "Someone else claimed this first."), CLAIM_MS);
+        return delayThenFail(
+          new ApiError(409, "already_claimed", "Someone else claimed this first."),
+          CLAIM_MS,
+        );
       }
       if (view.state === "open") {
         const claimed = save({ ...view, state: "claimed_by_you" });
         if (flakes(code, "claim")) return delayThenFail(new TypeError("Failed to fetch"), CLAIM_MS);
         return delay(claimed, CLAIM_MS);
       }
-      if (view.state === "already_claimed") throw new ApiError(409, "already_claimed", "Someone else claimed this first.");
-      if (view.state === "expired") throw new ApiError(410, "expired", "Time ran out for this sub-task.");
+      if (view.state === "already_claimed")
+        throw new ApiError(409, "already_claimed", "Someone else claimed this first.");
+      if (view.state === "expired")
+        throw new ApiError(410, "expired", "Time ran out for this sub-task.");
       return delay(view);
     },
     uploadPhoto: async (code, photo, note, options) => {
@@ -124,12 +136,19 @@ export function createFixtureApiClient(
       await simulateUpload(options, flakes(code, "photo"));
       const view = load(code);
       requireMine(view);
-      const url = typeof URL.createObjectURL === "function" ? URL.createObjectURL(photo) : "/fixtures/seat-photo.svg";
-      return save({ ...view, photo: { url, note: note || null, added_at: new Date(now()).toISOString() } });
+      const url =
+        typeof URL.createObjectURL === "function"
+          ? URL.createObjectURL(photo)
+          : "/fixtures/seat-photo.svg";
+      return save({
+        ...view,
+        photo: { url, note: note || null, added_at: new Date(now()).toISOString() },
+      });
     },
     submitPin: async (code, pin) => {
       const view = load(code);
-      if (view.state === "locked") return delay<SubmitPinResponse>({ result: "locked", claim: view });
+      if (view.state === "locked")
+        return delay<SubmitPinResponse>({ result: "locked", claim: view });
       requireMine(view);
       if (!/^\d{4}$/.test(pin)) throw new ApiError(400, "bad_request", "The PIN has 4 digits.");
       if (pin === FIXTURE_PIN) {
@@ -137,12 +156,20 @@ export function createFixtureApiClient(
         const claim = save({
           ...view,
           state: "paying",
-          payout: { amount: view.subtask.price, tx_hash: fakeHex(now() % 100_000), status: "pending" },
+          payout: {
+            amount: view.subtask.price,
+            tx_hash: fakeHex(now() % 100_000),
+            status: "pending",
+          },
         });
         return delay<SubmitPinResponse>({ result: "correct", claim });
       }
       const left = view.pin_attempts_left - 1;
-      const claim = save({ ...view, pin_attempts_left: left, state: left <= 0 ? "locked" : view.state });
+      const claim = save({
+        ...view,
+        pin_attempts_left: left,
+        state: left <= 0 ? "locked" : view.state,
+      });
       return delay<SubmitPinResponse>({ result: left <= 0 ? "locked" : "wrong", claim });
     },
     /** The open fixture codes (OPEN, RACE, FLAK, SOON) still open on this phone: claimed, lost and expired ones drop out. */

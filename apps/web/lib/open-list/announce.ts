@@ -19,6 +19,7 @@ export function arrivalAnnouncement(
   const arrived = next.filter((subtask) => !known.has(subtask.claim_code));
   const [first] = arrived;
   if (!first) return null;
-  if (arrived.length === 1) return `New sub-task: ${formatRlusd(first.price)}, ${first.description}`;
+  if (arrived.length === 1)
+    return `New sub-task: ${formatRlusd(first.price)}, ${first.description}`;
   return `${arrived.length} new sub-tasks`;
 }

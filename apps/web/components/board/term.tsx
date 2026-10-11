@@ -6,7 +6,14 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { useRef, useState } from "react";
 import { cn } from "@/lib/cn";
 import { FIXTURE_MODE } from "@/lib/config";
-import { explorerAccountUrl, explorerNftUrl, explorerTxUrl, formatRlusd, formatTimeLeft, shortHash } from "@/lib/format";
+import {
+  explorerAccountUrl,
+  explorerNftUrl,
+  explorerTxUrl,
+  formatRlusd,
+  formatTimeLeft,
+  shortHash,
+} from "@/lib/format";
 import {
   asciiBar,
   pendingFraction,
@@ -38,7 +45,10 @@ export function Cursor({ className }: { className?: string }) {
 /** An ASCII separator line (`====`, `----`) that fills its row and never scrolls the page sideways. */
 export function Rule({ char = "=", className }: { char?: string; className?: string }) {
   return (
-    <div aria-hidden className={cn("overflow-hidden whitespace-nowrap text-term-fg-dim select-none", className)}>
+    <div
+      aria-hidden
+      className={cn("overflow-hidden whitespace-nowrap text-term-fg-dim select-none", className)}
+    >
       {char.repeat(400)}
     </div>
   );
@@ -74,7 +84,10 @@ export function Pane({
 } & Omit<React.HTMLAttributes<HTMLElement>, "title">) {
   const Heading = `h${headingLevel}` as const;
   return (
-    <section className={cn("relative flex min-w-0 flex-col border border-term-line bg-term-bg", className)} {...rest}>
+    <section
+      className={cn("relative flex min-w-0 flex-col border border-term-line bg-term-bg", className)}
+      {...rest}
+    >
       <div
         className={cn(
           "flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b border-term-line px-2 py-1",
@@ -82,7 +95,10 @@ export function Pane({
           flash && "motion-safe:animate-term-arrive",
         )}
       >
-        <Heading id={titleId} className={cn("min-w-0 font-bold tracking-wide uppercase", !inverted && GLOW)}>
+        <Heading
+          id={titleId}
+          className={cn("min-w-0 font-bold tracking-wide uppercase", !inverted && GLOW)}
+        >
           {inverted ? (
             title
           ) : (
@@ -116,26 +132,34 @@ export function SectionTitle({
   children: React.ReactNode;
 }) {
   return (
-    <Tag className={cn("text-sm font-bold tracking-wide text-term-fg-dim uppercase projector:text-base", className)}>
+    <Tag
+      className={cn(
+        "text-sm font-bold tracking-wide text-term-fg-dim uppercase projector:text-base",
+        className,
+      )}
+    >
       <span aria-hidden>{"// "}</span>
       {children}
     </Tag>
   );
 }
 
-const tagSize = cva("inline-flex shrink-0 items-baseline gap-2 font-bold whitespace-nowrap uppercase", {
-  variants: {
-    size: {
-      sm: "text-sm",
-      base: "text-base",
-      lg: "text-lg",
-      xl: "text-2xl",
-      // Projector big window: the largest status on the wall (#43).
-      "2xl": "text-4xl",
+const tagSize = cva(
+  "inline-flex shrink-0 items-baseline gap-2 font-bold whitespace-nowrap uppercase",
+  {
+    variants: {
+      size: {
+        sm: "text-sm",
+        base: "text-base",
+        lg: "text-lg",
+        xl: "text-2xl",
+        // Projector big window: the largest status on the wall (#43).
+        "2xl": "text-4xl",
+      },
     },
+    defaultVariants: { size: "base" },
   },
-  defaultVariants: { size: "base" },
-});
+);
 
 /** A status as a text tag in its status color: `[OPEN]`, `[DONE]` (inverted block), `[ERR] FAILED`. */
 export function StatusTag({
@@ -143,9 +167,18 @@ export function StatusTag({
   size,
   className,
   children,
-}: { tag: TermTag; className?: string; children?: React.ReactNode } & VariantProps<typeof tagSize>) {
+}: { tag: TermTag; className?: string; children?: React.ReactNode } & VariantProps<
+  typeof tagSize
+>) {
   return (
-    <span className={cn(tagSize({ size }), TONE_TEXT[tag.tone], tag.tone === "done" && "px-1", className)}>
+    <span
+      className={cn(
+        tagSize({ size }),
+        TONE_TEXT[tag.tone],
+        tag.tone === "done" && "px-1",
+        className,
+      )}
+    >
       <span>{tag.tag}</span>
       {tag.word && <span>{tag.word}</span>}
       {children}
@@ -170,7 +203,10 @@ export function WorkStatusTag({
       tag={workTag(status)}
       size={size}
       // [DONE] is already a solid block, so it needs no flash.
-      className={cn(changes > 0 && status !== "done" && "motion-safe:animate-term-validated", className)}
+      className={cn(
+        changes > 0 && status !== "done" && "motion-safe:animate-term-validated",
+        className,
+      )}
     />
   );
 }
@@ -230,7 +266,11 @@ export function Money({ amount, className }: { amount: RlusdAmount; className?: 
 /** Live "m:ss" until a deadline. */
 export function Countdown({ deadline, className }: { deadline: IsoDateTime; className?: string }) {
   const now = useNow();
-  return <span className={cn("tabular-nums", className)}>{now === null ? "-:--" : formatTimeLeft(deadline, now)}</span>;
+  return (
+    <span className={cn("tabular-nums", className)}>
+      {now === null ? "-:--" : formatTimeLeft(deadline, now)}
+    </span>
+  );
 }
 
 /** Time left as an ASCII bar and a countdown: `[||||||....] 2:31`. Amber in the last quarter. */
@@ -250,7 +290,13 @@ export function TimeLeft({
   const now = useNow();
   const fraction = timeLeftFraction(deadline, limitMinutes, now);
   return (
-    <span className={cn("inline-flex flex-wrap items-baseline gap-x-2 tabular-nums", fraction < 0.25 && "text-term-amber", className)}>
+    <span
+      className={cn(
+        "inline-flex flex-wrap items-baseline gap-x-2 tabular-nums",
+        fraction < 0.25 && "text-term-amber",
+        className,
+      )}
+    >
       <span aria-hidden className={cn("text-sm", barClassName)}>
         {asciiBar(fraction, width)}
       </span>
@@ -260,7 +306,15 @@ export function TimeLeft({
 }
 
 /** A pending transaction's ASCII progress bar, filling over the usual ledger close time. */
-export function PendingBar({ tx, width = 8, className }: { tx: Pick<LedgerTx, "submitted_at">; width?: number; className?: string }) {
+export function PendingBar({
+  tx,
+  width = 8,
+  className,
+}: {
+  tx: Pick<LedgerTx, "submitted_at">;
+  width?: number;
+  className?: string;
+}) {
   const now = useNow(250);
   return (
     <span aria-hidden className={cn("text-term-status-pending tabular-nums", className)}>
@@ -276,7 +330,9 @@ type Target = { tx: string } | { account: string } | { nft: string };
  * or `label` in its place (the full value stays in the tooltip). `href` is the
  * server's own explorer link, when it sent one.
  */
-export function ExplorerLink(props: Target & { className?: string; label?: string; href?: string | null }) {
+export function ExplorerLink(
+  props: Target & { className?: string; label?: string; href?: string | null },
+) {
   const [built, value] =
     "tx" in props
       ? [explorerTxUrl(props.tx), props.tx]
@@ -285,14 +341,28 @@ export function ExplorerLink(props: Target & { className?: string; label?: strin
         : [explorerNftUrl(props.nft), props.nft];
   const href = props.href ?? built;
   return (
-    <a href={href} target="_blank" rel="noopener noreferrer" title={value} className={cn(LINK, props.className)}>
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      title={value}
+      className={cn(LINK, props.className)}
+    >
       {props.label ?? shortHash(value)}
     </a>
   );
 }
 
 /** `[ VIEW TX ]`: a bracketed link to a transaction on the explorer. */
-export function ViewTxLink({ hash, href, className }: { hash: string; href?: string | null; className?: string }) {
+export function ViewTxLink({
+  hash,
+  href,
+  className,
+}: {
+  hash: string;
+  href?: string | null;
+  className?: string;
+}) {
   return (
     <a
       href={href ?? explorerTxUrl(hash)}
@@ -308,7 +378,15 @@ export function ViewTxLink({ hash, href, className }: { hash: string; href?: str
 }
 
 /** A long unbreakable value (a hash, an ID) wrapped in lines of `width` characters, each ending in `\`. */
-export function WrapLine({ text, width = 24, className }: { text: string; width?: number; className?: string }) {
+export function WrapLine({
+  text,
+  width = 24,
+  className,
+}: {
+  text: string;
+  width?: number;
+  className?: string;
+}) {
   const lines = wrapWithContinuation(text, width);
   return (
     <span className={cn("inline-block tabular-nums", className)} title={text}>
@@ -341,7 +419,13 @@ export function FixtureBadge() {
 }
 
 /** A dashed box saying what the board is waiting for, with the cursor. */
-export function Waiting({ className, children }: { className?: string; children: React.ReactNode }) {
+export function Waiting({
+  className,
+  children,
+}: {
+  className?: string;
+  children: React.ReactNode;
+}) {
   return (
     <p
       className={cn(
@@ -364,7 +448,17 @@ export function Waiting({ className, children }: { className?: string; children:
  * to load, so a broken upload never breaks the board. With `fit`, the image
  * shrinks to fit the height its parent gives it (the projector layout, #43).
  */
-export function ZoomableImage({ src, alt, className, fit = false }: { src: string; alt: string; className?: string; fit?: boolean }) {
+export function ZoomableImage({
+  src,
+  alt,
+  className,
+  fit = false,
+}: {
+  src: string;
+  alt: string;
+  className?: string;
+  fit?: boolean;
+}) {
   const dialog = useRef<HTMLDialogElement>(null);
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
 
@@ -378,7 +472,12 @@ export function ZoomableImage({ src, alt, className, fit = false }: { src: strin
         )}
       >
         <span>[ERR] COULD NOT LOAD THE IMAGE</span>
-        <a href={src} target="_blank" rel="noopener noreferrer" className={cn(termButton({ variant: "bracket" }), "text-term-fg")}>
+        <a
+          href={src}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={cn(termButton({ variant: "bracket" }), "text-term-fg")}
+        >
           <Bracket>OPEN IT</Bracket>
         </a>
       </div>
@@ -397,7 +496,12 @@ export function ZoomableImage({ src, alt, className, fit = false }: { src: strin
         )}
         aria-label={`Enlarge: ${alt}`}
       >
-        <img src={src} alt={alt} className={cn("block w-full", fit && "h-full object-contain")} onError={() => setFailedSrc(src)} />
+        <img
+          src={src}
+          alt={alt}
+          className={cn("block w-full", fit && "h-full object-contain")}
+          onError={() => setFailedSrc(src)}
+        />
         <span className="absolute right-0 bottom-0 bg-term-bg px-1 text-sm font-bold text-term-fg group-hover:bg-term-fg group-hover:text-term-bg group-focus-visible:bg-term-fg group-focus-visible:text-term-bg projector:text-base">
           [ ZOOM ]
         </span>
@@ -408,8 +512,14 @@ export function ZoomableImage({ src, alt, className, fit = false }: { src: strin
         className="m-auto max-h-none max-w-none cursor-zoom-out border border-term-fg bg-term-bg p-0 backdrop:bg-term-bg/90"
         aria-label={alt}
       >
-        <img src={src} alt={alt} className="h-auto max-h-[88vh] w-[96vw] max-w-6xl object-contain" />
-        <p className="border-t border-term-line px-2 py-1 text-sm text-term-fg-dim">[ ESC / CLICK TO CLOSE ]</p>
+        <img
+          src={src}
+          alt={alt}
+          className="h-auto max-h-[88vh] w-[96vw] max-w-6xl object-contain"
+        />
+        <p className="border-t border-term-line px-2 py-1 text-sm text-term-fg-dim">
+          [ ESC / CLICK TO CLOSE ]
+        </p>
       </dialog>
     </>
   );

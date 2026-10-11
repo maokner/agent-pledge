@@ -13,7 +13,10 @@ export interface ClaimViewOptions {
   timeLimitMinutes?: number | null;
 }
 
-export function claimViewFromBackend(view: BackendClaimView, { now, timeLimitMinutes = null }: ClaimViewOptions): ClaimView {
+export function claimViewFromBackend(
+  view: BackendClaimView,
+  { now, timeLimitMinutes = null }: ClaimViewOptions,
+): ClaimView {
   const minutesLeft = Math.max(1, Math.ceil((Date.parse(view.deadline) - now) / 60_000) || 1);
   return {
     code: view.code,
@@ -35,7 +38,9 @@ export function claimViewFromBackend(view: BackendClaimView, { now, timeLimitMin
 }
 
 /** The page's state, from the server's status, claimed_by_you, PIN state and payout. */
-export function claimStateOf(view: Pick<BackendClaimView, "status" | "claimed_by_you" | "pin" | "payout">): ClaimState {
+export function claimStateOf(
+  view: Pick<BackendClaimView, "status" | "claimed_by_you" | "pin" | "payout">,
+): ClaimState {
   if (view.status === "failed") return "expired";
   if (view.status === "open") return "open";
   if (!view.claimed_by_you) return "already_claimed";
@@ -57,7 +62,9 @@ export interface HelperTokenStore {
   set(code: string, token: string): void;
 }
 
-export function createHelperTokenStore(storage: () => Storage | null = browserStorage): HelperTokenStore {
+export function createHelperTokenStore(
+  storage: () => Storage | null = browserStorage,
+): HelperTokenStore {
   const key = (code: string) => `agent-pledge:helper-token:${code.trim().toUpperCase()}`;
   return {
     get(code) {

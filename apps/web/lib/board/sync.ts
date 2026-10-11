@@ -55,7 +55,10 @@ export interface BoardSyncOptions {
   now?: () => number;
 }
 
-export function createBoardSync(transport: BoardTransport, options: BoardSyncOptions = {}): BoardSync {
+export function createBoardSync(
+  transport: BoardTransport,
+  options: BoardSyncOptions = {},
+): BoardSync {
   const now = options.now ?? (() => performance.timeOrigin + performance.now());
   let snapshot: BoardSyncSnapshot = { state: initialBoardState, status: "idle" };
   let connection: BoardConnection | null = null;
@@ -78,7 +81,9 @@ export function createBoardSync(transport: BoardTransport, options: BoardSyncOpt
       },
       onMessage: (wire: unknown) => {
         const receivedAt = now();
-        const message = transport.decode ? transport.decode(wire, snapshot.state) : (wire as BoardServerMessage);
+        const message = transport.decode
+          ? transport.decode(wire, snapshot.state)
+          : (wire as BoardServerMessage);
         if (!message) return;
         const state = applyBoardMessage(snapshot.state, message);
         if (state === snapshot.state) return;
@@ -113,9 +118,13 @@ export function createBoardSync(transport: BoardTransport, options: BoardSyncOpt
       loadSnapshot()
         .then((board) => {
           if (started !== generation || snapshot.state.seq > board.seq) return;
-          set({ state: applyBoardMessage(snapshot.state, { type: "board.snapshot", snapshot: board }) });
+          set({
+            state: applyBoardMessage(snapshot.state, { type: "board.snapshot", snapshot: board }),
+          });
         })
-        .catch((error: unknown) => console.warn("Could not load the board snapshot; the socket will send one", error))
+        .catch((error: unknown) =>
+          console.warn("Could not load the board snapshot; the socket will send one", error),
+        )
         .finally(() => {
           if (started === generation) connect();
         });

@@ -6,7 +6,16 @@ import { formatRlusd } from "@/lib/format";
 import { failureText } from "@/lib/labels";
 import { MoneyTree } from "./MoneyTree";
 import { GLOW, LINK, WORK_BORDER } from "./term-style";
-import { Countdown, Money, Pane, SectionTitle, TimeLeft, Waiting, WorkStatusTag, ZoomableImage } from "./term";
+import {
+  Countdown,
+  Money,
+  Pane,
+  SectionTitle,
+  TimeLeft,
+  Waiting,
+  WorkStatusTag,
+  ZoomableImage,
+} from "./term";
 import { TxList } from "./TxList";
 
 /**
@@ -15,7 +24,13 @@ import { TxList } from "./TxList";
  * sized to fit a 16:9 screen with no scrolling. The status, the amounts and
  * the PIN tries left are the largest text on the screen.
  */
-export function ProjectorTaskCard({ view, arrived = false }: { view: TaskView; arrived?: boolean }) {
+export function ProjectorTaskCard({
+  view,
+  arrived = false,
+}: {
+  view: TaskView;
+  arrived?: boolean;
+}) {
   const { task, subtasks } = view;
   const subtask = subtasks.at(-1) ?? null;
   const active = task.status === "open" || task.status === "claimed";
@@ -41,7 +56,11 @@ export function ProjectorTaskCard({ view, arrived = false }: { view: TaskView; a
         </div>
         <BigFact label="Time left">
           {active ? (
-            <TimeLeft deadline={task.deadline_at} limitMinutes={task.time_limit_minutes} barClassName="text-lg" />
+            <TimeLeft
+              deadline={task.deadline_at}
+              limitMinutes={task.time_limit_minutes}
+              barClassName="text-lg"
+            />
           ) : (
             <span className="text-term-fg-dim">Finished</span>
           )}
@@ -52,11 +71,14 @@ export function ProjectorTaskCard({ view, arrived = false }: { view: TaskView; a
       </header>
 
       {task.status === "failed" && (
-        <p role="status" className="border border-term-red px-3 py-1 text-2xl font-bold text-term-red">
+        <p
+          role="status"
+          className="border border-term-red px-3 py-1 text-2xl font-bold text-term-red"
+        >
           [ERR] FAILED{failureText(task) ? `: ${failureText(task)}.` : "."}{" "}
           <span className="text-term-amber">
-            <span aria-hidden>↩ </span>The requester gets {formatRlusd(task.price)} back plus the agent&apos;s {formatRlusd(task.pledge)}{" "}
-            pledge.
+            <span aria-hidden>↩ </span>The requester gets {formatRlusd(task.price)} back plus the
+            agent&apos;s {formatRlusd(task.pledge)} pledge.
           </span>
         </p>
       )}
@@ -69,10 +91,19 @@ export function ProjectorTaskCard({ view, arrived = false }: { view: TaskView; a
           {subtask ? (
             <SubtaskPanel subtask={subtask} earlier={subtasks.length - 1} />
           ) : (
-            <Waiting className="text-lg">{task.status === "open" ? "Waiting for the local agent to claim the task" : "No sub-task yet"}</Waiting>
+            <Waiting className="text-lg">
+              {task.status === "open"
+                ? "Waiting for the local agent to claim the task"
+                : "No sub-task yet"}
+            </Waiting>
           )}
           <div className="relative lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
-            <TxList txs={view.txs} names={selectPartyNames(view)} title="Transactions" compactRows={3} />
+            <TxList
+              txs={view.txs}
+              names={selectPartyNames(view)}
+              title="Transactions"
+              compactRows={3}
+            />
           </div>
         </div>
         <Media subtask={subtask} />
@@ -93,7 +124,10 @@ function BigFact({ label, children }: { label: string; children: React.ReactNode
 function SubtaskPanel({ subtask, earlier }: { subtask: Subtask; earlier: number }) {
   const active = subtask.status === "open" || subtask.status === "claimed";
   return (
-    <section aria-label={`Sub-task: ${subtask.description}`} className={cn("shrink-0 border p-3", WORK_BORDER[subtask.status])}>
+    <section
+      aria-label={`Sub-task: ${subtask.description}`}
+      className={cn("shrink-0 border p-3", WORK_BORDER[subtask.status])}
+    >
       <SectionTitle as="p" className="projector:text-lg">
         Sub-task for a helper{earlier > 0 ? ` (posted again, ${earlier} earlier)` : ""}
       </SectionTitle>
@@ -106,7 +140,11 @@ function SubtaskPanel({ subtask, earlier }: { subtask: Subtask; earlier: number 
           <PinTries subtask={subtask} />
         </Fact>
         <Fact label="Time left">
-          {active ? <Countdown deadline={subtask.deadline_at} className={cn("text-4xl font-bold", GLOW)} /> : <span className="text-term-fg-dim">Finished</span>}
+          {active ? (
+            <Countdown deadline={subtask.deadline_at} className={cn("text-4xl font-bold", GLOW)} />
+          ) : (
+            <span className="text-term-fg-dim">Finished</span>
+          )}
         </Fact>
         <Fact label="Held by">{subtaskHolder(subtask)}</Fact>
         <Fact label="Claim link">
@@ -135,11 +173,22 @@ function Fact({ label, children }: { label: string; children: React.ReactNode })
 
 /** "2 of 3" in big type, "[ERR] LOCKED" after three wrong PINs, "[OK] CORRECT" once paid (PRD R8). */
 function PinTries({ subtask }: { subtask: Subtask }) {
-  if (subtask.pin_locked) return <span className="text-4xl font-bold text-term-red">[ERR] LOCKED</span>;
-  if (subtask.status === "done") return <span className={cn("text-4xl font-bold text-term-status-validated", GLOW)}>[OK] CORRECT</span>;
+  if (subtask.pin_locked)
+    return <span className="text-4xl font-bold text-term-red">[ERR] LOCKED</span>;
+  if (subtask.status === "done")
+    return (
+      <span className={cn("text-4xl font-bold text-term-status-validated", GLOW)}>
+        [OK] CORRECT
+      </span>
+    );
   const left = subtask.pin_attempts_left;
   return (
-    <span className={cn("text-4xl font-bold tabular-nums", left < MAX_PIN_ATTEMPTS ? "text-term-red" : GLOW)}>
+    <span
+      className={cn(
+        "text-4xl font-bold tabular-nums",
+        left < MAX_PIN_ATTEMPTS ? "text-term-red" : GLOW,
+      )}
+    >
       {left} <span className="text-2xl">of {MAX_PIN_ATTEMPTS}</span>
     </span>
   );
@@ -153,28 +202,50 @@ function Media({ subtask }: { subtask: Subtask | null }) {
     <div className="flex flex-col gap-3 lg:min-h-0">
       <Figure title="The Yik Yak post">
         {post ? (
-          <ZoomableImage key={post.screenshot_url} src={post.screenshot_url} alt={`Screenshot of the Yik Yak post: ${post.text}`} fit />
+          <ZoomableImage
+            key={post.screenshot_url}
+            src={post.screenshot_url}
+            alt={`Screenshot of the Yik Yak post: ${post.text}`}
+            fit
+          />
         ) : (
-          <Waiting className="h-full min-h-20 text-lg">{subtask?.status === "open" ? "Waiting for the Yik Yak post" : "No post yet"}</Waiting>
+          <Waiting className="h-full min-h-20 text-lg">
+            {subtask?.status === "open" ? "Waiting for the Yik Yak post" : "No post yet"}
+          </Waiting>
         )}
       </Figure>
-      <Figure title="The helper's photo" caption={photo ? `[OK] Seat saved${photo.note ? `: ${photo.note}` : ""}` : undefined}>
+      <Figure
+        title="The helper's photo"
+        caption={photo ? `[OK] Seat saved${photo.note ? `: ${photo.note}` : ""}` : undefined}
+      >
         {photo ? (
           <ZoomableImage
             key={photo.url}
             src={photo.url}
-            alt={photo.note ? `The saved seat: ${photo.note}` : "The helper's photo of the saved seat"}
+            alt={
+              photo.note ? `The saved seat: ${photo.note}` : "The helper's photo of the saved seat"
+            }
             fit
           />
         ) : (
-          <Waiting className="h-full min-h-20 text-lg">{subtask?.status === "claimed" ? "Waiting for the helper's photo" : "No photo yet"}</Waiting>
+          <Waiting className="h-full min-h-20 text-lg">
+            {subtask?.status === "claimed" ? "Waiting for the helper's photo" : "No photo yet"}
+          </Waiting>
         )}
       </Figure>
     </div>
   );
 }
 
-function Figure({ title, caption, children }: { title: string; caption?: string; children: React.ReactNode }) {
+function Figure({
+  title,
+  caption,
+  children,
+}: {
+  title: string;
+  caption?: string;
+  children: React.ReactNode;
+}) {
   return (
     <figure className="flex flex-col lg:min-h-0 lg:flex-1">
       <figcaption className="mb-1">

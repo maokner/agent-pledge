@@ -15,10 +15,19 @@ export interface ErrorContext {
 }
 
 /** An HTTP error response (status and raw body) as an ApiError. */
-export function apiErrorFromBackend(status: number, text: string, { helper = false }: ErrorContext = {}): ApiError {
+export function apiErrorFromBackend(
+  status: number,
+  text: string,
+  { helper = false }: ErrorContext = {},
+): ApiError {
   const body = parse(text);
   if (!body) return new ApiError(status, "internal", `Server error (${status})`);
-  return new ApiError(status, errorCode(status, body.error, helper), body.message || body.error, body.details);
+  return new ApiError(
+    status,
+    errorCode(status, body.error, helper),
+    body.message || body.error,
+    body.details,
+  );
 }
 
 /** `details.attempts_left` from a 422 wrong_pin or 423 pin_locked, or null. */
@@ -37,7 +46,8 @@ function errorCode(status: number, code: string, helper: boolean): ApiErrorCode 
 function parse(text: string): BackendApiError | null {
   try {
     const body = JSON.parse(text) as Partial<BackendApiError> | null;
-    if (body && typeof body.error === "string") return { error: body.error, message: body.message ?? "", details: body.details };
+    if (body && typeof body.error === "string")
+      return { error: body.error, message: body.message ?? "", details: body.details };
   } catch {
     // Not JSON.
   }

@@ -32,11 +32,20 @@ export function BoardPreview({ layout }: { layout: PreviewLayout }) {
   const tasks = state ? selectTaskViews(state) : [];
   const log = state ? selectAgentLog(state) : [];
   const link = (current: boolean) =>
-    cn(termButton({ variant: "bracket" }), "projector:text-base", current && "bg-term-fg text-term-bg text-shadow-none");
+    cn(
+      termButton({ variant: "bracket" }),
+      "projector:text-base",
+      current && "bg-term-fg text-term-bg text-shadow-none",
+    );
   const nav = (
     <nav aria-label="Preview layouts" className="flex flex-wrap gap-x-2">
       {(Object.keys(PREVIEW_LAYOUTS) as PreviewLayout[]).map((key) => (
-        <Link key={key} href={`/preview?layout=${key}`} aria-current={key === layout ? "page" : undefined} className={link(key === layout)}>
+        <Link
+          key={key}
+          href={`/preview?layout=${key}`}
+          aria-current={key === layout ? "page" : undefined}
+          className={link(key === layout)}
+        >
           <Bracket>{PREVIEW_LAYOUTS[key]}</Bracket>
         </Link>
       ))}

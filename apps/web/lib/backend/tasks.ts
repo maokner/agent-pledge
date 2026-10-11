@@ -2,7 +2,9 @@
 import type { CreateTaskResponse, TaskNftData } from "@/lib/contract";
 import type { BackendCreateTaskResponse, BackendNftUriData } from "./types";
 
-export function createTaskResponseFromBackend(response: BackendCreateTaskResponse): CreateTaskResponse {
+export function createTaskResponseFromBackend(
+  response: BackendCreateTaskResponse,
+): CreateTaskResponse {
   return {
     task_id: response.task_id,
     pin: response.pin,

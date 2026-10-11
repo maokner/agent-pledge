@@ -26,7 +26,12 @@ function fakeTransport() {
 }
 
 function logEvent(seq: number): BoardEvent {
-  return { type: "agent.log", seq, at: "2026-10-11T19:00:00.000Z", data: { line: makeLogLine({ id: `l${seq}` }) } };
+  return {
+    type: "agent.log",
+    seq,
+    at: "2026-10-11T19:00:00.000Z",
+    data: { line: makeLogLine({ id: `l${seq}` }) },
+  };
 }
 
 beforeEach(() => vi.useFakeTimers());
@@ -39,7 +44,12 @@ describe("createBoardSync", () => {
 
     sync.start();
     fake.open();
-    fake.send({ type: "task.created", seq: 1, at: "2026-10-11T19:00:00.000Z", data: { task: makeTask({ id: "tsk_a" }) } });
+    fake.send({
+      type: "task.created",
+      seq: 1,
+      at: "2026-10-11T19:00:00.000Z",
+      data: { task: makeTask({ id: "tsk_a" }) },
+    });
 
     expect(fake.connections[0]?.since).toBe(0);
     expect(sync.getSnapshot().status).toBe("open");
@@ -127,7 +137,13 @@ describe("createBoardSync resync", () => {
     fake.send(logEvent(5));
     expect(sync.getSnapshot().state.seq).toBe(5);
     expect(sync.getSnapshot().state.needsResync).toBe(false);
-    expect(sync.getSnapshot().state.agentLog.map((l) => l.id)).toEqual(["l1", "l2", "l3", "l4", "l5"]);
+    expect(sync.getSnapshot().state.agentLog.map((l) => l.id)).toEqual([
+      "l1",
+      "l2",
+      "l3",
+      "l4",
+      "l5",
+    ]);
   });
 
   it("stop closes the connection and never reconnects", () => {
@@ -160,12 +176,22 @@ describe("createBoardSync resync", () => {
 
 describe("reconnectDelayMs", () => {
   it("starts at 250 ms, doubles, and stops at 4 s", () => {
-    expect([0, 1, 2, 3, 4, 5, 10].map(reconnectDelayMs)).toEqual([250, 500, 1000, 2000, 4000, 4000, 4000]);
+    expect([0, 1, 2, 3, 4, 5, 10].map(reconnectDelayMs)).toEqual([
+      250, 500, 1000, 2000, 4000, 4000, 4000,
+    ]);
   });
 });
 
 function boardSnapshot(seq: number, overrides: Partial<BoardSnapshot> = {}): BoardSnapshot {
-  return { seq, generated_at: "2026-10-11T19:00:00.000Z", tasks: [], subtasks: [], txs: [], agent_log: [], ...overrides };
+  return {
+    seq,
+    generated_at: "2026-10-11T19:00:00.000Z",
+    tasks: [],
+    subtasks: [],
+    txs: [],
+    agent_log: [],
+    ...overrides,
+  };
 }
 
 describe("createBoardSync initial load", () => {
@@ -187,7 +213,9 @@ describe("createBoardSync initial load", () => {
   it("connects from seq 0 when the snapshot cannot be loaded, so the socket sends one", async () => {
     vi.spyOn(console, "warn").mockImplementation(() => {});
     const fake = fakeTransport();
-    const sync = createBoardSync(fake.transport, { loadSnapshot: () => Promise.reject(new Error("offline")) });
+    const sync = createBoardSync(fake.transport, {
+      loadSnapshot: () => Promise.reject(new Error("offline")),
+    });
 
     sync.start();
     await vi.runAllTimersAsync();

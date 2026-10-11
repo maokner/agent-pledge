@@ -96,7 +96,10 @@ describe("web app proxy", () => {
   });
 
   it("passes the public host and scheme on to the web app", async () => {
-    const res = await get("/board", { host: "demo.trycloudflare.com", "x-forwarded-proto": "https" });
+    const res = await get("/board", {
+      host: "demo.trycloudflare.com",
+      "x-forwarded-proto": "https",
+    });
     const echo = res.json() as Echo;
     expect(echo.headers["x-forwarded-host"]).toBe("demo.trycloudflare.com");
     expect(echo.headers["x-forwarded-proto"]).toBe("https");
@@ -134,7 +137,13 @@ describe("web app proxy", () => {
   });
 
   it("keeps the API's JSON 404 under the API's own prefixes", async () => {
-    for (const url of ["/agent/nope", "/tools/nope", "/claim/AB23/nope", "/media/nope/x", "/ws/x"]) {
+    for (const url of [
+      "/agent/nope",
+      "/tools/nope",
+      "/claim/AB23/nope",
+      "/media/nope/x",
+      "/ws/x",
+    ]) {
       const res = await get(url);
       expect(res.statusCode, url).toBe(404);
       expect(res.headers["x-from"], url).toBeUndefined();

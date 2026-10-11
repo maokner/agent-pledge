@@ -27,7 +27,11 @@ export function TimeLeft({
     <span
       role="timer"
       aria-live="off"
-      className={cn("font-semibold tabular-nums", urgent && "font-bold text-human-danger", className)}
+      className={cn(
+        "font-semibold tabular-nums",
+        urgent && "font-bold text-human-danger",
+        className,
+      )}
     >
       {ms === null ? "–:––" : formatMsLeft(ms)}
     </span>

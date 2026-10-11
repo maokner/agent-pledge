@@ -15,7 +15,17 @@ const twMerge = extendTailwindMerge({
     },
     classGroups: {
       // Background images, not colors: they combine with bg-human-inverted etc.
-      "bg-image": [{ bg: ["human-gradient", "human-gradient-button", "human-dots", "human-card-glow", "human-corner-glow"] }],
+      "bg-image": [
+        {
+          bg: [
+            "human-gradient",
+            "human-gradient-button",
+            "human-dots",
+            "human-card-glow",
+            "human-corner-glow",
+          ],
+        },
+      ],
     },
   },
 });

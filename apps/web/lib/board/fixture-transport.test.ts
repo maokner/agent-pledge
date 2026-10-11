@@ -105,13 +105,20 @@ describe("fixture transport with board sync", () => {
     vi.advanceTimersByTime(1);
 
     const task = board.getSnapshot().state.tasks.tsk_form_1;
-    expect(task).toMatchObject({ description: "Save me a seat by the stairs", place: "Doe Library, 2nd floor", price: "6", time_limit_minutes: 7 });
+    expect(task).toMatchObject({
+      description: "Save me a seat by the stairs",
+      place: "Doe Library, 2nd floor",
+      price: "6",
+      time_limit_minutes: 7,
+    });
     expect(board.getSnapshot().state.needsResync).toBe(false);
 
     vi.advanceTimersByTime(30_000);
     const state = board.getSnapshot().state;
     expect(state.tasks.tsk_form_1?.subtask_ids).toHaveLength(1);
-    expect(Object.values(state.subtasks).find((s) => s.task_id === "tsk_form_1")?.price).toBe("4.5");
+    expect(Object.values(state.subtasks).find((s) => s.task_id === "tsk_form_1")?.price).toBe(
+      "4.5",
+    );
     const fresh = createBoardSync(transport);
     fresh.start();
     vi.advanceTimersByTime(1);

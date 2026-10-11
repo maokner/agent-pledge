@@ -16,11 +16,15 @@ function item(claim_code: string, price: string, minutesLeft: number): OpenSubta
   };
 }
 
-const codes = (subtasks: readonly OpenSubtaskSummary[]) => bentoCells(subtasks, NOW).map((cell) => cell.subtask.claim_code);
+const codes = (subtasks: readonly OpenSubtaskSummary[]) =>
+  bentoCells(subtasks, NOW).map((cell) => cell.subtask.claim_code);
 
 describe("bentoCells", () => {
   it("features the highest-paying sub-task, then the rest soonest deadline first", () => {
-    const cells = bentoCells([item("SOON", "3", 1), item("RICH", "8", 20), item("MIDL", "6", 5), item("LATE", "4", 9)], NOW);
+    const cells = bentoCells(
+      [item("SOON", "3", 1), item("RICH", "8", 20), item("MIDL", "6", 5), item("LATE", "4", 9)],
+      NOW,
+    );
     expect(cells.map((c) => c.subtask.claim_code)).toEqual(["RICH", "SOON", "MIDL", "LATE"]);
     expect(cells.map((c) => c.featured)).toEqual([true, false, false, false]);
   });
@@ -30,7 +34,11 @@ describe("bentoCells", () => {
   });
 
   it("breaks a tie for top pay by the sooner deadline", () => {
-    expect(codes([item("LATE", "8", 9), item("SOON", "8.00", 2), item("LOW1", "3", 1)])).toEqual(["SOON", "LOW1", "LATE"]);
+    expect(codes([item("LATE", "8", 9), item("SOON", "8.00", 2), item("LOW1", "3", 1)])).toEqual([
+      "SOON",
+      "LOW1",
+      "LATE",
+    ]);
   });
 
   it("leaves out sub-tasks whose time is up, even the best paid", () => {

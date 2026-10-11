@@ -34,10 +34,17 @@ function sourceFiles(dir: string): string[] {
  * are not text, so they are left out.
  */
 function userFacingStrings(fileName: string, source: string): string[] {
-  const file = ts.createSourceFile(fileName, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const file = ts.createSourceFile(
+    fileName,
+    source,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TSX,
+  );
   const found: string[] = [];
   const visit = (node: ts.Node) => {
-    if (ts.isImportDeclaration(node) || ts.isExportDeclaration(node) || ts.isImportTypeNode(node)) return;
+    if (ts.isImportDeclaration(node) || ts.isExportDeclaration(node) || ts.isImportTypeNode(node))
+      return;
     if (ts.isStringLiteral(node) || ts.isTemplateLiteralToken(node)) {
       // Template literals come in parts around each ${…}: head, middles and tail.
       found.push(node.text);
@@ -53,13 +60,31 @@ function userFacingStrings(fileName: string, source: string): string[] {
 
 describe("hasCryptoWord", () => {
   it("finds the words in any case, alone or plural", () => {
-    for (const text of ["Your wallet", "an NFT", "NFTs", "XRPL", "the XRP Ledger", "RLUSD", "ledger", "Tokens", "testnet"]) {
+    for (const text of [
+      "Your wallet",
+      "an NFT",
+      "NFTs",
+      "XRPL",
+      "the XRP Ledger",
+      "RLUSD",
+      "ledger",
+      "Tokens",
+      "testnet",
+    ]) {
       expect(hasCryptoWord(text), text).toBe(true);
     }
   });
 
   it("leaves plain words alone", () => {
-    for (const text of ["Claim", "Enter the PIN", "Paid $4.00", "View payment", "Sub-task", "Helper", "untokenized"]) {
+    for (const text of [
+      "Claim",
+      "Enter the PIN",
+      "Paid $4.00",
+      "View payment",
+      "Sub-task",
+      "Helper",
+      "untokenized",
+    ]) {
       expect(hasCryptoWord(text), text).toBe(false);
     }
   });
@@ -67,7 +92,9 @@ describe("hasCryptoWord", () => {
 
 describe("plainMessage", () => {
   it("keeps a plain server message", () => {
-    expect(plainMessage("Someone else claimed this first.")).toBe("Someone else claimed this first.");
+    expect(plainMessage("Someone else claimed this first.")).toBe(
+      "Someone else claimed this first.",
+    );
   });
 
   it("replaces one that talks about the plumbing", () => {
@@ -86,7 +113,14 @@ describe("the human side's copy (PRD R7)", () => {
       const line = \`Paid \${formatRlusd(amount)} today\`;
       export function X() { return <p title="Send">Enter the <b>PIN</b></p>; }
     `;
-    expect(userFacingStrings("x.tsx", source)).toEqual(["Claim", "Paid ", " today", "Send", "Enter the", "PIN"]);
+    expect(userFacingStrings("x.tsx", source)).toEqual([
+      "Claim",
+      "Paid ",
+      " today",
+      "Send",
+      "Enter the",
+      "PIN",
+    ]);
   });
 
   it("scans every claim page and /human page file", () => {

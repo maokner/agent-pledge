@@ -43,7 +43,12 @@ export function OpenSubtaskCard({
       )}
     >
       {/* Decoration: the featured card's corner glow, and the accent wash that fades in on hover. */}
-      {featured && <span aria-hidden="true" className="pointer-events-none absolute inset-0 bg-human-corner-glow" />}
+      {featured && (
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 bg-human-corner-glow"
+        />
+      )}
       <span
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 bg-human-card-glow opacity-0 transition-opacity duration-300 ease-human group-hover/card:opacity-100"
@@ -66,12 +71,17 @@ export function OpenSubtaskCard({
       <PayAmount
         amount={subtask.price}
         size={featured ? "xl" : "md"}
-        className={cn("relative", featured ? "mt-8 text-5xl sm:text-6xl lg:mt-10 lg:text-7xl" : "mt-6")}
+        className={cn(
+          "relative",
+          featured ? "mt-8 text-5xl sm:text-6xl lg:mt-10 lg:text-7xl" : "mt-6",
+        )}
       />
       <p
         className={cn(
           "relative font-semibold tracking-[-0.01em] break-words",
-          featured ? "mt-3 text-xl leading-snug sm:text-2xl lg:text-3xl lg:leading-tight" : "mt-2 text-lg leading-snug",
+          featured
+            ? "mt-3 text-xl leading-snug sm:text-2xl lg:text-3xl lg:leading-tight"
+            : "mt-2 text-lg leading-snug",
         )}
       >
         {subtask.description}
@@ -87,15 +97,28 @@ export function OpenSubtaskCard({
       </p>
 
       <div className={cn("relative mt-auto", featured ? "pt-8 lg:pt-12" : "pt-6")}>
-        <div className={cn("flex items-center justify-between gap-3", !featured && "border-t border-human-border pt-4")}>
-          <span className={cn("inline-flex items-center gap-2", featured ? "text-lg" : "text-base")}>
-            <Clock aria-hidden="true" className={cn("size-4 shrink-0", urgent ? "text-human-danger" : "text-human-accent")} />
+        <div
+          className={cn(
+            "flex items-center justify-between gap-3",
+            !featured && "border-t border-human-border pt-4",
+          )}
+        >
+          <span
+            className={cn("inline-flex items-center gap-2", featured ? "text-lg" : "text-base")}
+          >
+            <Clock
+              aria-hidden="true"
+              className={cn("size-4 shrink-0", urgent ? "text-human-danger" : "text-human-accent")}
+            />
             <TimeLeft ms={left} />
             <span className="text-human-muted-fg">left</span>
           </span>
           <span
             aria-hidden="true"
-            className={cn("inline-flex items-center gap-1.5 font-semibold text-human-accent", featured ? "text-lg" : "text-base")}
+            className={cn(
+              "inline-flex items-center gap-1.5 font-semibold text-human-accent",
+              featured ? "text-lg" : "text-base",
+            )}
           >
             {featured ? "Claim it" : "Claim"}
             <ArrowRight className="size-4 transition-transform duration-200 ease-human motion-safe:group-hover/card:translate-x-1" />

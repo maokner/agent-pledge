@@ -6,5 +6,10 @@ import { cn } from "@/lib/cn";
  * Decorative: always pair it with words ("Claiming…"). Under reduced motion it stands still.
  */
 export function Spinner({ className }: { className?: string }) {
-  return <LoaderCircle aria-hidden="true" className={cn("size-5 shrink-0 motion-safe:animate-spin", className)} />;
+  return (
+    <LoaderCircle
+      aria-hidden="true"
+      className={cn("size-5 shrink-0 motion-safe:animate-spin", className)}
+    />
+  );
 }

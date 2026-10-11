@@ -21,7 +21,11 @@ const MAX_STAGGERED = 6;
 
 /** Static class names per span, so Tailwind sees every one. */
 const MD_SPAN: Record<BentoCell["md"], string> = { 1: "", 2: "md:col-span-2" };
-const LG_SPAN: Record<BentoCell["lg"], string> = { 1: "lg:col-span-1", 2: "lg:col-span-2", 3: "lg:col-span-3" };
+const LG_SPAN: Record<BentoCell["lg"], string> = {
+  1: "lg:col-span-1",
+  2: "lg:col-span-2",
+  3: "lg:col-span-3",
+};
 const LG_ROWS: Record<BentoCell["lgRows"], string> = { 1: "", 2: "lg:row-span-2" };
 
 /** The bento grid: 1 column on phones, 2 on md, 3 on lg. */
@@ -78,7 +82,9 @@ export function OpenList() {
             </Button>
           }
         >
-          {online ? "Check your signal. We keep trying in the background." : "You’re offline. We’ll try again when you’re back."}
+          {online
+            ? "Check your signal. We keep trying in the background."
+            : "You’re offline. We’ll try again when you’re back."}
         </Notice>
       )}
       {state.status === "ready" && <ReadyGrid state={state} now={now} online={online} />}
@@ -106,7 +112,9 @@ function ReadyGrid({
       {state.failures > 0 && (
         <p className="flex items-start gap-2 text-base text-human-muted-fg">
           <CloudOff aria-hidden="true" className="mt-0.5 size-5 shrink-0" />
-          {online ? "Can’t refresh right now. Showing the last list while we try again." : "You’re offline. Showing the last list."}
+          {online
+            ? "Can’t refresh right now. Showing the last list while we try again."
+            : "You’re offline. Showing the last list."}
         </p>
       )}
       {cells.length === 0 ? (
@@ -119,8 +127,17 @@ function ReadyGrid({
             return (
               <li
                 key={subtask.claim_code}
-                className={cn(MD_SPAN[cell.md], LG_SPAN[cell.lg], LG_ROWS[cell.lgRows], enters && "motion-safe:animate-human-fade-up")}
-                style={enters ? { animationDelay: `${Math.min(index, MAX_STAGGERED) * STAGGER_MS}ms` } : undefined}
+                className={cn(
+                  MD_SPAN[cell.md],
+                  LG_SPAN[cell.lg],
+                  LG_ROWS[cell.lgRows],
+                  enters && "motion-safe:animate-human-fade-up",
+                )}
+                style={
+                  enters
+                    ? { animationDelay: `${Math.min(index, MAX_STAGGERED) * STAGGER_MS}ms` }
+                    : undefined
+                }
               >
                 <OpenSubtaskCard
                   subtask={subtask}
@@ -170,7 +187,12 @@ function FreshnessBadge({ state, online }: { state: OpenListState; online: boole
 function LoadingGrid() {
   const bar = "rounded-lg bg-human-muted motion-safe:animate-pulse";
   return (
-    <div aria-busy="true" aria-label="Loading open tasks" role="group" className="flex flex-col gap-5">
+    <div
+      aria-busy="true"
+      aria-label="Loading open tasks"
+      role="group"
+      className="flex flex-col gap-5"
+    >
       <div aria-hidden="true" className={GRID}>
         <div className="rounded-2xl border border-human-border bg-human-card p-6 shadow-human-md sm:p-8 md:col-span-2 lg:col-span-2 lg:row-span-2 lg:p-12">
           <div className={cn(bar, "size-18 rounded-3xl sm:size-22")} />
@@ -180,7 +202,10 @@ function LoadingGrid() {
           <div className={cn(bar, "mt-12 h-6 w-32")} />
         </div>
         {[0, 1].map((i) => (
-          <div key={i} className="rounded-2xl border border-human-border bg-human-card p-6 shadow-human-md lg:p-8">
+          <div
+            key={i}
+            className="rounded-2xl border border-human-border bg-human-card p-6 shadow-human-md lg:p-8"
+          >
             <div className={cn(bar, "size-14 rounded-full")} />
             <div className={cn(bar, "mt-6 h-10 w-28")} />
             <div className={cn(bar, "mt-3 h-5 w-4/5")} />

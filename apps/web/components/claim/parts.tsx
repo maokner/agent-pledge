@@ -30,7 +30,13 @@ export function BoardLink({
   children?: React.ReactNode;
 }) {
   return (
-    <Link href="/board" className={cn(buttonVariants({ variant, size: variant === "ghost" ? "sm" : "lg" }), className)}>
+    <Link
+      href="/board"
+      className={cn(
+        buttonVariants({ variant, size: variant === "ghost" ? "sm" : "lg" }),
+        className,
+      )}
+    >
       {children}
     </Link>
   );
