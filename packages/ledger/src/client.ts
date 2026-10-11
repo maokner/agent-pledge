@@ -14,7 +14,7 @@ const CONNECT_ATTEMPT_TIMEOUT_MS = 8_000;
 const BACKOFF_BASE_MS = 500;
 const BACKOFF_MAX_MS = 15_000;
 
-/** Exponential backoff with full jitter: attempt 0 waits up to 500 ms, then 1 s, 2 s, up to 15 s. */
+/** Exponential backoff with equal jitter: attempt n waits between half and all of min(500 ms * 2^n, 15 s). */
 export function backoffDelay(attempt: number, random: () => number = Math.random): number {
   const ceiling = Math.min(BACKOFF_MAX_MS, BACKOFF_BASE_MS * 2 ** attempt);
   return Math.round(ceiling / 2 + (random() * ceiling) / 2);
