@@ -5,11 +5,12 @@ dist
 .env
 .env.local
 *.log
+*.tsbuildinfo
 .DS_Store
 coverage
+.turbo
 
 # Claude Code agent worktrees
 .claude/
-.env.*
+.env*
 !.env.example
-.turbo

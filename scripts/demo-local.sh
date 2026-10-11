@@ -1,14 +1,16 @@
 #!/usr/bin/env bash
-# One command brings the whole demo up on this laptop: tunnel, server, local agent, phone agent.
-# Runbook: docs/demo-local.md.
+# One command brings the whole demo up on this laptop: tunnel, web app, server, local agent,
+# phone agent. Runbook: docs/demo-local.md.
 #
 #   pnpm demo:local                    # xrpl if packages/ledger/.env.testnet exists, else fake
 #   pnpm demo:local --mode fake        # simulated ledger
 #   pnpm demo:local --no-provision     # do not repoint the ElevenLabs phone agent
 #   pnpm demo:local --no-tunnel        # localhost only (implies --no-provision)
-#   pnpm demo:local --port 3202        # another port (default 3002)
+#   pnpm demo:local --port 3202        # another server port (default 3002)
+#   pnpm demo:local --web-port 3200    # another web app port (default 3000)
+#   pnpm demo:local --web-dev          # next dev instead of next build + next start
 #   pnpm demo:local --stop             # stop what this script started
-#   pnpm demo:local --restart server   # restart only the server (or: agent), keep the tunnel URL
+#   pnpm demo:local --restart server   # restart only the server (or: agent, web), keep the tunnel URL
 #
 # It never prints seeds or secrets. Works with the bash 3.2 that ships with macOS.
 set -euo pipefail
@@ -27,14 +29,17 @@ EXPECTED_AGENT_ADDRESS="rHg58RwCnQVLoqYyETd4pnA6HsQn5a3RqH"
 EXPECTED_VAULT_ADDRESS="rB7wQL1Ft8RHBNdJFmw6tPGrUV8qLRE5Se"
 
 TUNNEL_TIMEOUT=60
+WEB_TIMEOUT=120
 SERVER_TIMEOUT=120
 AGENT_TIMEOUT=60
 
-# Processes in stop order: the agent first, then the server, then the tunnel.
-NAMES="agent server tunnel"
+# Processes in stop order: the agent first, then the server, the web app, and the tunnel.
+NAMES="agent server web tunnel"
 
 MODE=""
 PORT=3002
+WEB_PORT=3000
+WEB_DEV=0
 TUNNEL=1
 PROVISION=1
 STOP_ONLY=0
@@ -59,7 +64,7 @@ die() {
 }
 
 usage() {
-  sed -n '2,12p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+  sed -n '2,15p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
   exit "${1:-0}"
 }
 
@@ -79,11 +84,18 @@ while [ $# -gt 0 ]; do
       shift 2
       ;;
     --port=*) PORT="${1#--port=}"; shift ;;
+    --web-port)
+      [ $# -ge 2 ] || die "--web-port needs a number"
+      WEB_PORT="$2"
+      shift 2
+      ;;
+    --web-port=*) WEB_PORT="${1#--web-port=}"; shift ;;
+    --web-dev) WEB_DEV=1; shift ;;
     --no-tunnel) TUNNEL=0; shift ;;
     --no-provision) PROVISION=0; shift ;;
     --stop) STOP_ONLY=1; shift ;;
     --restart)
-      [ $# -ge 2 ] || die "--restart needs a value: server or agent"
+      [ $# -ge 2 ] || die "--restart needs a value: server, agent or web"
       RESTART="$2"
       shift 2
       ;;
@@ -96,6 +108,10 @@ done
 case "$PORT" in
   '' | *[!0-9]*) die "--port must be a number, got: $PORT" ;;
 esac
+case "$WEB_PORT" in
+  '' | *[!0-9]*) die "--web-port must be a number, got: $WEB_PORT" ;;
+esac
+[ "$WEB_PORT" != "$PORT" ] || die "--web-port must differ from --port (both are $PORT)"
 if [ -z "$MODE" ]; then
   if [ -f "$TESTNET_ENV" ]; then MODE=xrpl; else MODE=fake; fi
 fi
@@ -222,12 +238,14 @@ prepare_env_files() {
   else
     env_set "$SERVER_ENV" CORS_ORIGINS "$PUBLIC_URL,$local_url"
   fi
+  env_set "$SERVER_ENV" WEB_UPSTREAM_URL "$(web_upstream)"
   env_set "$AGENT_ENV" SERVER_URL "$local_url"
   env_set "$AGENT_ENV" SERVER_WS_URL "ws://localhost:$PORT/ws/agent"
   if [ "$TUNNEL" = 1 ]; then
     env_set "$VOICE_ENV" PUBLIC_BASE_URL "$PUBLIC_URL"
   fi
   ok "PUBLIC_BASE_URL, PUBLIC_API_URL, CORS_ORIGINS -> $PUBLIC_URL"
+  ok "WEB_UPSTREAM_URL -> $(web_upstream) (the server proxies the web app)"
 
   # Ledger mode.
   env_set "$SERVER_ENV" LEDGER_MODE "$MODE"
@@ -386,6 +404,57 @@ tunnel_health_ok() {
   [ -n "$ip" ] && curl -fsS -m 5 --resolve "$host:443:$ip" "$PUBLIC_URL/health" >/dev/null 2>&1
 }
 
+# ---------- web app ----------
+
+# The Next.js app listens on loopback only: people reach it through the server's proxy, on the
+# server's port or the tunnel, so the pages, the API and /ws/board share one origin.
+web_upstream() { echo "http://127.0.0.1:$WEB_PORT"; }
+web_healthy() { curl -fsS -o /dev/null -m 5 "$(web_upstream)/board" 2>/dev/null; }
+
+# Env for both next build and next start, exported (never on a command line, so the secret does
+# not show in ps; the other children ignore these). The empty NEXT_PUBLIC_* values win over any
+# apps/web/.env.local (Next.js never overrides the process env): no fixtures, and the browser calls
+# the API and /ws/board on the page's own origin. The backup form's route handler reaches the server
+# directly with the voice secret; its passcode comes from apps/web/.env.local, if set.
+export_web_env() {
+  export NEXT_TELEMETRY_DISABLED=1 NEXT_PUBLIC_FIXTURES="" NEXT_PUBLIC_API_URL="" NEXT_PUBLIC_WS_URL=""
+  export AGENT_PLEDGE_SERVER_URL="http://127.0.0.1:$PORT"
+  # Like the server: an exported VOICE_SHARED_SECRET wins over apps/server/.env.
+  AGENT_PLEDGE_VOICE_SECRET="${VOICE_SHARED_SECRET:-$(env_get "$SERVER_ENV" VOICE_SHARED_SECRET)}"
+  export AGENT_PLEDGE_VOICE_SECRET
+}
+
+start_web() {
+  export_web_env
+  if [ "$WEB_DEV" = 1 ]; then
+    step "Starting the web app (next dev) on 127.0.0.1:$WEB_PORT"
+    start_bg web pnpm --dir "$ROOT/apps/web" exec next dev --port "$WEB_PORT" --hostname 127.0.0.1
+  else
+    step "Building the web app (next build)"
+    local build_log rc=0
+    build_log="$(log_file web-build)"
+    pnpm --dir "$ROOT/apps/web" exec next build >"$build_log" 2>&1 </dev/null || rc=$?
+    if [ "$rc" != 0 ]; then
+      printf '\n--- last 25 lines of %s ---\n' "$build_log" >&2
+      tail -n 25 "$build_log" >&2 || true
+      die "next build failed (exit $rc). Log: $build_log"
+    fi
+    ok "built (log: $build_log)"
+    step "Starting the web app (next start) on 127.0.0.1:$WEB_PORT"
+    start_bg web pnpm --dir "$ROOT/apps/web" exec next start --port "$WEB_PORT" --hostname 127.0.0.1
+  fi
+  local rc=0
+  wait_for "$WEB_TIMEOUT" web web_healthy || rc=$?
+  if [ "$rc" != 0 ]; then
+    show_log_tail web
+    [ "$rc" = 2 ] && die "The web app exited during startup. See the log above: $(log_file web)"
+    die "The web app did not answer $(web_upstream)/board within ${WEB_TIMEOUT}s." "Log: $(log_file web)"
+  fi
+  ok "web app answers at $(web_upstream)"
+  [ -n "$(env_get "$ROOT/apps/web/.env.local" BACKUP_FORM_PASSCODE)" ] ||
+    warn "BACKUP_FORM_PASSCODE is not set in apps/web/.env.local, so the board's backup form is off"
+}
+
 # ---------- server and agent ----------
 
 server_health() { curl -fsS -m 3 "http://localhost:$PORT/health" 2>/dev/null; }
@@ -396,7 +465,8 @@ start_server() {
   # The env values on the command line win over the .env file (dotenv does not override), so a
   # stray export in this shell cannot point the server somewhere else.
   start_bg server env PORT="$PORT" LEDGER_MODE="$MODE" PUBLIC_BASE_URL="$PUBLIC_URL" \
-    PUBLIC_API_URL="$PUBLIC_URL" pnpm --dir "$ROOT" --filter @agent-pledge/server start
+    PUBLIC_API_URL="$PUBLIC_URL" WEB_UPSTREAM_URL="$(web_upstream)" \
+    pnpm --dir "$ROOT" --filter @agent-pledge/server start
   local rc=0
   wait_for "$SERVER_TIMEOUT" server server_healthy || rc=$?
   if [ "$rc" != 0 ]; then
@@ -413,13 +483,14 @@ start_server() {
     die "The server runs ledger_mode=$ledger_mode, but this run asked for $MODE." "Log: $(log_file server)"
   ok "ledger_mode: $ledger_mode"
 
+  # The board through the server's proxy. /?task=<id> (the server's board_url) redirects to it.
   local board_status
-  board_status="$(curl -s -o /dev/null -m 5 -w '%{http_code}' "http://localhost:$PORT/" || true)"
+  board_status="$(curl -s -o /dev/null -m 10 -w '%{http_code}' "http://localhost:$PORT/board" || true)"
   if [ "$board_status" = 200 ]; then
-    ok "board page served at /"
+    ok "board page served through the server at /board"
     BOARD_OK=1
   else
-    warn "GET / returned $board_status: this server build does not serve the board page (apps/web/public missing?)"
+    warn "GET /board returned $board_status: the server does not reach the web app at $(web_upstream)"
     BOARD_OK=0
   fi
 
@@ -495,13 +566,17 @@ cd "$ROOT"
 # phone agent, the projector tab, and posted claim links) stays the same.
 if [ -n "$RESTART" ]; then
   case "$RESTART" in
-    server | agent) ;;
-    *) die "--restart must be server or agent, got: $RESTART" ;;
+    server | agent | web) ;;
+    *) die "--restart must be server, agent or web, got: $RESTART" ;;
   esac
   [ -f "$SERVER_ENV" ] || die "No apps/server/.env yet. Run pnpm demo:local first."
   PORT="$(env_get "$SERVER_ENV" PORT)"
   MODE="$(env_get "$SERVER_ENV" LEDGER_MODE)"
   PUBLIC_URL="$(env_get "$SERVER_ENV" PUBLIC_API_URL)"
+  upstream="$(env_get "$SERVER_ENV" WEB_UPSTREAM_URL)"
+  case "$upstream" in
+    http://127.0.0.1:*) WEB_PORT="${upstream##*:}" ;;
+  esac
   TUNNEL=0
   if [ -f "$(pid_file tunnel)" ] && is_alive "$(cat "$(pid_file tunnel)")"; then
     case "$PUBLIC_URL" in https://*) TUNNEL=1 ;; esac
@@ -518,10 +593,14 @@ if [ -n "$RESTART" ]; then
     else
       warn "the local agent is not running: pnpm demo:local --restart agent"
     fi
+  elif [ "$RESTART" = web ]; then
+    owner="$(port_owner "$WEB_PORT")"
+    [ -z "$owner" ] || die "Port $WEB_PORT is still in use by pid $owner. Stop it (kill $owner) and retry."
+    start_web
   else
     start_agent
   fi
-  step "Restarted the $RESTART. Board: $PUBLIC_URL/"
+  step "Restarted the $RESTART. Board: $PUBLIC_URL/board"
   exit 0
 fi
 
@@ -542,6 +621,13 @@ if [ -n "$owner" ]; then
     "Or use another port: pnpm demo:local --port 3202"
 fi
 ok "port $PORT is free"
+owner="$(port_owner "$WEB_PORT")"
+if [ -n "$owner" ]; then
+  die "Port $WEB_PORT (web app) is already in use by pid $owner: $(ps -o command= -p "$owner" 2>/dev/null | cut -c1-120)" \
+    "If it is an old web app started by hand, stop it: kill $owner" \
+    "Or use another port: pnpm demo:local --web-port 3200"
+fi
+ok "port $WEB_PORT is free"
 
 # A local agent started by hand would also connect to the new server and race ours for tasks.
 stray_agents="$(pgrep -f "$ROOT/apps/local-agent/.*src/index.ts" 2>/dev/null | tr '\n' ' ' || true)"
@@ -574,6 +660,7 @@ else
 fi
 
 prepare_env_files
+start_web
 start_server
 start_agent
 provision_voice
@@ -587,20 +674,26 @@ elif [ "$TUNNEL" = 1 ]; then
 else
   phone_line="$PHONE_NUMBER (NOT reachable: no tunnel)"
 fi
-board_line="$PUBLIC_URL/"
-[ "${BOARD_OK:-0}" = 1 ] || board_line="$PUBLIC_URL/   (this server build does not serve it yet)"
+board_line="$PUBLIC_URL/board"
+[ "${BOARD_OK:-0}" = 1 ] || board_line="$PUBLIC_URL/board   (NOT served: see the web log)"
+if [ "$WEB_DEV" = 1 ]; then web_kind="next dev"; else web_kind="next start"; fi
+tunnel_log_line=""
+[ "$TUNNEL" = 1 ] && tunnel_log_line="
+                $(log_file tunnel)"
 
 cat <<EOF
 
 ${GREEN}${BOLD}Demo is up${RESET} (ledger: $MODE)
 
   Board:        $board_line
-  Board local:  http://localhost:$PORT/
+  Board local:  http://localhost:$PORT/board
+  Claim links:  $PUBLIC_URL/c/<CODE>
   Phone:        $phone_line
   Health:       $PUBLIC_URL/health
+  Web app:      $(web_upstream) ($web_kind, reached through the server)
   Logs:         $(log_file server)
                 $(log_file agent)
-                $(log_file tunnel)
+                $(log_file web)${tunnel_log_line}
   Follow logs:  tail -f $LOG_DIR/*.log
   Stop:         pnpm demo:local --stop
 

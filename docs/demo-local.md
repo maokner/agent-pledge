@@ -1,7 +1,9 @@
 # Local demo runbook (everything on this laptop)
 
-The server, the local agent, and a cloudflared quick tunnel all run on this laptop.
+The server, the web app (Next.js), the local agent, and a cloudflared quick tunnel all run on this laptop.
 One command starts them, repoints the phone agent, and prints the URLs.
+The tunnel points at the server (port 3002).
+The server answers the API and `/ws/board` itself and reverse-proxies every other path (the board, the claim page `/c/<CODE>`, the landing page) to the web app on `127.0.0.1:3000`, so everything shares one public URL.
 What to say and what must happen in each run is in [`docs/runbook.md`](runbook.md) sections 3 and 4.
 This page is how to operate it.
 
@@ -12,7 +14,7 @@ Phone number: **+1 866-808-1262**.
 - [ ] You are in `~/Desktop/agent-pledge` on the demo branch, and `pnpm install` is done.
 - [ ] Nothing started by hand is still running.
       Stop old terminals with Ctrl+C, or `kill` the pids.
-      The script refuses to start if port 3002 is in use or a local agent from this checkout is running, and it prints the pid to kill.
+      The script refuses to start if port 3002 or 3000 is in use or a local agent from this checkout is running, and it prints the pid to kill.
 - [ ] `packages/ledger/.env.testnet` exists if you want the real ledger (xrpl mode).
       Without it the script runs the fake ledger.
 - [ ] `apps/voice-agent/.env` has `ELEVENLABS_API_KEY`, `ELEVENLABS_AGENT_ID`, and `ELEVENLABS_PHONE_NUMBER_ID`.
@@ -29,14 +31,15 @@ cd ~/Desktop/agent-pledge
 pnpm demo:local
 ```
 
-It takes about 30 seconds.
+It takes about 40 seconds, including about 10 seconds for `next build`.
 You see `ok` lines and then a block that starts with **Demo is up**.
 If it prints **ERROR**, read the lines under it: they say what to do.
 It stops anything it started, so you can always run it again.
 
 Then, in this order:
 
-1. Open the **Board** URL from the final block on the projector, full screen.
+1. Open the **Board** URL from the final block (`<tunnel URL>/board`) on the projector, full screen.
+   Add `?projector=1` for the projector layout.
 2. Open the same URL on a phone with Wi-Fi off. It loads and updates.
 3. Call +1 866-808-1262. You hear the greeting. Hang up before you say "yes".
 4. Open a second terminal for the logs: `tail -f .data/demo/logs/*.log`.
@@ -54,7 +57,7 @@ Hands off the laptop keyboard from here on, except for the terminals.
 
 Every full `pnpm demo:local` gives a **new tunnel URL**.
 After one, reload the board on the projector and the phone with the new URL.
-To restart one part and keep the URL, use `--restart server` or `--restart agent` (see Recovery).
+To restart one part and keep the URL, use `--restart server`, `--restart agent`, or `--restart web` (see Recovery).
 
 ## Run 1: success (about 4 minutes)
 
@@ -96,7 +99,7 @@ Yik Yak: leave at least 10 minutes between two real posts.
 
 ## Recovery
 
-First look at the logs: `.data/demo/logs/server.log`, `agent.log`, `tunnel.log` (and `provision.log`).
+First look at the logs: `.data/demo/logs/server.log`, `agent.log`, `web.log`, `tunnel.log` (and `web-build.log`, `provision.log`).
 
 ### Tunnel died
 
@@ -114,6 +117,13 @@ Signs: `curl -s http://localhost:3002/health` fails, and `server.log` ends with 
 2. Reload the board.
 3. Fake mode keeps the ledger in memory, so a task that was in progress cannot finish. Start a new task.
 4. If it fails again at once, run `pnpm demo:local --mode fake` (new URL) and say that we are on the simulated ledger.
+
+### Web app died
+
+Signs: the board or the claim page shows `{"error":"web_unavailable",...}` (the server answers, the web app does not), while `curl -s http://localhost:3002/health` still works.
+
+1. Run `pnpm demo:local --restart web`. It rebuilds and restarts the web app on the same port. The tunnel URL stays the same.
+2. Reload the board. Claim links stay valid.
 
 ### Agent stuck
 
@@ -145,12 +155,23 @@ Signs: the call does not connect, the agent says something went wrong, or no tas
 | `pnpm demo:local --mode fake` | Start with the simulated ledger. |
 | `pnpm demo:local --no-provision` | Start, but do not repoint the phone agent. |
 | `pnpm demo:local --no-tunnel` | Local only, no public URL, no phone. |
-| `pnpm demo:local --port 3202` | Use another port (for tests next to the real demo). |
+| `pnpm demo:local --port 3202` | Use another server port (for tests next to the real demo). |
+| `pnpm demo:local --web-port 3200` | Use another port for the web app (default 3000). |
+| `pnpm demo:local --web-dev` | Run the web app with `next dev` (hot reload through the server) instead of `next build` + `next start`. |
 | `pnpm demo:local --restart server` | Restart only the server. Same URL. |
 | `pnpm demo:local --restart agent` | Restart only the local agent. Same URL. |
-| `pnpm demo:local --stop` | Stop the tunnel, the server, and the agent. |
+| `pnpm demo:local --restart web` | Rebuild and restart only the web app. Same URL. |
+| `pnpm demo:local --stop` | Stop the tunnel, the web app, the server, and the agent. |
 
 The script rewrites only the URL, port, and ledger lines in `apps/server/.env`, `apps/local-agent/.env`, and `apps/voice-agent/.env`.
 It creates missing files from the `.env.example` files with new secrets, and it makes `AGENT_TOKEN` and the voice secret match across the three files.
+It also sets `WEB_UPSTREAM_URL` in `apps/server/.env` to the web app's address.
 It never prints seeds or secrets.
 Pid files and logs are in `.data/demo/`.
+
+The web app runs as `next build` + `next start` by default: the build takes about 10 seconds, and a production server is faster and steadier on the projector than `next dev`.
+It listens on `127.0.0.1` only, so people reach it through the server.
+The script builds and starts it with `NEXT_PUBLIC_FIXTURES` and `NEXT_PUBLIC_API_URL` empty, so an `apps/web/.env.local` left in fixture mode cannot leak into the demo, and the browser calls the API on the page's own origin.
+The board's backup form ("Phone call failed? Create the task here") needs `BACKUP_FORM_PASSCODE` in `apps/web/.env.local`; the script passes the server URL and the voice secret, and warns when the passcode is missing.
+
+To test next to a running demo without touching it: `pnpm demo:local --no-tunnel --no-provision --mode fake --port 3202 --web-port 3200`.

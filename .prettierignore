@@ -4,7 +4,8 @@ dist
 .next
 .data
 apps/server/drizzle/meta
-apps/web/public/fixtures
+apps/web/public
+apps/web/next-env.d.ts
 README.md
 *.md
 .claude

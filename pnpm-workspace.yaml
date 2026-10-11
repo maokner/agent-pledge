@@ -4,3 +4,6 @@ packages:
 onlyBuiltDependencies:
   - esbuild
   - sharp
+# unrs-resolver (eslint-config-next) works from its prebuilt binaries; its install script is not needed.
+ignoredBuiltDependencies:
+  - unrs-resolver

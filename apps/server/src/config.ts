@@ -22,8 +22,9 @@ export const ConfigSchema = z.object({
   PORT: z.coerce.number().int().default(3001),
   HOST: z.string().default("0.0.0.0"),
   /**
-   * Where the board and claim page live. This server serves them (apps/web/public), so in most
-   * setups this equals PUBLIC_API_URL. Claim links: `${PUBLIC_BASE_URL}/c/<CODE>`.
+   * Where the board and claim page live. This server proxies them from the web app (see
+   * WEB_UPSTREAM_URL), so in most setups this equals PUBLIC_API_URL.
+   * Claim links: `${PUBLIC_BASE_URL}/c/<CODE>`. Board links: `${PUBLIC_BASE_URL}/?task=<id>`.
    */
   PUBLIC_BASE_URL: z.string().url().default("http://localhost:3001"),
   /** Public URL of this server. NFT URIs and media URLs use it. */
@@ -39,6 +40,11 @@ export const ConfigSchema = z.object({
   COOKIE_SECRET: z.string().min(32).default(DEV_SECRET),
   /** Any string; a 32-byte AES-256-GCM key is derived from it with SHA-256. */
   SEED_ENCRYPTION_KEY: z.string().min(16).default(DEV_SECRET),
+  /**
+   * The web app (apps/web, Next.js) that this server reverse-proxies every non-API path to, so the
+   * pages, the API and /ws/board share one origin. Empty = do not proxy (API only).
+   */
+  WEB_UPSTREAM_URL: z.union([z.string().url(), z.literal("")]).default("http://localhost:3000"),
   /** Comma-separated origins allowed by CORS (with credentials). */
   CORS_ORIGINS: z.string().default("http://localhost:3000").transform(splitCsv),
   /** The local agent's XRPL address. In fake mode, defaults to the fake ledger's agent account. */
@@ -112,6 +118,7 @@ export function testConfig(overrides: Partial<Record<keyof Config, string>> = {}
     SEED_ENCRYPTION_KEY: "test-seed-key-0123456789",
     PUBLIC_BASE_URL: "http://board.test",
     PUBLIC_API_URL: "http://api.test",
+    WEB_UPSTREAM_URL: "",
     ...overrides,
   });
 }

@@ -460,13 +460,17 @@ pnpm install
 cp apps/server/.env.example apps/server/.env   # optional: every value has a dev default
 pnpm db:seed      # one demo task per status (stop `pnpm dev` first: PGlite allows one process)
 pnpm dev          # server on http://localhost:3001 (GET /health), fake ledger, PGlite in apps/server/.data
+pnpm dev:web      # web app (Next.js) on http://localhost:3000, in a second terminal
 pnpm lint && pnpm typecheck && pnpm test
 pnpm db:reset     # wipe the database before a rehearsal
 ```
 
-- The server also serves the board at `http://localhost:3001/` and the claim page at `http://localhost:3001/c/<CODE>` (static files in `apps/web/public`, no build step).
-  Set `PUBLIC_BASE_URL` to the same public URL as `PUBLIC_API_URL` so claim links point at this server.
-- `http://localhost:3001/?demo=1` renders the board from the bundled fixture in `apps/web/public/fixtures`, without live data.
+- Open the pages on the server's port: the board at `http://localhost:3001/board`, the claim page at `http://localhost:3001/c/<CODE>`.
+  The server answers the API and `/ws/board` itself and reverse-proxies every other path to the web app at `WEB_UPSTREAM_URL` (default `http://localhost:3000`), so the pages, the API, and the board socket share one origin (one tunnel URL in the demo, no CORS).
+  With `WEB_UPSTREAM_URL` empty the server serves only the API.
+- Set `PUBLIC_BASE_URL` to the same public URL as `PUBLIC_API_URL` so claim links (`/c/<CODE>`) and board links (`/?task=<id>`, which the web app redirects to `/board?task=<id>`) point at this server.
+- `pnpm dev:web:fixtures` runs the web app on fixture data, with no server; see [`apps/web/README.md`](apps/web/README.md).
+- The whole demo on one laptop (tunnel, web app, server, local agent, phone agent) is one command: `pnpm demo:local`. See [`docs/demo-local.md`](docs/demo-local.md).
 - `LEDGER_MODE=fake` (default) uses an in-memory ledger. `LEDGER_MODE=xrpl` uses `packages/ledger` on XRPL testnet.
 - Set `DATABASE_URL=postgres://…` to use real Postgres. Migrations run at startup.
 - Docker: `docker build -f apps/server/Dockerfile -t agent-pledge-server .` from the repo root.
