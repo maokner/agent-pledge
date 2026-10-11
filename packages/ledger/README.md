@@ -22,17 +22,17 @@ The task operations (issues 4 to 9) live in `src/ops/`.
 An empty value (for example `XRPL_VAULT_SEED=` in a `.env` file) counts as unset.
 A bad value throws a `ConfigError` that names every bad variable.
 
-| Variable | Default | Meaning |
-|---|---|---|
-| `XRPL_NETWORK_URL` | `wss://s.altnet.rippletest.net:51233` | XRPL WebSocket URL. |
-| `XRPL_EXPLORER_URL` | `https://testnet.xrpl.org` | Base of every explorer link. |
-| `XRPL_TOKEN_ISSUER` | `rQhWct2fv4Vc4KRjRgMrxa8xPN9Zx9iLKV` (RLUSD testnet) | Issuer of the payment token. Override it for a self-issued token. |
-| `XRPL_TOKEN_CURRENCY` | `524C555344000000000000000000000000000000` ("RLUSD") | Currency code: 3 characters or 40 hex characters. |
-| `XRPL_VAULT_SEED` | unset | Vault seed. Only the server holds it. |
-| `XRPL_AGENT_SEED` | unset | Local agent seed. Only the local agent holds it. |
-| `XRPL_REQUESTER_SEED` | unset | Demo requester seed from the setup script. |
-| `XRPL_TOKEN_ISSUER_SEED` | unset | Seed of a self-issued token issuer, to issue more of the token later. |
-| `PUBLIC_BASE_URL` | `http://localhost:3000` | Public server URL, for NFT URIs and the board link. |
+| Variable                 | Default                                              | Meaning                                                               |
+| ------------------------ | ---------------------------------------------------- | --------------------------------------------------------------------- |
+| `XRPL_NETWORK_URL`       | `wss://s.altnet.rippletest.net:51233`                | XRPL WebSocket URL.                                                   |
+| `XRPL_EXPLORER_URL`      | `https://testnet.xrpl.org`                           | Base of every explorer link.                                          |
+| `XRPL_TOKEN_ISSUER`      | `rQhWct2fv4Vc4KRjRgMrxa8xPN9Zx9iLKV` (RLUSD testnet) | Issuer of the payment token. Override it for a self-issued token.     |
+| `XRPL_TOKEN_CURRENCY`    | `524C555344000000000000000000000000000000` ("RLUSD") | Currency code: 3 characters or 40 hex characters.                     |
+| `XRPL_VAULT_SEED`        | unset                                                | Vault seed. Only the server holds it.                                 |
+| `XRPL_AGENT_SEED`        | unset                                                | Local agent seed. Only the local agent holds it.                      |
+| `XRPL_REQUESTER_SEED`    | unset                                                | Demo requester seed from the setup script.                            |
+| `XRPL_TOKEN_ISSUER_SEED` | unset                                                | Seed of a self-issued token issuer, to issue more of the token later. |
+| `PUBLIC_BASE_URL`        | `http://localhost:3000`                              | Public server URL, for NFT URIs and the board link.                   |
 
 Never commit seeds.
 The root `.gitignore` ignores `.env` and `.env.*` (except `.env.example`).
@@ -56,14 +56,14 @@ It prints the env block to stdout and writes it to `--out` with file mode 600.
 Progress goes to stderr.
 With `--out`, the env block cannot mix with pnpm's own banner lines on stdout.
 
-| Flag | Meaning |
-|---|---|
-| (none) | RLUSD from tryrlusd.com. If that fails, self-issue. |
-| `--rlusd` | RLUSD only. Fail if the faucet fails. |
-| `--self-issue` | Skip RLUSD and self-issue at once. |
-| `--amount N` | Token amount for the requester and the agent. Default 100. |
-| `--currency CODE` | Self-issued currency code. Default `USD`. |
-| `--out FILE` | Also write the env block to this file. |
+| Flag              | Meaning                                                    |
+| ----------------- | ---------------------------------------------------------- |
+| (none)            | RLUSD from tryrlusd.com. If that fails, self-issue.        |
+| `--rlusd`         | RLUSD only. Fail if the faucet fails.                      |
+| `--self-issue`    | Skip RLUSD and self-issue at once.                         |
+| `--amount N`      | Token amount for the requester and the agent. Default 100. |
+| `--currency CODE` | Self-issued currency code. Default `USD`.                  |
+| `--out FILE`      | Also write the env block to this file.                     |
 
 The RLUSD faucet: the tryrlusd.com page sends `POST /api/mint-xrpl` with `{"address": "r..."}`.
 Each call gives 10 RLUSD.
@@ -83,11 +83,11 @@ The rest of the package reads the token from config and does not change for eith
 
 The run on 2026-10-11 took 40 seconds (faucet 401, then self-issue):
 
-| Wallet | Address |
-|---|---|
-| Vault | [rGK7CqKpenitEQXMeXG6zA1CDCJrRWHZAf](https://testnet.xrpl.org/accounts/rGK7CqKpenitEQXMeXG6zA1CDCJrRWHZAf) |
-| Local agent | [rfd52orC5XNG68sHYNT58Ld41aVWgcZ5nw](https://testnet.xrpl.org/accounts/rfd52orC5XNG68sHYNT58Ld41aVWgcZ5nw) |
-| Demo requester | [rsXnMkA3FvP6sXXwm2USkb4Ed1vcamcZMM](https://testnet.xrpl.org/accounts/rsXnMkA3FvP6sXXwm2USkb4Ed1vcamcZMM) |
+| Wallet                                                           | Address                                                                                                    |
+| ---------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Vault                                                            | [rGK7CqKpenitEQXMeXG6zA1CDCJrRWHZAf](https://testnet.xrpl.org/accounts/rGK7CqKpenitEQXMeXG6zA1CDCJrRWHZAf) |
+| Local agent                                                      | [rfd52orC5XNG68sHYNT58Ld41aVWgcZ5nw](https://testnet.xrpl.org/accounts/rfd52orC5XNG68sHYNT58Ld41aVWgcZ5nw) |
+| Demo requester                                                   | [rsXnMkA3FvP6sXXwm2USkb4Ed1vcamcZMM](https://testnet.xrpl.org/accounts/rsXnMkA3FvP6sXXwm2USkb4Ed1vcamcZMM) |
 | Token issuer (`USD`, DefaultRipple and AllowTrustLineLocking on) | [rK5hgFwTFprL6eaonsoknSuW6kzTiwZhnh](https://testnet.xrpl.org/accounts/rK5hgFwTFprL6eaonsoknSuW6kzTiwZhnh) |
 
 Test payment of 1 USD from the requester to the vault, with the task memo `setup-check`: [02F46CC8](https://testnet.xrpl.org/transactions/02F46CC8DF0519C0B25DA66B8CB870418987538B357ABB3A060F808400A27176).
@@ -106,7 +106,13 @@ See [Spike results](#spike-results).
 
 ```ts
 import {
-  getClient, loadConfig, ledgerEvents, submitTx, walletFromSeed, taskMemo, tokenAmount,
+  getClient,
+  loadConfig,
+  ledgerEvents,
+  submitTx,
+  walletFromSeed,
+  taskMemo,
+  tokenAmount,
 } from "@agent-pledge/ledger";
 
 const config = loadConfig();
@@ -185,12 +191,12 @@ const response = await submitTx(
 
 `SubmitOptions`:
 
-| Option | Meaning |
-|---|---|
-| `kind?: TxKind` | Board meaning, copied into the events. Without it, events have `kind: null`. |
-| `taskId?: string` | Appends the task memo to `Memos`. Events then carry `taskId`. |
-| `config?: LedgerConfig` | For explorer links. Default `loadConfig()`. |
-| `pollIntervalMs?: number` | How often to ask for the outcome. Default 1000. |
+| Option                       | Meaning                                                                                                |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `kind?: TxKind`              | Board meaning, copied into the events. Without it, events have `kind: null`.                           |
+| `taskId?: string`            | Appends the task memo to `Memos`. Events then carry `taskId`.                                          |
+| `config?: LedgerConfig`      | For explorer links. Default `loadConfig()`.                                                            |
+| `pollIntervalMs?: number`    | How often to ask for the outcome. Default 1000.                                                        |
 | `outcomeDeadlineMs?: number` | How long to keep trying to learn the outcome while the connection is down. Default 180000 (3 minutes). |
 
 What `submitTx` does:
@@ -220,7 +226,7 @@ The lock is for one process only, so only one process may sign for each account.
 // resultCode(response: TxResponse): string
 resultCode(response); // "tesSUCCESS"
 
-// errorForResult(code, tx, account, cause?, hash?): LedgerError  (pure, used by submitTx)
+// errorForResult(code, tx, account, cause?, hash?, kind?): LedgerError  (pure, used by submitTx)
 errorForResult("tecOBJECT_NOT_FOUND", acceptTx, helper.classicAddress); // AlreadyClaimedError
 
 // RESULT_CODE_ERRORS: the code lists behind the mapping, see "Typed errors"
@@ -314,14 +320,14 @@ A listener that throws does not stop the other listeners or the ledger call.
 The error goes to `console.error`.
 Payload types are in `@agent-pledge/shared` (`LedgerEventMap`).
 
-| Event | When | Payload |
-|---|---|---|
-| `tx.pending` | The transaction is signed and about to go to the network. | `hash`, `kind`, `txType`, `account`, `taskId`, `explorerUrl` |
-| `tx.validated` | A validated ledger has it with `tesSUCCESS`. | the same, plus `result` (`"tesSUCCESS"`) and `ledgerIndex` |
-| `tx.failed` | It failed before or after it reached a ledger. It did not apply and never will. | `hash`, `kind`, `txType`, `account`, `taskId`, `code`, `errorCode`, `message`, `explorerUrl` |
-| `tx.unknown` | `submitTx` gave up on learning the outcome (the connection stayed down past `outcomeDeadlineMs`). The transaction may still validate. | `hash`, `kind`, `txType`, `account`, `taskId`, `errorCode` (`NETWORK`), `message`, `explorerUrl` |
-| `ledger.disconnected` | The WebSocket dropped unexpectedly. | `url`, `code` (WebSocket close code) |
-| `ledger.connected` | The client connected, or reconnected after a drop. | `url`, `reconnected` |
+| Event                 | When                                                                                                                                  | Payload                                                                                          |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `tx.pending`          | The transaction is signed and about to go to the network.                                                                             | `hash`, `kind`, `txType`, `account`, `taskId`, `explorerUrl`                                     |
+| `tx.validated`        | A validated ledger has it with `tesSUCCESS`.                                                                                          | the same, plus `result` (`"tesSUCCESS"`) and `ledgerIndex`                                       |
+| `tx.failed`           | It failed before or after it reached a ledger. It did not apply and never will.                                                       | `hash`, `kind`, `txType`, `account`, `taskId`, `code`, `errorCode`, `message`, `explorerUrl`     |
+| `tx.unknown`          | `submitTx` gave up on learning the outcome (the connection stayed down past `outcomeDeadlineMs`). The transaction may still validate. | `hash`, `kind`, `txType`, `account`, `taskId`, `errorCode` (`NETWORK`), `message`, `explorerUrl` |
+| `ledger.disconnected` | The WebSocket dropped unexpectedly.                                                                                                   | `url`, `code` (WebSocket close code)                                                             |
+| `ledger.connected`    | The client connected, or reconnected after a drop.                                                                                    | `url`, `reconnected`                                                                             |
 
 In `tx.failed`, `code` is the raw XRPL result code (for example `tecOBJECT_NOT_FOUND`).
 When there is no result code, `code` is the error code (for example `NETWORK`).
@@ -342,25 +348,26 @@ Every error extends `LedgerError` with `code` (a `LedgerErrorCode`), `resultCode
 Switch on `code` or use `instanceof`.
 The HTTP status is our suggestion for the server.
 
-| Class | `code` | XRPL result codes | HTTP | Meaning |
-|---|---|---|---|---|
-| `AlreadyClaimedError` | `ALREADY_CLAIMED` | `tecOBJECT_NOT_FOUND` on `NFTokenAcceptOffer` | 409 | Another account accepted the offer first (spike steps 4 and 6). |
-| `InsufficientFundsError` | `INSUFFICIENT_FUNDS` | `tecUNFUNDED_PAYMENT`, `tecINSUFFICIENT_FUNDS`, `tecUNFUNDED_OFFER`, `tecUNFUNDED`, `tecINSUFFICIENT_PAYMENT`, `tecINSUFFICIENT_RESERVE`, `tecINSUF_RESERVE_LINE`, `tecINSUF_RESERVE_OFFER`, `tecNO_LINE_INSUF_RESERVE`, `tecPATH_PARTIAL`, `tecPATH_DRY` | 402 | Not enough token, XRP, or XRP reserve. |
-| `NoTrustLineError` | `NO_TRUST_LINE` | `tecNO_LINE`, `tecNO_AUTH` | 500 | A trust line is missing or not authorized. A setup problem. |
-| `NotAllowedError` | `NOT_ALLOWED` | `tecNO_PERMISSION`, `tecCANT_ACCEPT_OWN_NFTOKEN_OFFER`, `tefNFTOKEN_IS_NOT_TRANSFERABLE` | 403 | The account may not do this (spike step 8). |
-| `NotFoundError` | `NOT_FOUND` | `tecNO_ENTRY`, `tecNO_DST`, `tecNO_DST_INSUF_XRP`, `tecNO_TARGET`, and `tecOBJECT_NOT_FOUND` on transactions other than an offer accept | 404 | The NFT, offer, or destination account does not exist (spike step 10). |
-| `OfferExpiredError` | `OFFER_EXPIRED` | `tecEXPIRED` | 410 | The NFT offer has expired. |
-| `TxExpiredError` | `TX_EXPIRED` | `tefMAX_LEDGER`, or `LastLedgerSequence` passed with no result | 503 | It will never apply. You can safely build and send it again. The message names a `ter` preliminary result, for example `terINSUF_FEE_B`, if there was one. |
-| `InvalidTransactionError` | `INVALID_TX` | every `tem*` code, and xrpl.js `ValidationError` | 500 | Malformed transaction, a bug in our code (spike step 9). |
-| `NetworkError` | `NETWORK` | none | 503 | No connection. If `hash` is set, the outcome is unknown. Check the hash before you retry. |
-| `ConfigError` | `CONFIG` | none | 500 | An environment variable is missing or invalid. |
-| `LedgerError` | `INVALID_INPUT` | none | 400 | Bad input to a helper, for example an empty task ID. |
-| `LedgerError` | `TX_FAILED` | every other code, and rippled request errors from `submit` | 500 | `resultCode` has the raw code. |
+| Class                     | `code`               | XRPL result codes                                                                                                                                                                                                                                         | HTTP | Meaning                                                                                                                                                    |
+| ------------------------- | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `AlreadyClaimedError`     | `ALREADY_CLAIMED`    | `tecOBJECT_NOT_FOUND` on `NFTokenAcceptOffer`, except `kind: "payout.accept"`                                                                                                                                                                             | 409  | Another account accepted the offer first (spike steps 4 and 6).                                                                                            |
+| `InsufficientFundsError`  | `INSUFFICIENT_FUNDS` | `tecUNFUNDED_PAYMENT`, `tecINSUFFICIENT_FUNDS`, `tecUNFUNDED_OFFER`, `tecUNFUNDED`, `tecINSUFFICIENT_PAYMENT`, `tecINSUFFICIENT_RESERVE`, `tecINSUF_RESERVE_LINE`, `tecINSUF_RESERVE_OFFER`, `tecNO_LINE_INSUF_RESERVE`, `tecPATH_PARTIAL`, `tecPATH_DRY` | 402  | Not enough token, XRP, or XRP reserve.                                                                                                                     |
+| `NoTrustLineError`        | `NO_TRUST_LINE`      | `tecNO_LINE`, `tecNO_AUTH`                                                                                                                                                                                                                                | 500  | A trust line is missing or not authorized. A setup problem.                                                                                                |
+| `NotAllowedError`         | `NOT_ALLOWED`        | `tecNO_PERMISSION`, `tecCANT_ACCEPT_OWN_NFTOKEN_OFFER`, `tefNFTOKEN_IS_NOT_TRANSFERABLE`                                                                                                                                                                  | 403  | The account may not do this (spike step 8).                                                                                                                |
+| `NotFoundError`           | `NOT_FOUND`          | `tecNO_ENTRY`, `tecNO_DST`, `tecNO_DST_INSUF_XRP`, `tecNO_TARGET`, and `tecOBJECT_NOT_FOUND` on the vault's payout accept or on transactions other than an offer accept                                                                                   | 404  | The NFT, offer, or destination account does not exist (spike step 10).                                                                                     |
+| `OfferExpiredError`       | `OFFER_EXPIRED`      | `tecEXPIRED`                                                                                                                                                                                                                                              | 410  | The NFT offer has expired.                                                                                                                                 |
+| `TxExpiredError`          | `TX_EXPIRED`         | `tefMAX_LEDGER`, or `LastLedgerSequence` passed with no result                                                                                                                                                                                            | 503  | It will never apply. You can safely build and send it again. The message names a `ter` preliminary result, for example `terINSUF_FEE_B`, if there was one. |
+| `InvalidTransactionError` | `INVALID_TX`         | every `tem*` code, and xrpl.js `ValidationError`                                                                                                                                                                                                          | 500  | Malformed transaction, a bug in our code (spike step 9).                                                                                                   |
+| `NetworkError`            | `NETWORK`            | none                                                                                                                                                                                                                                                      | 503  | No connection. If `hash` is set, the outcome is unknown. Check the hash before you retry.                                                                  |
+| `ConfigError`             | `CONFIG`             | none                                                                                                                                                                                                                                                      | 500  | An environment variable is missing or invalid.                                                                                                             |
+| `LedgerError`             | `INVALID_INPUT`      | none                                                                                                                                                                                                                                                      | 400  | Bad input to a helper, for example an empty task ID.                                                                                                       |
+| `LedgerError`             | `TX_FAILED`          | every other code, and rippled request errors from `submit`                                                                                                                                                                                                | 500  | `resultCode` has the raw code.                                                                                                                             |
 
 What each mapped code means:
 
 - `tecOBJECT_NOT_FOUND`: the ledger object in the transaction does not exist.
-  On an offer accept, this means somebody already accepted the offer, so the offer is deleted.
+  On a claim, this means somebody already accepted the offer, so the offer is deleted.
+  On the vault's payout accept (`kind: "payout.accept"`), it means the holder's payout offer is gone, for example because the NFT was burned, so it is a `NotFoundError`.
 - `tecUNFUNDED_PAYMENT`: the sender does not have enough XRP to send.
 - `tecINSUFFICIENT_FUNDS`: the account does not have enough of the asset, for example a buyer who accepts a 5-token sell offer with 0 tokens (spike step 13).
 - `tecUNFUNDED_OFFER`, `tecUNFUNDED`: the offer or the payment is not funded.
@@ -397,23 +404,23 @@ Wallets: vault [r4pBskTc3tnEHYZoRSXF4QAwQTL7DLsrtV](https://testnet.xrpl.org/acc
 Core NFT: [00090000E693...](https://testnet.xrpl.org/nft/00090000E69371CF4F227BB8E101C076ABE8A44E0BF589B4421A52A701477D0C).
 Its explorer page shows the mint, the offer, B's accept, and the vault's burn, and marks it "BURNED".
 
-| Step | Expected | Actual | Thrown | Transaction |
-|---|---|---|---|---|
-| 1. Vault mints NFT with tfBurnable and tfTransferable | `tesSUCCESS` | `tesSUCCESS` | - | [FB9E5446](https://testnet.xrpl.org/transactions/FB9E544674757E95DB59BA382D89D30938FD28361BA8203C10D7B9196036EA0B) |
-| 2. Vault sell offer, Amount "0", no Destination | `tesSUCCESS` | `tesSUCCESS` | - | [6C8A9598](https://testnet.xrpl.org/transactions/6C8A959810789FEF0937091175F090245319A65305A2AA5DFD1C9F22FC8638C0) |
-| 3. B accepts the open offer | `tesSUCCESS` | `tesSUCCESS` | - | [CCDBF455](https://testnet.xrpl.org/transactions/CCDBF4550C7D4F313F00B4585AD850CDA7B4A078CA1B5135AF040F4383159286) |
-| 4. C accepts the same offer | `tecOBJECT_NOT_FOUND` | `tecOBJECT_NOT_FOUND` | AlreadyClaimedError | [99EDCA81](https://testnet.xrpl.org/transactions/99EDCA81EFA831877A39CED1B81FF7EA87BBD2C54FCEF8EA23E95ADA492E6E41) |
-| 5. Vault burns the NFT while B holds it | `tesSUCCESS` | `tesSUCCESS` | - | [333E675B](https://testnet.xrpl.org/transactions/333E675B59FBEFA939B742B8580E2AB6655051ABE26EADEFCAAE716CEE47A018) |
-| 6a. Race: B accepts | one of 6a and 6b `tesSUCCESS` | `tesSUCCESS` | - | [4F125C5A](https://testnet.xrpl.org/transactions/4F125C5A4EBC35B10E7684EB5348C9EC9013B979DB92E8963DAE91A68D2B067A) |
-| 6b. Race: C accepts | the other `tecOBJECT_NOT_FOUND` | `tecOBJECT_NOT_FOUND` | AlreadyClaimedError | [6579CEB8](https://testnet.xrpl.org/transactions/6579CEB80CB7ED73F7DD97A9B2EC2E68A31511C06D5340BB290C6273A32EAB61) |
-| 7. NFTokenMint with Amount "0" (mint and open offer in one transaction) | `tesSUCCESS` | `tesSUCCESS` | - | [EC9AE620](https://testnet.xrpl.org/transactions/EC9AE6205BFC494A7CC669BC2EB9FCD68850DD68C129D9A1A31760A9CDF2C297) |
-| 7b. B accepts the offer made by the mint | `tesSUCCESS` | `tesSUCCESS` | - | [4E4C6101](https://testnet.xrpl.org/transactions/4E4C61011392715584877C936C39FF1DB8162299F9A57FF01F823778110CEBBE) |
-| 8. C accepts an offer whose Destination is B | `tecNO_PERMISSION` | `tecNO_PERMISSION` | NotAllowedError | [2A73E922](https://testnet.xrpl.org/transactions/2A73E922DA795B92C049C0EA60461CEF4ECBE334CBE81E521F0F290013D8D635) |
-| 9. Sell offer with a zero token (IOU) Amount | `temBAD_AMOUNT` | `temBAD_AMOUNT` | InvalidTransactionError | not in a ledger |
-| 10. Vault burns an NFT that is already burned | `tecNO_ENTRY` | `tecNO_ENTRY` | NotFoundError | [B5178401](https://testnet.xrpl.org/transactions/B517840159CDDE83B46E56FF446C81F793CC0F995ACBD494351AA8E6502D3CEF) |
-| 11. B (trust line, zero balance) pays the vault 1 token | `tecPATH_DRY` | `tecPATH_DRY` | InsufficientFundsError | [3C6E8FF7](https://testnet.xrpl.org/transactions/3C6E8FF7D125C61E130019D86203F79494A1E73C035AF900BAB278CADD08846C) |
-| 12. Vault pays C, who has no trust line, 1 token | `tecPATH_DRY` | `tecPATH_DRY` | InsufficientFundsError | [47B16F68](https://testnet.xrpl.org/transactions/47B16F68C9F02E05253A322264E6749F2B2F8A0612EF974B695D2835480C1DD5) |
-| 13. B (zero balance) accepts a 5 token sell offer | `tecINSUFFICIENT_FUNDS` | `tecINSUFFICIENT_FUNDS` | InsufficientFundsError | [4DAC977D](https://testnet.xrpl.org/transactions/4DAC977D90E962AA7B8612DA48177239B9DBF45E73FA78BCF48D949D853CFF7B) |
+| Step                                                                    | Expected                        | Actual                  | Thrown                  | Transaction                                                                                                        |
+| ----------------------------------------------------------------------- | ------------------------------- | ----------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| 1. Vault mints NFT with tfBurnable and tfTransferable                   | `tesSUCCESS`                    | `tesSUCCESS`            | -                       | [FB9E5446](https://testnet.xrpl.org/transactions/FB9E544674757E95DB59BA382D89D30938FD28361BA8203C10D7B9196036EA0B) |
+| 2. Vault sell offer, Amount "0", no Destination                         | `tesSUCCESS`                    | `tesSUCCESS`            | -                       | [6C8A9598](https://testnet.xrpl.org/transactions/6C8A959810789FEF0937091175F090245319A65305A2AA5DFD1C9F22FC8638C0) |
+| 3. B accepts the open offer                                             | `tesSUCCESS`                    | `tesSUCCESS`            | -                       | [CCDBF455](https://testnet.xrpl.org/transactions/CCDBF4550C7D4F313F00B4585AD850CDA7B4A078CA1B5135AF040F4383159286) |
+| 4. C accepts the same offer                                             | `tecOBJECT_NOT_FOUND`           | `tecOBJECT_NOT_FOUND`   | AlreadyClaimedError     | [99EDCA81](https://testnet.xrpl.org/transactions/99EDCA81EFA831877A39CED1B81FF7EA87BBD2C54FCEF8EA23E95ADA492E6E41) |
+| 5. Vault burns the NFT while B holds it                                 | `tesSUCCESS`                    | `tesSUCCESS`            | -                       | [333E675B](https://testnet.xrpl.org/transactions/333E675B59FBEFA939B742B8580E2AB6655051ABE26EADEFCAAE716CEE47A018) |
+| 6a. Race: B accepts                                                     | one of 6a and 6b `tesSUCCESS`   | `tesSUCCESS`            | -                       | [4F125C5A](https://testnet.xrpl.org/transactions/4F125C5A4EBC35B10E7684EB5348C9EC9013B979DB92E8963DAE91A68D2B067A) |
+| 6b. Race: C accepts                                                     | the other `tecOBJECT_NOT_FOUND` | `tecOBJECT_NOT_FOUND`   | AlreadyClaimedError     | [6579CEB8](https://testnet.xrpl.org/transactions/6579CEB80CB7ED73F7DD97A9B2EC2E68A31511C06D5340BB290C6273A32EAB61) |
+| 7. NFTokenMint with Amount "0" (mint and open offer in one transaction) | `tesSUCCESS`                    | `tesSUCCESS`            | -                       | [EC9AE620](https://testnet.xrpl.org/transactions/EC9AE6205BFC494A7CC669BC2EB9FCD68850DD68C129D9A1A31760A9CDF2C297) |
+| 7b. B accepts the offer made by the mint                                | `tesSUCCESS`                    | `tesSUCCESS`            | -                       | [4E4C6101](https://testnet.xrpl.org/transactions/4E4C61011392715584877C936C39FF1DB8162299F9A57FF01F823778110CEBBE) |
+| 8. C accepts an offer whose Destination is B                            | `tecNO_PERMISSION`              | `tecNO_PERMISSION`      | NotAllowedError         | [2A73E922](https://testnet.xrpl.org/transactions/2A73E922DA795B92C049C0EA60461CEF4ECBE334CBE81E521F0F290013D8D635) |
+| 9. Sell offer with a zero token (IOU) Amount                            | `temBAD_AMOUNT`                 | `temBAD_AMOUNT`         | InvalidTransactionError | not in a ledger                                                                                                    |
+| 10. Vault burns an NFT that is already burned                           | `tecNO_ENTRY`                   | `tecNO_ENTRY`           | NotFoundError           | [B5178401](https://testnet.xrpl.org/transactions/B517840159CDDE83B46E56FF446C81F793CC0F995ACBD494351AA8E6502D3CEF) |
+| 11. B (trust line, zero balance) pays the vault 1 token                 | `tecPATH_DRY`                   | `tecPATH_DRY`           | InsufficientFundsError  | [3C6E8FF7](https://testnet.xrpl.org/transactions/3C6E8FF7D125C61E130019D86203F79494A1E73C035AF900BAB278CADD08846C) |
+| 12. Vault pays C, who has no trust line, 1 token                        | `tecPATH_DRY`                   | `tecPATH_DRY`           | InsufficientFundsError  | [47B16F68](https://testnet.xrpl.org/transactions/47B16F68C9F02E05253A322264E6749F2B2F8A0612EF974B695D2835480C1DD5) |
+| 13. B (zero balance) accepts a 5 token sell offer                       | `tecINSUFFICIENT_FUNDS`         | `tecINSUFFICIENT_FUNDS` | InsufficientFundsError  | [4DAC977D](https://testnet.xrpl.org/transactions/4DAC977D90E962AA7B8612DA48177239B9DBF45E73FA78BCF48D949D853CFF7B) |
 
 What we learned:
 

@@ -44,6 +44,23 @@ describe("errorForResult", () => {
     expect(error.message).toContain(OFFER);
   });
 
+  it("maps tecOBJECT_NOT_FOUND on the vault's payout accept to NotFoundError, not a claim", () => {
+    const error = errorForResult(
+      "tecOBJECT_NOT_FOUND",
+      accept,
+      ACCOUNT,
+      undefined,
+      "H",
+      "payout.accept",
+    );
+    expect(error).toBeInstanceOf(NotFoundError);
+    expect(error.code).toBe("NOT_FOUND");
+    expect(error.message).toContain(`Payout offer ${OFFER}`);
+    expect(
+      errorForResult("tecOBJECT_NOT_FOUND", accept, ACCOUNT, undefined, "H", "subtask.claim"),
+    ).toBeInstanceOf(AlreadyClaimedError);
+  });
+
   it("maps tecOBJECT_NOT_FOUND on other transactions to NotFoundError", () => {
     expect(errorForResult("tecOBJECT_NOT_FOUND", burn, ACCOUNT)).toBeInstanceOf(NotFoundError);
   });

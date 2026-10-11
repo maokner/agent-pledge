@@ -83,7 +83,9 @@ function targetOf(tx: SubmittableTransaction): string {
 
 /**
  * Maps an XRPL result code to a typed LedgerError. Pure: no network, no events.
- * `tecOBJECT_NOT_FOUND` on an offer accept means another account accepted the offer first.
+ * `tecOBJECT_NOT_FOUND` on a claim (an offer accept of any kind but `payout.accept`) means another
+ * account accepted the offer first. On the vault's `payout.accept` it means the holder's payout
+ * offer is gone (cancelled, or deleted by a burn), so it is a NotFoundError.
  */
 export function errorForResult(
   code: string,
@@ -91,10 +93,14 @@ export function errorForResult(
   account: string,
   cause?: unknown,
   hash?: string,
+  kind?: TxKind | null,
 ): LedgerError {
   const details: LedgerErrorDetails = { resultCode: code, ...(hash ? { hash } : {}) };
   const offerId = offerIdOf(tx);
   if (code === "tecOBJECT_NOT_FOUND") {
+    if (offerId && kind === "payout.accept") {
+      return new NotFoundError(`Payout offer ${offerId}`, cause, details);
+    }
     return offerId
       ? new AlreadyClaimedError(offerId, cause, details)
       : new NotFoundError(targetOf(tx), cause, details);
@@ -352,7 +358,10 @@ export async function submitTx<T extends SubmittableTransaction>(
         }
       }
       if (isFinalPreliminary(preliminary)) {
-        throw fail(errorForResult(preliminary, tx, account, undefined, signedHash), false);
+        throw fail(
+          errorForResult(preliminary, tx, account, undefined, signedHash, options.kind),
+          false,
+        );
       }
       const lastLedger = prepared.LastLedgerSequence ?? Number.POSITIVE_INFINITY;
       // 2a. The Sequence is not used in the open ledger yet. Keep the lock until the outcome is
@@ -382,7 +391,7 @@ export async function submitTx<T extends SubmittableTransaction>(
     });
     return response;
   }
-  throw fail(errorForResult(code, tx, account, response, txHash), true);
+  throw fail(errorForResult(code, tx, account, response, txHash, options.kind), true);
 }
 
 async function submitBlob(client: Client, txBlob: string): Promise<string> {
