@@ -25,11 +25,11 @@ export function ConnectionStatus({ status, seq }: { status: Status; seq: number 
   return (
     <span
       role="status"
-      className={`inline-flex items-center gap-2 text-sm ${down ? "font-semibold text-rose-700 dark:text-rose-300" : "text-zinc-600 dark:text-zinc-300"}`}
+      className={`inline-flex items-center gap-2 text-sm projector:text-xl projector:font-semibold ${down ? "font-semibold text-rose-700 dark:text-rose-300" : "text-zinc-600 dark:text-zinc-300 projector:text-zinc-900"}`}
       title={`Last event seq ${seq}`}
       data-status={status}
     >
-      <span aria-hidden className={`size-2.5 rounded-full ${DOT[status]}`} />
+      <span aria-hidden className={`size-2.5 rounded-full projector:size-4 ${DOT[status]}`} />
       {LABEL[status]}
     </span>
   );

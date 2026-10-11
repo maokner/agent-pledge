@@ -48,7 +48,7 @@ export function LatencyMeter({ latency, seq }: { latency: LatencyTracker; seq: n
 
   return (
     <span
-      className={`font-mono text-xs tabular-nums ${slow ? "font-semibold text-amber-700 dark:text-amber-300" : "text-zinc-500 dark:text-zinc-400"}`}
+      className={`font-mono text-xs tabular-nums projector:text-base ${slow ? "font-semibold text-amber-700 dark:text-amber-300" : "text-zinc-500 dark:text-zinc-400 projector:text-zinc-700"}`}
       title={title}
       aria-label={`Board updates take ${ms(last.totalMs)}`}
       data-testid="latency-meter"

@@ -1,5 +1,41 @@
 @import "tailwindcss";
 
+/*
+ * Projector mode (#43): <html data-projector> while the board is in projector
+ * mode (lib/board/use-projector-mode.ts). `projector:` styles apply inside it.
+ * Dark styles never apply there: a projector cannot show black, so a dark
+ * board turns grey and loses its contrast in a lit room.
+ */
+@custom-variant projector (&:where([data-projector], [data-projector] *));
+@custom-variant dark {
+  @media (prefers-color-scheme: dark) {
+    &:where(:not([data-projector], [data-projector] *)) {
+      @slot;
+    }
+  }
+}
+
+:root {
+  /* Native controls and scrollbars follow the page's light or dark scheme. */
+  color-scheme: light dark;
+}
+
+:root[data-projector] {
+  color-scheme: light;
+}
+
+/*
+ * On a big screen, projector mode sizes everything to the screen: 1rem is
+ * 20px on a 1920x1080 screen and 13.3px on 1280x720, so the same layout fills
+ * both, and text is the same size on the wall either way. Breakpoints still
+ * use the browser's 16px rem, so a narrow window keeps the stacked layout.
+ */
+@media (min-width: 1024px) {
+  :root[data-projector] {
+    font-size: min(1.0417vw, 1.852vh);
+  }
+}
+
 @theme {
   --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;

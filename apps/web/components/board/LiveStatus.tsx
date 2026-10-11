@@ -6,7 +6,7 @@ import { useChangeCount } from "@/lib/use-change-count";
 import { WORK_STATUS_STYLE } from "./status-style";
 
 /** A status badge that pops each time the status changes (demo steps 7, 10 and 13). */
-export function LiveStatusBadge({ status, size }: { status: WorkStatus; size?: "sm" | "lg" }) {
+export function LiveStatusBadge({ status, size }: { status: WorkStatus; size?: "sm" | "lg" | "xl" }) {
   const changes = useChangeCount(status);
   return (
     <WorkStatusBadge

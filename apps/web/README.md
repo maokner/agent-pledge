@@ -12,7 +12,7 @@ pnpm dev:web            # against a server; see .env.example
 
 | Path | What |
 |---|---|
-| `components/board/*` | Board UI (#32 to #38). `Board.tsx` wires `useBoard` to the cards. |
+| `components/board/*` | Board UI (#32 to #38, #43). `Board.tsx` wires `useBoard` to the cards, or to `ProjectorBoard` in projector mode. |
 | `components/claim/*` | Claim page UI (#39 to #42). `ClaimScreen.tsx` loads the claim and picks a view per state. |
 | `components/ui/*` | Shared pieces: status badges, money, explorer links, countdown. |
 | `lib/api/*` | `getApiClient()`: HTTP client, or the fixture client in fixture mode. |
@@ -28,7 +28,8 @@ live run every few seconds (success and failure alternate). The header has butto
 connection and skip an event, to exercise reconnect and resync.
 
 `/preview?layout=one|three|stops` (fixture mode only) shows static boards with one task and one sub-task,
-three tasks, or one task at each point in the flow, to check the card layout without waiting for the stream.
+three tasks, or one task at each point in the flow, to check the card layout without waiting for the stream. Add `&projector=1` to see
+them in projector mode.
 
 Claim codes for `/c/<code>` (the PIN is `4821`; state lives in memory, so reload to reset):
 
@@ -48,6 +49,39 @@ Claim codes for `/c/<code>` (the PIN is `4821`; state lives in memory, so reload
 | anything else | not found |
 
 Claiming takes about 5 seconds in fixture mode, like the real ledger.
+
+## Projector mode (#43, PRD 9.1)
+
+The board laid out for a projector, readable from the back of the room. Open `/?projector=1`, or click
+"Projector mode" in the board's header (shown on screens 1024 px and wider). The choice is remembered in
+`localStorage` (`agent-pledge:projector`), so the projector laptop stays in projector mode across reloads.
+Leave it with "Normal view" or `?projector=0`. Logic: `lib/board/projector.ts`, `lib/board/use-projector-mode.ts`.
+
+What changes:
+
+- **One screen, no scrolling.** The newest task fills a big card: the task's status, time left and price
+  across the top; the money tree; the sub-task with its pay, status, **PIN tries left** and time left; the
+  newest transactions (with a "Show all" toggle); the Yik Yak screenshot and the seat photo, shrunk to fit.
+  The agent log runs down the right side. Up to two other tasks show as small cards under the big one
+  (tasks still running first), with "+N more" after that. Click a small card to put it in the big card;
+  "Follow newest" goes back.
+- **Sized to the screen.** On screens 1024 px and wider, `1rem` is `min(1.0417vw, 1.852vh)`: 20 px at
+  1920x1080, 13.3 px at 1280x720. The same layout fills both, and text is the same size on the wall.
+- **Big type.** At 1080p the amounts and time left are 60 px, PIN tries left 45 px and the status badges
+  37.5 px bold capitals (3.5 to 5.5 % of the screen height). Nothing a judge reads is under 20 px (1.9 %):
+  the agent log and the transactions are 22.5 px. On a 3 m wide screen a 1080p pixel is about 1.6 mm, so
+  the status capitals are about 4 cm tall: about 14 arc minutes at 10 m, where 5 is the limit of
+  normal sight. NFT IDs are left out of the money tree, since nobody can read hex on a wall.
+- **Colors for a washed-out projector.** Always the light scheme, even if the laptop is in dark mode
+  (a projector cannot show black, so dark pages turn grey in a lit room). White background, black text,
+  2 px grey borders instead of faint tints, status bands and solid badges one shade darker than normal
+  (sky, emerald and rose 700), and no light-grey text. Each status is also a word, never only a color.
+
+Checked in a browser at 1920x1080 and 1280x720 with `/preview?layout=one|three|stops&projector=1` and the
+live fixture stream. **Still to do at rehearsal (#30):** on the real projector, open `/?projector=1` in
+full screen (Chrome: View, Enter Full Screen) at the projector's native resolution, and walk to the back
+of the room: read the status, the amounts and the PIN tries left, and check that amber (pending) and
+sky (held in the vault) are still told apart on that projector.
 
 ## Live updates (#35, PRD R3)
 

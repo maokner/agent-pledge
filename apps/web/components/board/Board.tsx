@@ -3,6 +3,7 @@
 import { selectAgentLog } from "@/lib/board/agent-log";
 import { selectTaskViews } from "@/lib/board/selectors";
 import { useBoard } from "@/lib/board/use-board";
+import { useProjectorMode } from "@/lib/board/use-projector-mode";
 import { FIXTURE_MODE } from "@/lib/config";
 import { FixtureBadge } from "@/components/ui/FixtureBadge";
 import { AgentLog } from "./AgentLog";
@@ -10,12 +11,38 @@ import { BackupTaskForm } from "./BackupTaskForm";
 import { ConnectionStatus } from "./ConnectionStatus";
 import { FixtureControls } from "./FixtureControls";
 import { LatencyMeter } from "./LatencyMeter";
+import { ProjectorBoard } from "./ProjectorBoard";
+import { ProjectorToggle } from "./ProjectorToggle";
 import { TaskCard } from "./TaskCard";
 
-/** The public board (PRD 9.1): every task with its sub-tasks and transactions, plus the agent log. */
+/**
+ * The public board (PRD 9.1): every task with its sub-tasks and transactions,
+ * plus the agent log. Projector mode (#43) lays the same data out for a
+ * projector; see README.md, "Projector mode".
+ */
 export function Board() {
   const { state, status, latency } = useBoard();
+  const [projector, setProjector] = useProjectorMode();
   const tasks = selectTaskViews(state);
+  const isOnBoard = (taskId: string) => taskId in state.tasks;
+
+  if (projector) {
+    return (
+      <ProjectorBoard
+        tasks={tasks}
+        log={selectAgentLog(state)}
+        controls={
+          <>
+            <ConnectionStatus status={status} seq={state.seq} />
+            <LatencyMeter latency={latency} seq={state.seq} />
+            {FIXTURE_MODE && <FixtureControls />}
+            <BackupTaskForm isOnBoard={isOnBoard} />
+            <ProjectorToggle on onChange={setProjector} />
+          </>
+        }
+      />
+    );
+  }
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 p-4 sm:p-6">
@@ -28,6 +55,7 @@ export function Board() {
           {FIXTURE_MODE && <FixtureControls />}
           <ConnectionStatus status={status} seq={state.seq} />
           <LatencyMeter latency={latency} seq={state.seq} />
+          <ProjectorToggle on={false} onChange={setProjector} />
         </div>
       </header>
 
@@ -43,7 +71,7 @@ export function Board() {
       </div>
 
       <footer className="flex justify-end">
-        <BackupTaskForm isOnBoard={(taskId) => taskId in state.tasks} />
+        <BackupTaskForm isOnBoard={isOnBoard} />
       </footer>
     </div>
   );

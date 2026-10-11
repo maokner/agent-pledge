@@ -4,10 +4,12 @@ import { CLAIM_STATE_LABEL, TX_STATUS_LABEL, WORK_STATUS_LABEL } from "@/lib/lab
 type Tone = "neutral" | "info" | "good" | "bad" | "wait" | "infoSolid" | "goodSolid" | "badSolid";
 
 const TONE_CLASS: Record<Tone, string> = {
-  infoSolid: "bg-sky-600 text-white ring-sky-700",
-  goodSolid: "bg-emerald-600 text-white ring-emerald-700",
-  badSolid: "bg-rose-600 text-white ring-rose-700",
-  neutral: "bg-zinc-100 text-zinc-800 ring-zinc-300 dark:bg-zinc-800 dark:text-zinc-100 dark:ring-zinc-600",
+  // On the projector the solid tones go one shade darker, which survives a washed-out image.
+  infoSolid: "bg-sky-600 text-white ring-sky-700 projector:bg-sky-700 projector:ring-sky-900",
+  goodSolid: "bg-emerald-600 text-white ring-emerald-700 projector:bg-emerald-700 projector:ring-emerald-900",
+  badSolid: "bg-rose-600 text-white ring-rose-700 projector:bg-rose-700 projector:ring-rose-900",
+  neutral:
+    "bg-zinc-100 text-zinc-800 ring-zinc-300 dark:bg-zinc-800 dark:text-zinc-100 dark:ring-zinc-600 projector:bg-white projector:text-zinc-950 projector:ring-zinc-900",
   info: "bg-sky-100 text-sky-900 ring-sky-300 dark:bg-sky-950 dark:text-sky-100 dark:ring-sky-700",
   good: "bg-emerald-100 text-emerald-900 ring-emerald-300 dark:bg-emerald-950 dark:text-emerald-100 dark:ring-emerald-700",
   bad: "bg-rose-100 text-rose-900 ring-rose-300 dark:bg-rose-950 dark:text-rose-100 dark:ring-rose-700",
@@ -27,11 +29,13 @@ const CLAIM_TONE: Record<ClaimState, Tone> = {
   paid: "good",
 };
 
-type Size = "sm" | "lg";
+type Size = "sm" | "lg" | "xl";
 
 const SIZE_CLASS: Record<Size, string> = {
-  sm: "px-2.5 py-0.5 text-sm",
-  lg: "px-4 py-1 text-lg uppercase tracking-wide",
+  sm: "px-2.5 py-0.5 text-sm font-semibold ring-1",
+  lg: "px-4 py-1 text-lg font-semibold uppercase tracking-wide ring-1",
+  // Projector: readable from the back of the room (#43).
+  xl: "px-5 py-1 text-3xl font-extrabold uppercase tracking-wide ring-[0.15rem]",
 };
 
 function Badge({
@@ -47,7 +51,7 @@ function Badge({
 }) {
   return (
     <span
-      className={`inline-flex items-center rounded-full font-semibold ring-1 ring-inset ${SIZE_CLASS[size]} ${TONE_CLASS[tone]} ${className ?? ""}`}
+      className={`inline-flex shrink-0 items-center rounded-full whitespace-nowrap ring-inset ${SIZE_CLASS[size]} ${TONE_CLASS[tone]} ${className ?? ""}`}
     >
       {children}
     </span>
