@@ -12,10 +12,12 @@
     }
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint .",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run --passWithNoTests",
+    "setup": "tsx scripts/setup-wallets.ts",
+    "spike": "tsx scripts/spike-open-offer.ts"
   },
   "dependencies": {
     "@agent-pledge/shared": "workspace:*",
