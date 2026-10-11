@@ -14,6 +14,7 @@
  *   reaches it. Falls back to NEXT_PUBLIC_API_URL if that is absolute.
  * - AGENT_PLEDGE_VOICE_SECRET: the same secret the voice agent sends.
  * - BACKUP_FORM_CALLER_PHONE: caller_phone when the form leaves it empty.
+ *   Optional: without it the task has no phone, which the server accepts.
  *
  * In fixture mode (NEXT_PUBLIC_FIXTURES=1) the route answers with the fixture
  * client instead of calling a server.
@@ -27,32 +28,31 @@ import {
 } from "@agent-pledge/shared";
 import { ApiError } from "../api/client";
 import { createHttpApiClient } from "../api/http-client";
-import { trimSlash } from "../config";
+import { apiUrlFrom, trimSlash } from "../config";
 import { BACKUP_PASSCODE_HEADER, type BackupTaskErrorBody } from "./protocol";
 import { validateBackupTask } from "./validate";
 
 export { BACKUP_PASSCODE_HEADER };
 
-/** A reserved fictional number (555-01xx), for tasks made without a caller. */
-export const DEFAULT_CALLER_PHONE = "+15555550100";
 
 export interface BackupTaskConfig {
   mode: "server" | "fixtures";
   passcode: string | null;
   serverUrl: string | null;
   voiceSecret: string | null;
-  callerPhone: string;
+  /** Null: send no phone. */
+  callerPhone: string | null;
 }
 
 export function readBackupTaskConfig(env: Record<string, string | undefined>): BackupTaskConfig {
-  const publicApi = env.NEXT_PUBLIC_API_URL ?? "";
+  const publicApi = apiUrlFrom(env);
   const serverUrl = env.AGENT_PLEDGE_SERVER_URL || (/^https?:\/\//.test(publicApi) ? publicApi : "");
   return {
     mode: env.NEXT_PUBLIC_FIXTURES === "1" ? "fixtures" : "server",
     passcode: env.BACKUP_FORM_PASSCODE || null,
     serverUrl: serverUrl ? trimSlash(serverUrl) : null,
     voiceSecret: env.AGENT_PLEDGE_VOICE_SECRET || null,
-    callerPhone: env.BACKUP_FORM_CALLER_PHONE || DEFAULT_CALLER_PHONE,
+    callerPhone: env.BACKUP_FORM_CALLER_PHONE || null,
   };
 }
 
@@ -86,11 +86,17 @@ export async function handleBackupTask(request: Request, { config, createTask }:
   if (!checked.ok) return error(400, "bad_request", "Some fields need fixing.", checked.errors);
 
   try {
-    const response = await createTask({ ...checked.value, caller_phone: checked.value.caller_phone ?? config.callerPhone });
+    const { caller_phone, ...task } = checked.value;
+    const phone = caller_phone ?? config.callerPhone;
+    const response = await createTask(phone ? { ...task, caller_phone: phone } : task);
     return Response.json(response);
   } catch (cause) {
     if (cause instanceof ApiError && cause.status === 401) {
       return error(502, "internal", "The server rejected the voice secret. Check AGENT_PLEDGE_VOICE_SECRET.");
+    }
+    if (cause instanceof ApiError && cause.code === "not_seat_hold") {
+      // Only seat holds exist on the server; say so next to the description, where the operator can fix it.
+      return error(cause.status, cause.code, cause.message, { description: cause.message });
     }
     if (cause instanceof ApiError && cause.status < 500) return error(cause.status, cause.code, cause.message);
     console.error("backup-task: create_task failed", cause);

@@ -2,7 +2,7 @@ import { taskTag } from "@/lib/board/agent-log";
 import { selectPartyNames, splitTxs, taskHolder, type TaskView } from "@/lib/board/selectors";
 import { cn } from "@/lib/cn";
 import { formatMinutes, formatRlusd } from "@/lib/format";
-import { FAILURE_REASON_LABEL } from "@/lib/labels";
+import { failureText } from "@/lib/labels";
 import { Fact, Facts } from "./Facts";
 import { MoneyTree } from "./MoneyTree";
 import { SubtaskCard } from "./SubtaskCard";
@@ -61,14 +61,14 @@ export function TaskCard({ view, arrived = false }: { view: TaskView; arrived?: 
         </Fact>
         {task.nft_id && (
           <Fact label="Task NFT">
-            <ExplorerLink nft={task.nft_id} />
+            <ExplorerLink nft={task.nft_id} href={task.nft_explorer_url} />
           </Fact>
         )}
       </Facts>
 
       {task.status === "failed" && (
         <p role="status" className="mt-3 border border-term-red px-3 py-2 text-lg font-bold text-term-red">
-          [ERR] FAILED{task.failure_reason ? `: ${FAILURE_REASON_LABEL[task.failure_reason]}.` : "."}{" "}
+          [ERR] FAILED{failureText(task) ? `: ${failureText(task)}.` : "."}{" "}
           <span className="text-term-amber">
             <span aria-hidden>↩ </span>The requester gets {formatRlusd(task.price)} back plus the agent&apos;s {formatRlusd(task.pledge)} pledge.
           </span>

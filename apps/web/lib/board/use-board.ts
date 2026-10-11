@@ -1,6 +1,6 @@
 "use client";
 
-import type { BoardSnapshot } from "@agent-pledge/shared";
+import type { BoardServerMessage, BoardSnapshot } from "@agent-pledge/shared";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { getBoardTransport, loadBoardSnapshot } from "./get-transport";
 import { createLatencyTracker, type LatencyTracker } from "./latency";
@@ -62,5 +62,12 @@ export function useBoard(options: UseBoardOptions = {}): UseBoardResult {
 /** Defers picking the transport until the first open, which only happens in the browser. */
 function lazyTransport(): BoardTransport {
   let real: BoardTransport | null = null;
-  return { open: (since, handlers) => (real ??= getBoardTransport()).open(since, handlers) };
+  const get = () => (real ??= getBoardTransport());
+  return {
+    open: (since, handlers) => get().open(since, handlers),
+    decode: (wire, state) => {
+      const transport = get();
+      return transport.decode ? transport.decode(wire, state) : (wire as BoardServerMessage);
+    },
+  };
 }

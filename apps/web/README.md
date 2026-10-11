@@ -7,8 +7,43 @@ Types come from `@agent-pledge/shared` (draft contract, see `packages/shared/CON
 
 ```sh
 pnpm dev:web:fixtures   # from the repo root: fixture data, no server needed
-pnpm dev:web            # against a server; see .env.example
+pnpm dev:web            # against the server at http://localhost:3001; see .env.example
 ```
+
+## Against the real server
+
+The server lives on the `backend-all` branch (`apps/server`, contract in its `docs/api.md`). Its shapes differ
+from the DRAFT types here, so one adapter, `lib/backend/`, maps them: the HTTP client (`lib/api/http-client.ts`)
+and the board socket (`lib/board/websocket-transport.ts`) speak the server's shapes and hand the rest of the app
+the DRAFT types. Fixture mode never touches it. `lib/backend/types.ts` mirrors the server's types; replace it
+with imports of the server's `@agent-pledge/shared` once the branches merge.
+
+To run both locally:
+
+1. Server (on a `backend-all` checkout): `LEDGER_MODE=fake PORT=3001 CORS_ORIGINS=http://localhost:3000
+   PUBLIC_BASE_URL=http://localhost:3000 pnpm dev`. `CORS_ORIGINS` must list this app's origin (comma-separated,
+   credentials allowed); `PUBLIC_BASE_URL` is this app, so claim links (`/c/<CODE>`) and board links
+   (`/?task=<id>`, which `/` redirects to `/board?task=<id>`) land here.
+2. This app: `pnpm dev:web` with `NEXT_PUBLIC_FIXTURES` unset. `NEXT_PUBLIC_API_URL` defaults to
+   `http://localhost:3001`.
+
+What the adapter covers, and what it works around until the server changes:
+
+| Server | Here |
+|---|---|
+| `GET /board/state` nests sub-tasks and transactions in each task, newest first; `agent_log` newest first with numeric IDs | Flattened into `BoardSnapshot`, log oldest first, IDs as strings |
+| Socket snapshot `{type: "snapshot", seq, state}`; `seq` restarts at the boot time after a restart | Becomes `board.snapshot`, a full reset |
+| Socket events are patches (`photo.added`, `yikyak.posted`, `pin.*` carry IDs and the changed fields; `agent.log` carries `entry`) | `BoardTransport.decode` fills them in from the current board state |
+| `tx.failed`, `subtask.paid`, `task.created` sent twice | Applied as upserts; any unknown event type is skipped but still advances `seq` |
+| Sub-tasks have no description, place, time limit or PIN state | Taken from the parent task; time limit = deadline minus creation, rounded up |
+| Tx kinds `task_funding`, `task_offer`, `helper_redeem_offer`, `refund_requester`, … plus `wallet_setup` and `requester_funding` | Renamed to the DRAFT kinds; the XRPL type is derived; `explorer_url` used for links; transactions without a task are dropped |
+| Free-text `fail_reason` | Kept as `fail_reason`, mapped to `failure_reason` when it matches |
+| Claim view: `status`, `claimed_by_you`, `pin`, `payout`; no `server_time` or time limit | `ClaimState` derived; the phone's clock stands in for `server_time`; the time limit comes from `/board/state` once per sub-task |
+| `POST /claim/:code/claim` returns `{helper_token, claim}` and answers 409 even to the phone holding the claim | Token kept per code in localStorage and sent as `x-helper-token`; the client GETs the claim first |
+| Photo field `file`, 8 MB limit, `{claim, media}`; 401 for the wrong phone | Sent as `file`, originals over 8 MB refused; 401 becomes `not_your_claim` |
+| Wrong PIN 422 `wrong_pin` (`details.attempts_left`), third wrong 423 `pin_locked`; the right PIN answers only after the payout | `wrong` / `locked` results after reloading the claim; no request timeout |
+| No `GET /subtasks/open` | `listOpenSubtasks()` derives it from `/board/state` (open, offer made, time left) |
+| `create_task` rejects non-seat-holds with 422 `not_seat_hold`; phone optional | The backup form shows the message next to the description; no placeholder phone |
 
 ## Layout
 
@@ -21,6 +56,7 @@ pnpm dev:web            # against a server; see .env.example
 | `components/open-list/*`, `lib/open-list/*` | The `/human` page: the bento grid of open sub-tasks (`bento.ts`: the highest pay gets the featured card, the rest soonest deadline first; `icon.ts`: an icon per sub-task), polling, expiry and announcements, plus the How it works strip and the stats band. |
 | `lib/human-stats/*` | The `/human` stats band's numbers from `getBoardState()`: open now, paid out today (validated Helper payouts since local midnight) and Helpers paid today (distinct sub-tasks among those payouts). Refreshes every 30 s and when the tab is shown. |
 | `lib/api/*` | `getApiClient()`: HTTP client, or the fixture client in fixture mode. |
+| `lib/backend/*` | The adapter from the real server's shapes to the DRAFT types (see "Against the real server"). |
 | `lib/board/*` | Board state reducer, selectors, sync (reconnect and seq resync), transports, `useBoard`. `terminal.ts`: status tags and ASCII bars; `arrivals.ts`: which tasks flash as new. |
 | `lib/backup-task/*`, `app/api/backup-task/route.ts` | The backup form's validation, browser client and server-side proxy to create_task (#38). |
 | `lib/fixtures/*` | Fixture data built from the PRD's seat-hold flow. |
@@ -52,6 +88,10 @@ Claim codes for `/c/<code>` (the PIN is `4821`; state lives in memory, so reload
 | `FLAK` | open, on a bad signal: the first claim response is lost (the claim went through) and the first photo upload fails part way |
 | `SOON` | open with 20 seconds left, then expired |
 | anything else | not found |
+
+The real server makes codes from `ABCDEFGHJKMNPQRSTUVWXYZ23456789` (no 0, O, 1, I or L) and reads them in any case.
+Most fixture codes use O, I or L, so the server could never issue them. They stay, because they are easy to read
+and fixture mode never talks to the server.
 
 Claiming takes about 5 seconds in fixture mode, like the real ledger.
 
@@ -100,7 +140,7 @@ hurt legibility and the green and amber tags are still told apart on that projec
 ## Live updates (#35, PRD R3)
 
 `useBoard` loads `GET /board/state`, then opens `/ws/board?since=<snapshot seq>` and applies each event.
-If the snapshot load fails it connects from seq 0 and the server sends a `board.snapshot` instead.
+If the snapshot load fails it connects from seq 0 and the server sends a snapshot instead (any snapshot resets the board).
 On a drop it reconnects with backoff (250 ms, doubling, capped at 4 s) from the last seq it applied, and
 reconnects at once when the tab becomes visible again or the browser comes back online (a phone that slept).
 On a seq gap it reconnects at once. All of this is in `lib/board/sync.ts`.
@@ -152,7 +192,7 @@ operator passcode (header `x-backup-passcode`), validates the form, and calls th
 | `BACKUP_FORM_PASSCODE` | What the operator types into the form. The route returns 503 until it is set. |
 | `AGENT_PLEDGE_SERVER_URL` | The server's base URL from the web server. Defaults to `NEXT_PUBLIC_API_URL` if absolute. |
 | `AGENT_PLEDGE_VOICE_SECRET` | The voice agent's shared secret. |
-| `BACKUP_FORM_CALLER_PHONE` | `caller_phone` when the form leaves it empty. Default `+15555550100`. |
+| `BACKUP_FORM_CALLER_PHONE` | `caller_phone` when the form leaves it empty. Optional: without it the task has no phone. |
 
 This needs the web app to run as a Next.js server (not a static export), and on a shared host `/api/*` must
 route to Next.js. The form remembers the passcode for the browser tab (sessionStorage).

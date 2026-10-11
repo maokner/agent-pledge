@@ -56,6 +56,8 @@ export class ApiError extends Error {
     readonly status: number,
     readonly code: ApiErrorCode,
     message: string,
+    /** The server's `details`, for example `{ attempts, attempts_left }` on a wrong PIN. */
+    readonly details?: unknown,
   ) {
     super(message);
     this.name = "ApiError";

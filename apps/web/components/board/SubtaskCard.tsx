@@ -2,7 +2,7 @@ import type { LedgerTx, Subtask } from "@agent-pledge/shared";
 import { cn } from "@/lib/cn";
 import { subtaskHolder } from "@/lib/board/selectors";
 import { formatMinutes } from "@/lib/format";
-import { FAILURE_REASON_LABEL } from "@/lib/labels";
+import { failureText } from "@/lib/labels";
 import { Fact, Facts } from "./Facts";
 import { GLOW, LINK, WORK_BORDER } from "./term-style";
 import { ExplorerLink, Money, Pane, SectionTitle, TimeLeft, Waiting, WorkStatusTag, ZoomableImage } from "./term";
@@ -53,7 +53,7 @@ export function SubtaskCard({ subtask, txs, names }: { subtask: Subtask; txs: Le
         </Fact>
         {subtask.nft_id && (
           <Fact label="Sub-task NFT">
-            <ExplorerLink nft={subtask.nft_id} />
+            <ExplorerLink nft={subtask.nft_id} href={subtask.nft_explorer_url} />
           </Fact>
         )}
         {subtask.parent_nft_id && (
@@ -68,9 +68,9 @@ export function SubtaskCard({ subtask, txs, names }: { subtask: Subtask; txs: Le
         )}
       </Facts>
 
-      {subtask.status === "failed" && subtask.failure_reason && (
+      {subtask.status === "failed" && failureText(subtask) && (
         <p className="mt-3 border border-term-red px-2 py-1 font-bold text-term-red">
-          [ERR] FAILED: {FAILURE_REASON_LABEL[subtask.failure_reason]}
+          [ERR] FAILED: {failureText(subtask)}
         </p>
       )}
 

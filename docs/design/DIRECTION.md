@@ -10,7 +10,7 @@ This is the design direction for the web app (`apps/web`). Read it before changi
 
 The tokens live in `apps/web/app/globals.css`. Each route group's layout sets `data-surface="landing" | "human" | "agent"` on its wrapper, and that is what turns its tokens on. A token used on the wrong surface has no value, which makes the mistake easy to see. Don't define colors in components. If you need a token that doesn't exist, ask for it to be added to `globals.css`.
 
-Fonts come from `next/font` in `app/layout.tsx` as CSS variables: `--font-inter`, `--font-calistoga` and `--font-jetbrains-mono`. Tailwind exposes them as `font-sans` (Inter), `font-display` (Calistoga) and `font-mono` (JetBrains Mono).
+Fonts come from `next/font` in `app/layout.tsx` as CSS variables: `--font-inter`, `--font-calistoga` and `--font-jetbrains-mono`. Tailwind exposes them as `font-sans` (Inter), `font-display` (Calistoga) and `font-mono` (JetBrains Mono). The human side uses Inter only; the board uses JetBrains Mono; Calistoga is currently unused.
 
 Use the README's vocabulary everywhere: **Helper**, **Sub-task**, **Claim**, **PIN**.
 

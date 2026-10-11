@@ -29,7 +29,7 @@ export function PaidView({ view }: { view: ClaimView }) {
 
       {payout && (
         <a
-          href={explorerTxUrl(payout.tx_hash)}
+          href={payout.explorer_url ?? explorerTxUrl(payout.tx_hash)}
           target="_blank"
           rel="noopener noreferrer"
           className={buttonVariants({ variant: "primary" })}

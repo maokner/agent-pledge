@@ -1,6 +1,8 @@
 /**
  * The claim page counts down with the server's clock, because a stranger's
- * phone clock can be off by minutes (ClaimView.server_time).
+ * phone clock can be off by minutes (ClaimView.server_time). The real server
+ * sends no clock yet, so lib/backend fills server_time with the phone's own and
+ * the offset is 0 until it does.
  */
 import type { IsoDateTime } from "@agent-pledge/shared";
 

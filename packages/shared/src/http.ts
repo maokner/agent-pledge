@@ -42,6 +42,14 @@ export const AGENT_AUTH_HEADER = "authorization";
  */
 export const HELPER_COOKIE = "ap_helper";
 
+/**
+ * The real server returns a helper token in the claim response and accepts it
+ * back in this header (it also sets a cookie per code, `ap_helper_<CODE>`).
+ * The web app stores the token per code and sends this header, because the
+ * claim page and the API are on different origins.
+ */
+export const HELPER_TOKEN_HEADER = "x-helper-token";
+
 // ---------------------------------------------------------------------------
 // Errors
 // ---------------------------------------------------------------------------
@@ -51,9 +59,14 @@ export type ApiErrorCode =
   | "unauthorized" // 401: missing or wrong secret, token or cookie
   | "not_found" // 404: unknown task, sub-task or claim code
   | "already_claimed" // 409: someone else claimed the sub-task first
-  | "not_your_claim" // 403: photo or PIN from a phone that did not claim
+  | "conflict" // 409: wrong state for this action, for example "not ready to claim yet"
+  | "not_your_claim" // 401 (real server) or 403: photo or PIN from a phone that did not claim
   | "expired" // 410: the deadline passed
-  | "locked" // 423: three wrong PINs
+  | "wrong_pin" // 422: wrong PIN (the real server's answer; the client turns it into a "wrong" result)
+  | "not_seat_hold" // 422: create_task for something that is not a seat hold
+  | "payload_too_large" // 413: the photo is over the server's limit (8 MB)
+  | "locked" // 423: three wrong PINs (the real server's code is "pin_locked")
+  | "not_implemented" // 501
   | "ledger_error" // 502: an XRPL transaction failed
   | "internal"; // 500
 
@@ -74,15 +87,20 @@ export interface CreateTaskRequest {
   time_limit_minutes: number;
   /** The voice agent sends a JSON number, as the PRD names it. Example: 5. */
   price_usd: number;
-  /** E.164, for example "+15105550123". */
-  caller_phone: string;
+  /** E.164, for example "+15105550123". Optional: the real server accepts none. */
+  caller_phone?: string | null;
 }
 
 export interface CreateTaskResponse {
   task_id: TaskId;
   /** 4 digits, for example "4821". Only ever returned here. */
   pin: string;
+  /** The real server sends `<web app>/?task=<id>`; the landing page redirects that to the board. */
   board_url: string;
+  /** Sent by the real server. */
+  status?: WorkStatus;
+  price?: RlusdAmount;
+  deadline_at?: IsoDateTime;
 }
 
 /** GET /tools/task_status/:taskId */
@@ -226,8 +244,13 @@ export interface ClaimView {
     amount: RlusdAmount;
     tx_hash: TxHash;
     status: TxStatus;
+    /** Explorer link, as the server builds it. */
+    explorer_url?: string;
   } | null;
-  /** Server clock, so the countdown is right even if the phone clock is off. */
+  /**
+   * Server clock, so the countdown is right even if the phone clock is off.
+   * The real server does not send one yet; its adapter puts the phone's clock here.
+   */
   server_time: IsoDateTime;
 }
 
@@ -319,9 +342,15 @@ export interface TaskNftData {
   type: "task" | "subtask";
   description: string;
   place: string;
-  time_limit_minutes: number;
+  /** Null from the real server, which does not include it. */
+  time_limit_minutes: number | null;
   price: RlusdAmount;
-  created_at: IsoDateTime;
+  /** Null from the real server, which does not include it. */
+  created_at: IsoDateTime | null;
+  /** Sent by the real server. */
+  deadline_at?: IsoDateTime;
+  status?: WorkStatus;
+  nft_id?: NftId | null;
   /** Sub-tasks only. */
   parent_task_id: TaskId | null;
   /** Sub-tasks only: the parent task's NFT ID. */

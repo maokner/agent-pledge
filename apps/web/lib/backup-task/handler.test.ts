@@ -114,6 +114,25 @@ describe("handleBackupTask", () => {
     expect((await badSecret.json()).message).toMatch(/AGENT_PLEDGE_VOICE_SECRET/);
     expect(down.status).toBe(502);
   });
+
+  it("sends no caller_phone when neither the form nor the env has one (the server's is optional)", async () => {
+    const createTask = created();
+
+    await handleBackupTask(post(body, "open sesame"), { config: { ...serverConfig, callerPhone: null }, createTask });
+
+    expect(createTask).toHaveBeenCalledWith(body);
+  });
+
+  it("shows the server's 422 not_seat_hold message, also next to the description", async () => {
+    const message = "Right now I can only save seats. This task is not a seat hold.";
+    const response = await handleBackupTask(post(body, "open sesame"), {
+      config: serverConfig,
+      createTask: vi.fn(async () => Promise.reject(new ApiError(422, "not_seat_hold", message))),
+    });
+
+    expect(response.status).toBe(422);
+    expect(await response.json()).toEqual({ error: "not_seat_hold", message, fields: { description: message } });
+  });
 });
 
 describe("createTaskSender", () => {
@@ -151,13 +170,14 @@ describe("readBackupTaskConfig", () => {
     });
   });
 
-  it("falls back to NEXT_PUBLIC_API_URL when it is absolute, and to a placeholder phone", () => {
-    expect(readBackupTaskConfig({ NEXT_PUBLIC_API_URL: "http://localhost:8080" })).toMatchObject({
-      serverUrl: "http://localhost:8080",
+  it("falls back to NEXT_PUBLIC_API_URL when it is absolute, and to no phone", () => {
+    expect(readBackupTaskConfig({ NEXT_PUBLIC_API_URL: "http://localhost:3001" })).toMatchObject({
+      serverUrl: "http://localhost:3001",
       passcode: null,
-      callerPhone: "+15555550100",
+      callerPhone: null,
     });
     expect(readBackupTaskConfig({ NEXT_PUBLIC_API_URL: "" }).serverUrl).toBeNull();
+    expect(readBackupTaskConfig({}).serverUrl).toBe("http://localhost:3001");
     expect(readBackupTaskConfig({ NEXT_PUBLIC_FIXTURES: "1" }).mode).toBe("fixtures");
   });
 });

@@ -3,7 +3,11 @@ import { foldEvents } from "../fixtures/board";
 import { ScenarioBuilder, seatHoldFlow, type FlowStop } from "../fixtures/scenario";
 import { makeSubtask, makeTask, makeTx } from "../fixtures/factories";
 import { buildMoneyTree, moneyPlan, summarizeMoney, type MoneyNode } from "./money-tree";
-import { selectTaskViews, type TaskView } from "./selectors";
+import { selectPartyNames, selectTaskViews, type TaskView } from "./selectors";
+import { applyBoardMessage, initialBoardState } from "./state";
+import { boardSnapshotFromBackend } from "../backend";
+import { ADDRESSES, backendBoardState, backendSubtask, backendTask, backendTx, hash } from "../backend/test-payloads";
+import type { BackendTxKind } from "../backend/types";
 
 const NOW = Date.parse("2026-10-11T19:00:00.000Z");
 
@@ -199,5 +203,76 @@ describe("summarizeMoney", () => {
       { party: "agent", paid: "0", got: "0", net: "0" },
       { party: "helper", paid: "0", got: "0", net: "0" },
     ]);
+  });
+});
+
+describe("the money tree from the real server's transactions", () => {
+  /** A paid task as GET /board/state sends it, with the server's tx kind names (FakeLedger amounts). */
+  function realPaidView(): TaskView {
+    const sub = backendSubtask({ status: "done", nft_id: "SUBNFT", helper_address: ADDRESSES.helper });
+    const tx = (n: number, kind: BackendTxKind, from: string | null, to: string | null, amount: string | null, subtask = false) =>
+      backendTx({ hash: hash(n), kind, from, to, amount, currency: amount ? "RLUSD" : null, subtask_id: subtask ? sub.id : null });
+    const { vault, requester, agent, helper, treasury } = ADDRESSES;
+    const task = backendTask({
+      status: "done",
+      nft_id: "TASKNFT",
+      subtasks: [sub],
+      transactions: [
+        tx(1, "requester_funding", treasury, requester, "5.00"),
+        tx(2, "task_funding", requester, vault, "5.00"),
+        tx(3, "task_nft_mint", vault, null, null),
+        tx(4, "task_offer", vault, agent, "1.00"),
+        tx(5, "task_claim", agent, vault, "1.00"),
+        tx(6, "subtask_funding", agent, vault, "4.00", true),
+        tx(7, "subtask_nft_mint", vault, null, null, true),
+        tx(8, "subtask_offer", vault, null, null, true),
+        tx(9, "subtask_claim", helper, vault, null, true),
+        tx(10, "helper_redeem_offer", helper, vault, "4.00", true),
+        tx(11, "helper_payout", vault, helper, "4.00", true),
+        tx(12, "subtask_nft_burn", vault, null, null, true),
+        tx(13, "agent_redeem_offer", agent, vault, "6.00"),
+        tx(14, "agent_payout", vault, agent, "6.00"),
+        tx(15, "task_nft_burn", vault, null, null),
+      ],
+    });
+    const state = applyBoardMessage(initialBoardState, {
+      type: "board.snapshot",
+      snapshot: boardSnapshotFromBackend(backendBoardState({ tasks: [task] })),
+    });
+    return selectTaskViews(state)[0]!;
+  }
+
+  it("draws the paid tree with every edge green", () => {
+    const tree = buildMoneyTree(realPaidView());
+
+    expect(spine(tree).map((n) => n.role)).toEqual(["requester", "vault", "task_nft", "agent", "subtask_nft", "helper"]);
+    expect(edgesDown(tree).every((e) => e.state === "paid")).toBe(true);
+    expect(find(tree, "vault")).toMatchObject({ address: ADDRESSES.vault, detail: "holds $0.00" });
+    expect(find(tree, "helper").receives.map((e) => e.label)).toEqual(["$4.00 to helper"]);
+    expect(find(tree, "agent").receives.map((e) => e.label)).toEqual(["$6.00 to agent"]);
+  });
+
+  it("links each edge to the server's explorer URL", () => {
+    const tree = buildMoneyTree(realPaidView());
+
+    expect(edgesDown(tree)[0]?.explorerUrl).toBe(`https://testnet.xrpl.org/transactions/${hash(2)}`);
+    expect(find(tree, "helper").receives[0]?.explorerUrl).toBe(`https://testnet.xrpl.org/transactions/${hash(11)}`);
+  });
+
+  it("matches the PRD 2.2 table, not counting the demo treasury's funding", () => {
+    expect(summarizeMoney(realPaidView())).toEqual([
+      { party: "requester", paid: "5", got: "0", net: "-5" },
+      { party: "agent", paid: "5", got: "6", net: "1" },
+      { party: "helper", paid: "0", got: "4", net: "4" },
+    ]);
+  });
+
+  it("names the vault, the agent and the helper in the transaction list", () => {
+    const names = selectPartyNames(realPaidView());
+
+    expect(names.get(ADDRESSES.vault)).toBe("Vault");
+    expect(names.get(ADDRESSES.requester)).toBe("Requester");
+    expect(names.get(ADDRESSES.agent)).toBe("Local agent");
+    expect(names.get(ADDRESSES.helper)).toBe("Helper");
   });
 });

@@ -8,6 +8,7 @@ export const TX_TYPE_LABEL: Record<XrplTxType, string> = {
   NFTokenCreateOffer: "Offer",
   NFTokenAcceptOffer: "Accept",
   NFTokenBurn: "Burn",
+  TrustSet: "Trust",
 };
 
 /** Why a task failed, as the board says it. */
@@ -17,6 +18,12 @@ export const FAILURE_REASON_LABEL: Record<FailureReason, string> = {
   pin_locked: "Three wrong PINs locked the sub-task",
   ledger_error: "A ledger transaction failed",
 };
+
+/** Why a task or sub-task failed: the board's words for a known reason, else the server's own text. Null if neither. */
+export function failureText({ failure_reason, fail_reason }: { failure_reason: FailureReason | null; fail_reason?: string | null }): string | null {
+  if (failure_reason) return FAILURE_REASON_LABEL[failure_reason];
+  return fail_reason || null;
+}
 
 export const WORK_STATUS_LABEL: Record<WorkStatus, string> = {
   open: "Open",
@@ -32,6 +39,8 @@ export const TX_STATUS_LABEL: Record<TxStatus, string> = {
 };
 
 export const TX_KIND_LABEL: Record<TxKind, string> = {
+  wallet_setup: "Server sets up a new wallet",
+  requester_funding: "Demo treasury funds the requester",
   task_escrow: "Requester pays the vault",
   task_nft_mint: "Vault makes the task NFT",
   task_nft_offer: "Vault offers the task to the agent",
