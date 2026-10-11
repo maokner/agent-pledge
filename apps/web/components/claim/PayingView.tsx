@@ -1,24 +1,38 @@
 import type { ClaimView } from "@agent-pledge/shared";
-import { ExplorerLink } from "@/components/ui/ExplorerLink";
-import { formatRlusd } from "@/lib/format";
-import { Spinner } from "./parts";
+import { ExternalLink } from "lucide-react";
+import { Badge } from "@/components/human/Badge";
+import { buttonVariants } from "@/components/human/Button";
+import { Card } from "@/components/human/Card";
+import { PayAmount } from "@/components/human/PayAmount";
+import { Spinner } from "@/components/human/Spinner";
+import { explorerTxUrl } from "@/lib/format";
 
-/** The PIN was right and the payout transaction is pending (PRD 2.1 step 13). The page polls until it validates. */
+/** The PIN was right and the payment is on its way (PRD 2.1 step 13). The page polls until it lands. */
 export function PayingView({ view }: { view: ClaimView }) {
-  const amount = formatRlusd(view.payout?.amount ?? view.subtask.price);
   return (
-    <section
-      aria-live="polite"
-      className="flex flex-col items-center gap-3 rounded-2xl bg-amber-50 p-6 text-center ring-1 ring-amber-200 dark:bg-amber-950 dark:ring-amber-800"
-    >
-      <Spinner className="size-12 text-amber-600 dark:text-amber-400" />
-      <h2 className="text-4xl font-extrabold">Paying you {amount}</h2>
-      <p className="text-lg">The PIN is right. The money is on its way over the XRP Ledger. This takes a few seconds.</p>
+    <Card as="section" aria-live="polite" aria-labelledby="paying-title" className="flex flex-col items-center gap-4 py-8 text-center">
+      <span aria-hidden="true" className="grid size-16 place-items-center rounded-2xl bg-human-gradient text-human-accent-fg shadow-human-accent">
+        <Spinner className="size-8" />
+      </span>
+      <Badge size="sm" dot="pulse">
+        PIN is right
+      </Badge>
+      <h2 id="paying-title" className="font-display text-4xl leading-[1.1] tracking-[-0.02em]">
+        Paying you <PayAmount amount={view.payout?.amount ?? view.subtask.price} size="md" tone="gradient" />
+      </h2>
+      <p className="text-lg leading-relaxed text-human-muted-fg">Your money is on its way. This takes a few seconds.</p>
       {view.payout && (
-        <p className="text-base text-zinc-700 dark:text-zinc-300">
-          Transaction (pending): <ExplorerLink tx={view.payout.tx_hash} />
-        </p>
+        <a
+          href={explorerTxUrl(view.payout.tx_hash)}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={buttonVariants({ variant: "ghost", size: "sm", block: false })}
+        >
+          View payment
+          <ExternalLink aria-hidden="true" className="size-4" />
+          <span className="sr-only">(opens in a new tab)</span>
+        </a>
       )}
-    </section>
+    </Card>
   );
 }

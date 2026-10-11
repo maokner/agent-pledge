@@ -1,49 +1,75 @@
 import type { ClaimView } from "@agent-pledge/shared";
-import { Money } from "@/components/ui/Money";
-import { formatMsLeft } from "@/lib/claim/clock";
-import { CARD } from "./parts";
-
-const URGENT_MS = 60_000;
+import { Clock, MapPin } from "lucide-react";
+import { Badge } from "@/components/human/Badge";
+import { Card } from "@/components/human/Card";
+import { TimeLeft } from "@/components/human/Countdown";
+import { PayAmount } from "@/components/human/PayAmount";
+import { cn } from "@/lib/cn";
 
 /**
- * The sub-task: the pay in big type, the place, and the time left (PRD 9.2 step 1).
- * `left` is milliseconds left on the server's clock, or null before the first tick.
+ * The sub-task: the pay in big type, what to do, the place, and the time left
+ * (PRD 9.2 step 1). `left` is milliseconds left on the server's clock, or null
+ * before the first tick. The full card (with a gradient border) is for the
+ * Claim step; `compact` is the reminder on the later steps.
  */
 export function SubtaskSummary({ view, left, compact = false }: { view: ClaimView; left: number | null; compact?: boolean }) {
   const { subtask } = view;
   const live = view.state === "open" || view.state === "claimed_by_you";
-  const urgent = live && left !== null && left < URGENT_MS;
   return (
-    <section className={CARD} aria-label="The task">
-      <p className="text-sm font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">{live ? "You get" : "Pay"}</p>
-      <p className={`font-extrabold leading-none tracking-tight ${compact ? "text-4xl" : "mt-1 text-6xl"}`}>
-        <Money amount={subtask.price} />
-      </p>
-      <h2 className={`font-bold leading-snug ${compact ? "mt-2 text-xl" : "mt-4 text-2xl"}`}>{subtask.description}</h2>
-      <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-lg">
-        <dt className="text-zinc-500 dark:text-zinc-400">Where</dt>
-        <dd className="font-medium">{subtask.place}</dd>
+    <Card as="section" variant={compact ? "default" : "featured"} aria-label="The sub-task">
+      <div className="flex items-center justify-between gap-3">
+        <p className="font-mono text-xs font-medium uppercase tracking-[0.15em] text-human-muted-fg">
+          {live ? "You get" : "Pay"}
+        </p>
+        {view.state === "open" && (
+          <Badge size="sm" dot="pulse">
+            Open
+          </Badge>
+        )}
+        {view.state === "claimed_by_you" && (
+          <Badge size="sm" tone="success" dot>
+            Yours
+          </Badge>
+        )}
+      </div>
+      <PayAmount
+        amount={subtask.price}
+        size={compact ? "md" : "hero"}
+        tone={compact ? "default" : "gradient"}
+        className={compact ? "mt-1" : "mt-2"}
+      />
+      <h2 className={cn("font-semibold leading-snug tracking-[-0.01em]", compact ? "mt-2 text-lg" : "mt-4 text-xl")}>
+        {subtask.description}
+      </h2>
+      <dl className={cn("flex flex-col gap-3 border-t border-human-border text-base", compact ? "mt-3 pt-3" : "mt-5 pt-4")}>
+        <Detail icon={<MapPin className="size-5" />} term="Where">
+          <span className="font-medium">{subtask.place}</span>
+        </Detail>
         {live ? (
-          <>
-            <dt className="text-zinc-500 dark:text-zinc-400">Time left</dt>
-            <dd>
-              <span
-                role="timer"
-                aria-live="off"
-                className={`font-bold tabular-nums ${urgent ? "text-rose-600 dark:text-rose-400" : ""}`}
-              >
-                {left === null ? "–:––" : formatMsLeft(left)}
-              </span>{" "}
-              <span className="text-zinc-500 dark:text-zinc-400">of {subtask.time_limit_minutes} min</span>
-            </dd>
-          </>
+          <Detail icon={<Clock className="size-5" />} term="Time left">
+            <TimeLeft ms={left} className="text-lg" />{" "}
+            <span className="text-human-muted-fg">of {subtask.time_limit_minutes} min</span>
+          </Detail>
         ) : (
-          <>
-            <dt className="text-zinc-500 dark:text-zinc-400">Time limit</dt>
-            <dd className="font-medium">{subtask.time_limit_minutes} min</dd>
-          </>
+          <Detail icon={<Clock className="size-5" />} term="Time limit">
+            <span className="font-medium">{subtask.time_limit_minutes} min</span>
+          </Detail>
         )}
       </dl>
-    </section>
+    </Card>
+  );
+}
+
+function Detail({ icon, term, children }: { icon: React.ReactNode; term: string; children: React.ReactNode }) {
+  return (
+    <div className="flex items-start gap-3">
+      <span aria-hidden="true" className="mt-0.5 text-human-accent">
+        {icon}
+      </span>
+      <div className="flex min-w-0 flex-col">
+        <dt className="font-mono text-xs uppercase tracking-[0.15em] text-human-muted-fg">{term}</dt>
+        <dd className="break-words">{children}</dd>
+      </div>
+    </div>
   );
 }

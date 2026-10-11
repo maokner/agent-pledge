@@ -2,11 +2,18 @@
 /* eslint-disable @next/next/no-img-element -- previews are local object URLs */
 
 import type { ClaimView } from "@agent-pledge/shared";
+import { Camera, Images, RotateCw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { Button, buttonVariants } from "@/components/human/Button";
+import { Card } from "@/components/human/Card";
+import { Field, Input } from "@/components/human/Input";
+import { Notice } from "@/components/human/Notice";
+import { ProgressBar } from "@/components/human/ProgressBar";
+import { Spinner } from "@/components/human/Spinner";
 import { getApiClient } from "@/lib/api";
 import { afterError } from "@/lib/claim/flow";
 import { PhotoError, preparePhoto } from "@/lib/claim/prepare-photo";
-import { ErrorNotice, isAbortError, PRIMARY_BUTTON, SECONDARY_BUTTON, Spinner, StepHeading, TEXT_BUTTON } from "./parts";
+import { isAbortError, StepHeading } from "./parts";
 
 const NOTE_MAX = 140;
 
@@ -92,21 +99,30 @@ export function PhotoForm({
   const percent = Math.round(progress * 100);
 
   return (
-    <section className="flex flex-col gap-4" aria-labelledby="photo-step">
-      <StepHeading id="photo-step" step={2} title="Add a photo" />
-      <p className="-mt-2 text-lg text-zinc-700 dark:text-zinc-300">
-        Show the requester it is done, for example the seat you saved. This step is optional.
-      </p>
+    <Card as="section" className="flex flex-col gap-5" aria-labelledby="photo-step">
+      <div className="flex flex-col gap-2">
+        <StepHeading id="photo-step" step={2} title="Add a photo" />
+        <p className="text-lg leading-relaxed text-human-muted-fg">
+          Show the requester it is done, for example the seat you saved. This step is optional.
+        </p>
+      </div>
 
       {phase === "preparing" ? (
-        <p className="flex min-h-16 items-center justify-center gap-3 rounded-2xl bg-zinc-100 text-lg dark:bg-zinc-800" aria-live="polite">
-          <Spinner /> Getting your photo ready…
+        <p
+          className="flex min-h-14 items-center justify-center gap-3 rounded-xl border border-dashed border-human-border text-lg"
+          aria-live="polite"
+        >
+          <Spinner className="text-human-accent" /> Getting your photo ready…
         </p>
       ) : picked ? (
         <div className="flex flex-col items-center gap-1">
-          <img src={picked.previewUrl} alt="Your photo" className="max-h-80 w-full rounded-2xl bg-zinc-100 object-contain dark:bg-zinc-800" />
+          <img
+            src={picked.previewUrl}
+            alt="Your photo"
+            className="max-h-80 w-full rounded-xl border border-human-border bg-human-muted object-contain"
+          />
           {!uploading && (
-            <label className={`${TEXT_BUTTON} cursor-pointer has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-emerald-500`}>
+            <label className={buttonVariants({ variant: "ghost", size: "sm", block: false })}>
               Take a different photo
               <input type="file" accept="image/*" onChange={pick} className="sr-only" />
             </label>
@@ -114,22 +130,19 @@ export function PhotoForm({
         </div>
       ) : (
         <div className="flex flex-col gap-3">
-          <label className={`${PRIMARY_BUTTON} cursor-pointer has-[:focus-visible]:ring-4 has-[:focus-visible]:ring-emerald-300`}>
-            <CameraIcon /> Take a photo
+          <label className={buttonVariants({ variant: "primary" })}>
+            <Camera aria-hidden="true" className="size-6" /> Take a photo
             <input type="file" accept="image/*" capture="environment" onChange={pick} className="sr-only" />
           </label>
-          <label className={`${SECONDARY_BUTTON} cursor-pointer has-[:focus-visible]:ring-4 has-[:focus-visible]:ring-emerald-300`}>
-            Choose from your photos
+          <label className={buttonVariants({ variant: "secondary" })}>
+            <Images aria-hidden="true" className="size-5" /> Choose from photos
             <input type="file" accept="image/*" onChange={pick} className="sr-only" />
           </label>
         </div>
       )}
 
-      <label className="flex flex-col gap-1 text-lg font-medium">
-        <span>
-          Note <span className="font-normal text-zinc-500 dark:text-zinc-400">(optional)</span>
-        </span>
-        <input
+      <Field label="Note" optional>
+        <Input
           type="text"
           value={note}
           onChange={(e) => setNote(e.target.value)}
@@ -138,51 +151,39 @@ export function PhotoForm({
           enterKeyHint="done"
           autoComplete="off"
           disabled={uploading}
-          className="min-h-14 rounded-2xl border-2 border-zinc-300 bg-white px-4 text-lg outline-none focus:border-emerald-600 disabled:bg-zinc-100 dark:border-zinc-600 dark:bg-zinc-900 dark:disabled:bg-zinc-800"
         />
-      </label>
+      </Field>
 
       {uploading ? (
-        <div className="flex flex-col gap-3">
-          <div
-            role="progressbar"
-            aria-label="Sending your photo"
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-valuenow={percent}
-            className="h-4 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800"
-          >
-            <div className="h-full rounded-full bg-emerald-600 transition-[width] duration-200" style={{ width: `${percent}%` }} />
-          </div>
-          <p className="flex items-center justify-between text-lg" aria-live="polite">
-            <span>{percent < 100 ? `Sending… ${percent}%` : "Almost done…"}</span>
-            <button type="button" onClick={() => upload.current?.abort()} className={TEXT_BUTTON}>
+        <div className="flex flex-col gap-2">
+          <ProgressBar value={progress} label="Sending your photo" />
+          <p className="flex items-center justify-between gap-3 text-lg" aria-live="polite">
+            <span className="flex items-center gap-2 tabular-nums">
+              <Spinner className="text-human-accent" />
+              {percent < 100 ? `Sending… ${percent}%` : "Almost done…"}
+            </span>
+            <Button variant="ghost" size="sm" onClick={() => upload.current?.abort()} className="w-auto">
               Cancel
-            </button>
+            </Button>
           </p>
         </div>
       ) : (
         picked && (
-          <button type="button" onClick={send} className={PRIMARY_BUTTON}>
+          <Button
+            onClick={send}
+            trailingArrow={!error}
+            icon={error ? <RotateCw aria-hidden="true" className="size-5" /> : undefined}
+          >
             {error ? "Try again" : "Send photo"}
-          </button>
+          </Button>
         )
       )}
 
-      {error && <ErrorNotice message={error} />}
+      {error && <Notice tone="danger">{error}</Notice>}
 
-      <button type="button" onClick={onSkip} disabled={uploading} className={TEXT_BUTTON}>
+      <Button variant="ghost" size="sm" onClick={onSkip} disabled={uploading}>
         Skip and enter the PIN
-      </button>
-    </section>
-  );
-}
-
-function CameraIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className="size-7" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z" />
-      <circle cx="12" cy="13.5" r="3.5" />
-    </svg>
+      </Button>
+    </Card>
   );
 }

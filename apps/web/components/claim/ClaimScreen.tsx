@@ -3,16 +3,18 @@
 /* eslint-disable @next/next/no-img-element -- the photo URL comes from the API server */
 
 import { MAX_PIN_ATTEMPTS, type ClaimView } from "@agent-pledge/shared";
-import Link from "next/link";
+import { CircleCheck, RotateCw } from "lucide-react";
 import { useState } from "react";
-import { FixtureBadge } from "@/components/ui/FixtureBadge";
+import { Button } from "@/components/human/Button";
+import { Card } from "@/components/human/Card";
+import { HumanHeader } from "@/components/human/HumanHeader";
+import { Notice } from "@/components/human/Notice";
 import { stepFor } from "@/lib/claim/flow";
 import { useClaim } from "@/lib/claim/use-claim";
 import { ClaimButton } from "./ClaimButton";
 import { ClaimClosed } from "./ClaimClosed";
 import { PaidView } from "./PaidView";
 import { PayingView } from "./PayingView";
-import { ErrorNotice, SECONDARY_BUTTON, TEXT_BUTTON } from "./parts";
 import { PhotoForm } from "./PhotoForm";
 import { PinForm } from "./PinForm";
 import { SubtaskSummary } from "./SubtaskSummary";
@@ -26,25 +28,27 @@ export function ClaimScreen({ code }: { code: string }) {
   const { load, left, timeUp, accept, refresh, retry } = useClaim(code);
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col gap-5 px-4 pt-2 pb-10">
-      <header className="flex min-h-12 items-center justify-between gap-3">
-        <Link href="/" className="text-lg font-extrabold tracking-tight">
-          Agent Pledge
-        </Link>
-        <FixtureBadge />
-      </header>
+    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col gap-5 px-4 pt-2 pb-12 sm:px-5">
+      <HumanHeader />
 
       {load.status === "loading" && <LoadingCard />}
-      {load.status === "not_found" && <ClaimClosed reason="not_found" />}
+      {load.status === "not_found" && (
+        <Step>
+          <ClaimClosed reason="not_found" />
+        </Step>
+      )}
       {load.status === "error" && (
-        <ErrorNotice
-          message={load.message}
+        <Notice
+          tone="danger"
+          title="This sub-task did not load"
           action={
-            <button type="button" onClick={retry} className={SECONDARY_BUTTON}>
+            <Button variant="secondary" onClick={retry} icon={<RotateCw aria-hidden="true" className="size-5" />}>
               Try again
-            </button>
+            </Button>
           }
-        />
+        >
+          {load.message}
+        </Notice>
       )}
       {load.status === "ready" && <ClaimFlow view={load.view} left={left} timeUp={timeUp} onUpdate={accept} refresh={refresh} />}
     </main>
@@ -67,19 +71,23 @@ function ClaimFlow({
   const [photoSkipped, setPhotoSkipped] = useState(false);
   const step = stepFor(view, { photoSkipped });
 
+  let content: React.ReactNode;
   switch (step) {
     case "claim":
-      return (
+      content = (
         <>
           <SubtaskSummary view={view} left={left} />
           <ClaimButton view={view} timeUp={timeUp} onUpdate={onUpdate} refresh={refresh} />
         </>
       );
+      break;
     case "photo":
     case "pin":
-      return (
+      content = (
         <>
-          <YoursBanner />
+          <Notice tone="success" title="It is yours.">
+            Finish it before the time runs out.
+          </Notice>
           <SubtaskSummary view={view} left={left} compact />
           {step === "photo" ? (
             <PhotoForm view={view} onUpdate={onUpdate} refresh={refresh} onSkip={() => setPhotoSkipped(true)} />
@@ -91,58 +99,63 @@ function ClaimFlow({
           )}
         </>
       );
+      break;
     case "paying":
-      return <PayingView view={view} />;
+      content = <PayingView view={view} />;
+      break;
     case "paid":
-      return <PaidView view={view} />;
+      content = <PaidView view={view} />;
+      break;
     default:
-      return (
+      content = (
         <>
           <ClaimClosed reason={step} />
           <SubtaskSummary view={view} left={left} compact />
         </>
       );
   }
+  // Keyed by step, so each new step fades up once.
+  return <Step key={step}>{content}</Step>;
+}
+
+/** One step's content, fading up as it arrives (not under reduced motion). */
+function Step({ children }: { children: React.ReactNode }) {
+  return <div className="flex flex-col gap-5 motion-safe:animate-human-fade-up">{children}</div>;
 }
 
 /** On the PIN step: the photo that was sent, or a way back to add one. */
 function PhotoRecap({ view, onAddPhoto }: { view: ClaimView; onAddPhoto: () => void }) {
   if (view.photo) {
     return (
-      <div className="flex items-center gap-4 rounded-2xl bg-zinc-100 p-3 dark:bg-zinc-800">
-        <img src={view.photo.url} alt="Your photo" className="size-20 shrink-0 rounded-xl object-cover" />
-        <div>
-          <p className="text-lg font-semibold">Photo sent</p>
-          {view.photo.note && <p className="text-zinc-700 dark:text-zinc-300">{view.photo.note}</p>}
+      <Card padding="sm" className="flex items-center gap-4">
+        <img src={view.photo.url} alt="Your photo" className="size-20 shrink-0 rounded-xl border border-human-border object-cover" />
+        <div className="min-w-0">
+          <p className="flex items-center gap-2 text-lg font-semibold">
+            <CircleCheck aria-hidden="true" className="size-5 text-human-success" />
+            Photo sent
+          </p>
+          {view.photo.note && <p className="break-words text-base text-human-muted-fg">{view.photo.note}</p>}
         </div>
-      </div>
+      </Card>
     );
   }
   if (view.pin_attempts_left < MAX_PIN_ATTEMPTS) return null;
   return (
-    <p className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-zinc-100 px-4 py-2 text-lg dark:bg-zinc-800">
+    <p className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-dashed border-human-border py-1 pr-1 pl-4 text-lg">
       No photo yet.
-      <button type="button" onClick={onAddPhoto} className={TEXT_BUTTON}>
+      <Button variant="ghost" size="sm" onClick={onAddPhoto} className="w-auto">
         Add a photo
-      </button>
-    </p>
-  );
-}
-
-function YoursBanner() {
-  return (
-    <p className="rounded-2xl bg-emerald-100 p-4 text-lg font-semibold text-emerald-950 dark:bg-emerald-950 dark:text-emerald-100">
-      It is yours. Finish it before the time runs out.
+      </Button>
     </p>
   );
 }
 
 function LoadingCard() {
   return (
-    <section aria-busy="true" aria-label="Loading the task" className="flex flex-col gap-4">
-      <div className="h-64 animate-pulse rounded-2xl bg-zinc-200 dark:bg-zinc-800" />
-      <div className="h-16 animate-pulse rounded-2xl bg-zinc-200 dark:bg-zinc-800" />
-      <p className="text-center text-lg text-zinc-600 dark:text-zinc-400">Loading the task…</p>
+    <section aria-busy="true" aria-label="Loading the sub-task" className="flex flex-col gap-5">
+      <div className="h-72 rounded-2xl bg-human-muted motion-safe:animate-pulse" />
+      <div className="h-14 rounded-xl bg-human-muted motion-safe:animate-pulse" />
+      <p className="text-center text-lg text-human-muted-fg">Loading the sub-task…</p>
     </section>
   );
 }
