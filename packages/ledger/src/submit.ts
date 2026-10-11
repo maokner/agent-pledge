@@ -26,6 +26,7 @@ import {
 import { ledgerEvents } from "./events.js";
 import { explorerTxUrl } from "./explorer.js";
 import { readTaskMemo, taskMemo } from "./memo.js";
+import { runExclusive } from "./queue.js";
 
 /** Reads the engine result code from a validated transaction response. */
 export function resultCode(response: TxResponse): string {
@@ -166,24 +167,12 @@ const DEFAULT_OUTCOME_DEADLINE_MS = 180_000;
 
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
-const accountQueues = new Map<string, Promise<unknown>>();
-
 /**
  * Runs `fn` after every earlier `fn` for the same account has settled. This keeps autofilled
  * Sequence numbers unique when the server sends many transactions from the vault at once.
  */
-async function withAccountLock<R>(account: string, fn: () => Promise<R>): Promise<R> {
-  const previous = accountQueues.get(account) ?? Promise.resolve();
-  const run = previous.then(fn, fn);
-  const settled = run.then(
-    () => undefined,
-    () => undefined,
-  );
-  accountQueues.set(account, settled);
-  void settled.then(() => {
-    if (accountQueues.get(account) === settled) accountQueues.delete(account);
-  });
-  return run;
+function withAccountLock<R>(account: string, fn: () => Promise<R>): Promise<R> {
+  return runExclusive(`account|${account}`, fn);
 }
 
 function isConnectionError(error: unknown): boolean {

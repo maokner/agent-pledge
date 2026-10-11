@@ -5,7 +5,7 @@ import { loadConfig, type LedgerConfig } from "../config.js";
 import { explorerTxUrl } from "../explorer.js";
 import { submitTx } from "../submit.js";
 import type { SubmittedTx } from "../types.js";
-import { readMemos } from "./memo.js";
+import { readMemos } from "../memo.js";
 
 /** The client and config that every op uses. Both are optional; defaults come from the env. */
 export interface OpsContext {

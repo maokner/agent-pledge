@@ -1,7 +1,7 @@
 import type { Wallet } from "xrpl";
 import { LedgerError } from "../errors.js";
 import { resolveContext, submitOp, type OpsContext } from "./context.js";
-import { buildMemos } from "./memo.js";
+import { buildMemos } from "../memo.js";
 import { getAcceptedNftId } from "./meta.js";
 import type { ClaimResult } from "./types.js";
 

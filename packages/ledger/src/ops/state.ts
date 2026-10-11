@@ -1,6 +1,6 @@
 import type { Client, Memo } from "xrpl";
 import type { LedgerConfig } from "../config.js";
-import { readMemos, type MemoFields } from "./memo.js";
+import { readMemos, type MemoFields } from "../memo.js";
 import { getAcceptedNftId } from "./meta.js";
 
 /** One validated transaction from account_tx, reduced to the fields the ops read. */

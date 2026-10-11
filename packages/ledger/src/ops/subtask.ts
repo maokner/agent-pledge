@@ -9,7 +9,7 @@ import {
   type AccountRef,
   type OpsContext,
 } from "./context.js";
-import { buildMemos } from "./memo.js";
+import { buildMemos } from "../memo.js";
 import { createSellOffer, mintNft, SUBTASK_NFT_TAXON } from "./nft.js";
 import type { MintResult, OfferResult } from "./types.js";
 

@@ -2,7 +2,7 @@ import type { Wallet } from "xrpl";
 import type { SubmittedTx } from "../types.js";
 import { tokenAmount, type DecimalInput } from "./amount.js";
 import { resolveContext, submitOp, type OpsContext } from "./context.js";
-import { buildMemos, type MemoFields } from "./memo.js";
+import { buildMemos, type MemoFields } from "../memo.js";
 import { createSellOffer } from "./nft.js";
 import type { OfferResult, RedeemResult } from "./types.js";
 

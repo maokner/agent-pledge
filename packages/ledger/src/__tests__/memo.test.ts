@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { LedgerError } from "../errors.js";
-import { fromHex, readTaskMemo, TASK_MEMO_TYPE, taskMemo, toHex } from "../memo.js";
+import {
+  buildMemos,
+  encodeMemo,
+  fromHex,
+  readMemos,
+  readTaskMemo,
+  TASK_MEMO_TYPE,
+  taskMemo,
+  toHex,
+} from "../memo.js";
 
 describe("taskMemo", () => {
   it("hex encodes the type, data, and format", () => {
@@ -54,5 +63,46 @@ describe("readTaskMemo", () => {
     expect(
       readTaskMemo({ Memos: [{ Memo: { MemoType: toHex(TASK_MEMO_TYPE), MemoData: "XYZ" } }] }),
     ).toBeNull();
+  });
+});
+
+describe("memos", () => {
+  it("encodes MemoType agent-pledge/task and MemoData as hex", () => {
+    expect(encodeMemo("agent-pledge/task", "task-42")).toEqual({
+      Memo: {
+        MemoType: Buffer.from("agent-pledge/task").toString("hex").toUpperCase(),
+        MemoData: Buffer.from("task-42").toString("hex").toUpperCase(),
+        MemoFormat: Buffer.from("text/plain").toString("hex").toUpperCase(),
+      },
+    });
+  });
+
+  it("round-trips fields and leaves out undefined ones", () => {
+    const memos = buildMemos({ task: "t1", subtask: undefined, action: "refund" });
+    expect(memos).toHaveLength(2);
+    expect(readMemos(memos)).toEqual({ task: "t1", action: "refund" });
+  });
+
+  it("ignores memos from other apps and malformed memos", () => {
+    const memos = [
+      encodeMemo("other-app/id", "x"),
+      { Memo: { MemoType: "ZZ", MemoData: "00" } },
+      { Memo: {} },
+      ...buildMemos({ subtask: "s1" }),
+    ];
+    expect(readMemos(memos)).toEqual({ subtask: "s1" });
+    expect(readMemos(undefined)).toEqual({});
+  });
+
+  it("rejects empty values and bad IDs with INVALID_INPUT", () => {
+    expect(() => buildMemos({ task: "" })).toThrow(LedgerError);
+    expect(() => buildMemos({ action: "" })).toThrow(LedgerError);
+    expect(() => buildMemos({ subtask: " s1" })).toThrow(LedgerError);
+    expect(() => buildMemos({ subtask: "s".repeat(257) })).toThrow(LedgerError);
+  });
+
+  it("reads the task memo that taskMemo writes, so both views agree", () => {
+    expect(readMemos(taskMemo("t9"))).toEqual({ task: "t9" });
+    expect(readTaskMemo({ Memos: buildMemos({ task: "t9", action: "refund" }) })).toBe("t9");
   });
 });

@@ -3,7 +3,7 @@ import { decode, hashes, RippledError, Wallet, type Client, type Memo } from "xr
 import { loadConfig } from "../../config.js";
 import { LedgerError } from "../../errors.js";
 import { failTask, planFailTask, vaultStateFromHistory, type FailTaskInput } from "../fail.js";
-import { buildMemos } from "../memo.js";
+import { buildMemos } from "../../memo.js";
 
 const config = loadConfig({} as NodeJS.ProcessEnv);
 const vault = Wallet.generate();

@@ -3,9 +3,9 @@ import { LedgerError } from "../errors.js";
 import type { SubmittedTx } from "../types.js";
 import { addIouValues, isZeroIouValue, tokenAmount, type DecimalInput } from "./amount.js";
 import { resolveContext, submitOp, type OpsContext } from "./context.js";
-import { buildMemos, type MemoFields } from "./memo.js";
+import { buildMemos, type MemoFields } from "../memo.js";
 import { burnNft } from "./payout.js";
-import { runExclusive } from "./queue.js";
+import { runExclusive } from "../queue.js";
 import { findNftHolder, listAccountTransactions, type LedgerTxRecord } from "./state.js";
 
 export interface FailSubtaskInput {
