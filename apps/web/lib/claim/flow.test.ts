@@ -2,6 +2,7 @@ import type { ClaimView } from "@agent-pledge/shared";
 import { describe, expect, it } from "vitest";
 import { ApiError } from "../api/client";
 import { afterError, claimingMessage, stepFor } from "./flow";
+import { PLAIN_FALLBACK_MESSAGE } from "./plain-words";
 
 function view(overrides: Partial<ClaimView> = {}): ClaimView {
   return {
@@ -68,8 +69,13 @@ describe("afterError", () => {
   });
 
   it("keeps the step and shows the server's message for other errors, so the helper can retry", () => {
+    const outcome = afterError(view(), new ApiError(403, "not_your_claim", "This phone did not claim this sub-task."));
+    expect(outcome).toEqual({ kind: "retry", message: "This phone did not claim this sub-task." });
+  });
+
+  it("puts a server message about the plumbing in plain words (PRD R7)", () => {
     const outcome = afterError(view(), new ApiError(502, "ledger_error", "The ledger did not accept the claim."));
-    expect(outcome).toEqual({ kind: "retry", message: "The ledger did not accept the claim." });
+    expect(outcome).toEqual({ kind: "retry", message: PLAIN_FALLBACK_MESSAGE });
   });
 
   it("asks the page to re-check the server after a network error, since the request may have gone through", () => {
@@ -79,13 +85,13 @@ describe("afterError", () => {
 });
 
 describe("claimingMessage", () => {
-  it("explains the ledger wait for the usual 4 to 8 seconds", () => {
-    expect(claimingMessage(0)).toBe("Reserving this for you on the XRP Ledger…");
-    expect(claimingMessage(7_999)).toBe("Reserving this for you on the XRP Ledger…");
+  it("explains the wait for the usual 4 to 8 seconds", () => {
+    expect(claimingMessage(0)).toBe("Holding this sub-task for you…");
+    expect(claimingMessage(7_999)).toBe("Holding this sub-task for you…");
   });
 
-  it("reassures the helper when the ledger is slow", () => {
-    expect(claimingMessage(8_000)).toBe("Still working. The ledger can take a few more seconds.");
+  it("reassures the helper when the claim is slow", () => {
+    expect(claimingMessage(8_000)).toBe("Still working. This can take a few more seconds.");
     expect(claimingMessage(20_000)).toBe("This is slower than usual. Keep this page open.");
   });
 });

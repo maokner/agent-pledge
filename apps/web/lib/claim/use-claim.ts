@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ApiError, errorMessage, getApiClient } from "../api";
 import { useNow } from "../use-now";
 import { clockOffsetMs, msLeft } from "./clock";
+import { plainMessage } from "./plain-words";
 
 export type ClaimLoad =
   | { status: "loading" }
@@ -38,7 +39,7 @@ export function useClaim(code: string) {
       if (error instanceof ApiError && error.code === "not_found") {
         setLoad({ status: "not_found" });
       } else {
-        setLoad((prev) => (prev.status === "ready" ? prev : { status: "error", message: errorMessage(error) }));
+        setLoad((prev) => (prev.status === "ready" ? prev : { status: "error", message: plainMessage(errorMessage(error)) }));
       }
       return null;
     }
