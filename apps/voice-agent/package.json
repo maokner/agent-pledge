@@ -1,0 +1,19 @@
+{
+  "name": "@agent-pledge/voice-agent",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "provision": "tsx scripts/provision.ts",
+    "mock-server": "tsx scripts/mock-server.ts",
+    "simulate": "tsx scripts/simulate.ts"
+  },
+  "dependencies": {
+    "@agent-pledge/shared": "workspace:*",
+    "@elevenlabs/elevenlabs-js": "^2.71.0",
+    "zod": "^4.1.0"
+  }
+}

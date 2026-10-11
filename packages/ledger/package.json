@@ -1,21 +1,27 @@
 {
   "name": "@agent-pledge/ledger",
-  "version": "0.1.0",
+  "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "XRPL ledger module. Owned by the crypto teammate (issues #3-#10).",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts"
   },
-  "main": "./src/index.ts",
-  "types": "./src/index.ts",
   "scripts": {
-    "typecheck": "tsc -p tsconfig.json"
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json",
+    "lint": "eslint .",
+    "test": "vitest run --passWithNoTests",
+    "setup": "tsx scripts/setup-wallets.ts",
+    "spike": "tsx scripts/spike-open-offer.ts",
+    "demo": "tsx scripts/demo.ts",
+    "transfer": "tsx scripts/transfer.ts",
+    "claim-rlusd": "tsx scripts/claim-rlusd.ts"
   },
   "dependencies": {
-    "@agent-pledge/shared": "workspace:*"
-  },
-  "devDependencies": {
-    "@types/node": "^22.18.0"
+    "@agent-pledge/shared": "workspace:*",
+    "xrpl": "^4.4.0",
+    "zod": "^4.1.0"
   }
 }

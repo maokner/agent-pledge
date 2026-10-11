@@ -272,8 +272,12 @@ Server tools:
 
 | Tool | Input | Output |
 |---|---|---|
-| `create_task` | `description, place, time_limit_minutes, price_usd, caller_phone` | `task_id, pin, board_url` |
+| `create_task` | `description, place, time_limit_minutes, price_usd, caller_phone, call_id` | `task_id, pin, board_url` |
 | `task_status` | `task_id` | `status, helper_note` |
+
+`call_id` is the ElevenLabs conversation id.
+The server returns the existing task for a repeated `call_id`, so a retry after a timeout does not create a second task.
+See `apps/voice-agent/README.md` for the full contract.
 
 ## 7. The local agent
 
@@ -445,6 +449,7 @@ We enter Context.dev only if we build food delivery (see [section 12](#12-featur
 | 2026-10-11 | Database: Drizzle ORM with the Postgres dialect everywhere. node-postgres in production; PGlite (embedded Postgres in WASM) for local development and tests. This replaces "SQLite for local development". | Two SQL dialects would need two schemas. One schema and one migration folder run on every host, and tests need no database server. Drizzle is light and type-safe, with plain SQL migrations. |
 | 2026-10-11 | Media bytes (photos, Yik Yak screenshots) live in Postgres (`bytea`). | Works on any host and in PGlite, with no volume or bucket to set up. |
 | 2026-10-11 | The local agent signs its own transactions on the laptop (claim, sub-task funding, redeem offer) and sends the hash; the server verifies it with `verifyTx` and does the vault steps. | The server never holds the agent's key (PRD 4). With `LEDGER_MODE=fake` the server can do the agent's step, so the flow is testable without XRPL. See `docs/api.md`. |
+| 2026-10-11 | The sub-task offer is an open sell offer with Amount "0" (XRP drops) and no Destination. No 1-drop fallback. | The testnet spike (issue #2) validated it: the first accept wins, a second accept (even a simultaneous one) fails with tecOBJECT_NOT_FOUND, and the vault can burn the NFT while a helper holds it. A zero RLUSD amount is temBAD_AMOUNT, so the offer must use XRP drops. |
 
 ## 15. Run it locally
 

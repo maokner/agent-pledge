@@ -2,7 +2,7 @@
   "name": "agent-pledge",
   "private": true,
   "type": "module",
-  "packageManager": "pnpm@10.12.1",
+  "packageManager": "pnpm@10.33.0",
   "engines": {
     "node": ">=22"
   },
@@ -20,15 +20,21 @@
     "demo:reset": "pnpm db:reset && pnpm --dir apps/server exec tsx ../../scripts/demo-reset.ts",
     "smoke": "pnpm --dir apps/server exec tsx ../../scripts/smoke.ts",
     "deploy:secrets": "pnpm --dir apps/server exec tsx ../../scripts/gen-secrets.ts",
-    "typecheck:scripts": "tsc -p scripts/tsconfig.json"
+    "typecheck:scripts": "tsc -p scripts/tsconfig.json",
+    "ledger:demo": "pnpm --filter @agent-pledge/ledger demo",
+    "format:check": "prettier --check .",
+    "build": "pnpm -r --if-present build"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@types/node": "^24.0.0",
     "eslint": "^9.39.1",
     "eslint-config-prettier": "^10.1.8",
     "globals": "^16.5.0",
     "prettier": "^3.6.2",
+    "tsx": "^4.20.0",
     "typescript": "~5.9.3",
-    "typescript-eslint": "^8.46.0"
+    "typescript-eslint": "^8.46.0",
+    "vitest": "^3.2.0"
   }
 }
