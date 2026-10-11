@@ -325,7 +325,7 @@ async function runDoubleClaim(f: Fixtures, ctx: OpsContext): Promise<Expected> {
         url: tx.explorerUrl,
         ms: 0,
       });
-      log(`${elapsed()}    ${name}: tesSUCCESS, holds the NFT              ${tx.explorerUrl}`);
+      log(`${elapsed()}    ${`${name}: tesSUCCESS, holds the NFT`.padEnd(52)} ${tx.explorerUrl}`);
       return;
     }
     // The loser gets tecOBJECT_NOT_FOUND if its tx validates after the winner. If it never
@@ -336,7 +336,9 @@ async function runDoubleClaim(f: Fixtures, ctx: OpsContext): Promise<Expected> {
       const hash = (error.cause as { result?: { hash?: string } } | undefined)?.result?.hash;
       const url = hash ? `${f.config.XRPL_EXPLORER_URL}/transactions/${hash}` : "(no hash)";
       if (hash) records.push({ label: `10. claim by ${name} (lost)`, hash, url, ms: 0 });
-      log(`${elapsed()}    ${name}: AlreadyClaimedError (tecOBJECT_NOT_FOUND)   ${url}`);
+      log(
+        `${elapsed()}    ${`${name}: AlreadyClaimedError (tecOBJECT_NOT_FOUND)`.padEnd(52)} ${url}`,
+      );
     } else {
       log(`${elapsed()}    ${name}: lost without a result code: ${error.name}: ${error.message}`);
     }
