@@ -23,7 +23,7 @@ export function PayingView({ view }: { view: ClaimView }) {
       <p className="text-lg leading-relaxed text-human-muted-fg">Your money is on its way. This takes a few seconds.</p>
       {view.payout && (
         <a
-          href={explorerTxUrl(view.payout.tx_hash)}
+          href={view.payout.explorer_url ?? explorerTxUrl(view.payout.tx_hash)}
           target="_blank"
           rel="noopener noreferrer"
           className={buttonVariants({ variant: "ghost", size: "sm", block: false })}
