@@ -7,9 +7,10 @@
  * It reads the same env as the server (apps/server/.env, then the repo-root .env, then the process env).
  * Point DATABASE_URL at Render's EXTERNAL connection string to reset the deployed database (docs/runbook.md).
  *
- * Local agent state: LOCAL_AGENT_STATE_DIR, default apps/local-agent/.data (gitignored by the root
- * .gitignore pattern for .data). The local agent (apps/local-agent, issue #27) keeps its queue and
- * seen-task IDs there.
+ * Local agent state: AGENT_STATE_DIR (the local agent's own variable; LOCAL_AGENT_STATE_DIR also works),
+ * default apps/local-agent/.data (gitignored by the root .gitignore pattern for .data). The local agent
+ * (apps/local-agent, issue #27) keeps its post queue and screenshots there. The chrome-profile folder
+ * with our Yik Yak login is kept.
  */
 import { existsSync, readdirSync, rmSync } from "node:fs";
 import { resolve } from "node:path";
@@ -165,16 +166,24 @@ async function printBalances() {
 
 // ---------- 2. local agent state ----------
 
+// The browser profile holds our Yik Yak login (apps/local-agent/README.md), so a reset keeps it.
+const KEEP_IN_AGENT_STATE = new Set(["chrome-profile"]);
+
 function clearLocalAgentState() {
-  const dir = resolve(REPO_ROOT, process.env.LOCAL_AGENT_STATE_DIR ?? "apps/local-agent/.data");
+  const dir = resolve(
+    REPO_ROOT,
+    process.env.AGENT_STATE_DIR || process.env.LOCAL_AGENT_STATE_DIR || "apps/local-agent/.data",
+  );
   console.log(`\nLocal agent state: ${dir}`);
   if (!existsSync(dir)) {
     console.log("  not found; nothing to clear");
     return;
   }
-  const entries = readdirSync(dir);
+  const entries = readdirSync(dir).filter((name) => !KEEP_IN_AGENT_STATE.has(name));
   for (const name of entries) rmSync(resolve(dir, name), { recursive: true, force: true });
-  console.log(`  cleared ${entries.length} entr${entries.length === 1 ? "y" : "ies"}`);
+  console.log(
+    `  cleared ${entries.length} entr${entries.length === 1 ? "y" : "ies"} (kept the Yik Yak browser profile)`,
+  );
 }
 
 await printBalances();

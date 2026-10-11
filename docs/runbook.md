@@ -34,7 +34,7 @@ Reset only before a session, never between the two runs: the judges should see b
    DATABASE_URL='postgresql://...render.com/agent_pledge?sslmode=require' pnpm demo:reset
    ```
 
-   It runs `pnpm db:reset` (drop everything, re-run migrations), prints the vault, agent, and treasury balances, and clears `apps/local-agent/.data` (or `LOCAL_AGENT_STATE_DIR`).
+   It runs `pnpm db:reset` (drop everything, re-run migrations), prints the vault, agent, and treasury balances, and clears `apps/local-agent/.data` (or `AGENT_STATE_DIR`), keeping `chrome-profile/` so the Yik Yak login survives.
    In xrpl mode, also set `LEDGER_MODE=xrpl VAULT_SEED=... TREASURY_SEED=... AGENT_ADDRESS=... TREASURY_ADDRESS=...` so the balances are real. Fix every `WARNINGS` line before going on (refill from the treasury or the testnet faucet).
    Without `DATABASE_URL` it resets the local PGlite database instead (stop `pnpm dev` first).
 3. Restart the server: Render > `agent-pledge-api` > **Manual Deploy** > **Restart service**. This clears the in-memory event buffer (and, in fake mode, the in-memory ledger).
