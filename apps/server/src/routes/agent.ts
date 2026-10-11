@@ -19,9 +19,6 @@ const agentRoutes: FastifyPluginAsync = async (app) => {
   app.post("/agent/tasks/:id/redeem", async (_req, reply) =>
     notImplemented(reply, "POST /agent/tasks/:id/redeem"),
   );
-  app.post("/agent/subtasks/:id/screenshot", async (_req, reply) =>
-    notImplemented(reply, "POST /agent/subtasks/:id/screenshot"),
-  );
   app.post("/agent/log", async (_req, reply) => notImplemented(reply, "POST /agent/log"));
 };
 
