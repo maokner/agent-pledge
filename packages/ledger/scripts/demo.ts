@@ -4,6 +4,7 @@
  *   pnpm --filter @agent-pledge/ledger demo success
  *   pnpm --filter @agent-pledge/ledger demo failure
  *   pnpm --filter @agent-pledge/ledger demo double-claim
+ *   pnpm --filter @agent-pledge/ledger demo failure --live   (real wallets from .env.testnet, real RLUSD)
  *
  * Prints an explorer link and a timing for every transaction, then the final balance of every
  * wallet against the expected values from PRD 2.2 and 2.3. Exits with code 1 on any mismatch.
@@ -28,11 +29,13 @@ import {
   getTokenBalance,
   mintSubtaskNftWithOffer,
   mintTaskNftWithOffer,
+  subtractIouValues,
+  transferToken,
   type ClaimResult,
   type OpsContext,
   type SubmittedTx,
 } from "../src/index.js";
-import { createFixtures, FIXTURE_ISSUED_AMOUNT, seconds, type Fixtures } from "./fixtures.js";
+import { createFixtures, createLiveFixtures, seconds, type Fixtures } from "./fixtures.js";
 
 const MODES = ["success", "failure", "double-claim"] as const;
 type Mode = (typeof MODES)[number];
@@ -227,7 +230,7 @@ async function runSuccess(f: Fixtures, ctx: OpsContext): Promise<Expected> {
     ),
   );
   await payOut(f, ctx, task, helper);
-  return { requester: "95", agent: "101", helper1: "4", vault: "0" };
+  return { requester: "-5", agent: "+1", helper1: "+4", vault: "0" };
 }
 
 async function runFailure(f: Fixtures, ctx: OpsContext): Promise<Expected> {
@@ -288,7 +291,7 @@ async function runFailure(f: Fixtures, ctx: OpsContext): Promise<Expected> {
   );
   if (second.burns.length + second.refunds.length !== 0)
     fail("second failTask call sent transactions");
-  return { requester: "101", agent: "99", helper1: "0", vault: "0" };
+  return { requester: "+1", agent: "-1", helper1: "0", vault: "0" };
 }
 
 async function runDoubleClaim(f: Fixtures, ctx: OpsContext): Promise<Expected> {
@@ -350,8 +353,8 @@ async function runDoubleClaim(f: Fixtures, ctx: OpsContext): Promise<Expected> {
   const won = winner as Wallet;
   await payOut(f, ctx, task, won);
   return won === helper1
-    ? { requester: "95", agent: "101", helper1: "4", helper2: "0", vault: "0" }
-    : { requester: "95", agent: "101", helper1: "0", helper2: "4", vault: "0" };
+    ? { requester: "-5", agent: "+1", helper1: "+4", helper2: "0", vault: "0" }
+    : { requester: "-5", agent: "+1", helper1: "0", helper2: "+4", vault: "0" };
 }
 
 function printNfts(f: Fixtures, task: TaskState) {
@@ -359,8 +362,40 @@ function printNfts(f: Fixtures, task: TaskState) {
   log(`             sub-task NFT ${explorerNftUrl(f.config, task.subtaskNftId)}`);
 }
 
-/** Expected token balance per role at the end of the run. */
+/** Expected change of the token balance per role over the run, as "+4", "-5", or "0". */
 type Expected = Record<string, string>;
+
+function applyDelta(start: string, delta: string): string {
+  if (delta.startsWith("-")) return subtractIouValues(start, delta.slice(1));
+  return addIouValues(start, delta.replace(/^\+/, ""));
+}
+
+function walletRows(f: Fixtures): [string, Wallet][] {
+  const { wallets } = f;
+  return [
+    ["requester", wallets.requester],
+    ["agent", wallets.agent],
+    ...wallets.helpers.map((w, i): [string, Wallet] => [`helper${i + 1}`, w]),
+    ["vault", wallets.vault],
+    ...(wallets.issuer ? [["issuer", wallets.issuer] as [string, Wallet]] : []),
+  ];
+}
+
+async function readBalances(f: Fixtures): Promise<Record<string, string>> {
+  const out: Record<string, string> = {};
+  await Promise.all(
+    walletRows(f).map(async ([role, w]) => {
+      out[role] = await getTokenBalance(f.client, f.config, w.classicAddress);
+    }),
+  );
+  return out;
+}
+
+function tokenName(f: Fixtures): string {
+  const code = f.config.XRPL_TOKEN_CURRENCY;
+  if (code.length !== 40) return code;
+  return Buffer.from(code, "hex").toString("ascii").replace(/\0+$/, "");
+}
 
 let mismatches = 0;
 function fail(message: string) {
@@ -368,17 +403,11 @@ function fail(message: string) {
   log(`FAIL: ${message}`);
 }
 
-async function printBalances(f: Fixtures, expected: Expected) {
-  const { client, config, wallets } = f;
-  const rows: [string, Wallet][] = [
-    ["requester", wallets.requester],
-    ["agent", wallets.agent],
-    ...wallets.helpers.map((w, i): [string, Wallet] => [`helper${i + 1}`, w]),
-    ["vault", wallets.vault],
-    ["issuer", wallets.issuer],
-  ];
+async function printBalances(f: Fixtures, starts: Record<string, string>, expected: Expected) {
+  const { client, config } = f;
+  const rows = walletRows(f);
   log();
-  log("Final balances (token TSTUSD, a self-issued stand-in for RLUSD)");
+  log(`Final balances (token ${tokenName(f)}, issuer ${config.XRPL_TOKEN_ISSUER})`);
   log(
     `${"role".padEnd(10)} ${"address".padEnd(35)} ${"start".padStart(6)} ${"token".padStart(7)} ${"expected".padStart(8)} ${"XRP".padStart(12)} ${"NFTs".padStart(4)}  check`,
   );
@@ -389,8 +418,9 @@ async function printBalances(f: Fixtures, expected: Expected) {
       client.getXrpBalance(address),
       client.request({ command: "account_nfts", account: address, ledger_index: "validated" }),
     ]);
-    const start = role === "requester" || role === "agent" ? FIXTURE_ISSUED_AMOUNT : "0";
-    const want = expected[role];
+    const start = starts[role] ?? "0";
+    const delta = expected[role];
+    const want = delta === undefined ? undefined : applyDelta(start, delta);
     const nftCount = nfts.result.account_nfts.length;
     let check = "-";
     if (want !== undefined) {
@@ -404,15 +434,41 @@ async function printBalances(f: Fixtures, expected: Expected) {
   }
 }
 
+/** Live mode only: send any token a helper earned back to the requester, so real RLUSD is not stranded in throwaway helper wallets. */
+async function sweepHelpers(f: Fixtures, ctx: OpsContext) {
+  for (const [i, helper] of f.wallets.helpers.entries()) {
+    const balance = await getTokenBalance(f.client, f.config, helper.classicAddress);
+    if (compareIouValues(balance, "0") === 0) continue;
+    const tx = await transferToken(
+      { from: helper, to: f.wallets.requester.classicAddress, amount: balance },
+      ctx,
+    );
+    log(
+      `${elapsed()}  sweep: helper${i + 1} returned ${balance} to the requester  ${tx.explorerUrl}`,
+    );
+  }
+}
+
 async function main() {
-  const mode = process.argv[2] as Mode | undefined;
+  const args = process.argv.slice(2);
+  const live = args.includes("--live");
+  const mode = args.find((a) => !a.startsWith("--")) as Mode | undefined;
   if (!mode || !MODES.includes(mode)) {
-    console.error(`Usage: demo <${MODES.join("|")}>`);
+    console.error(`Usage: demo <${MODES.join("|")}> [--live]`);
     process.exit(2);
   }
-  log(`Agent Pledge ledger demo: ${mode}`);
-  log("Fixtures:");
-  const fixtures = await createFixtures({ helperCount: mode === "double-claim" ? 2 : 1, log });
+  log(`Agent Pledge ledger demo: ${mode}${live ? " (live wallets, real token)" : ""}`);
+  log(live ? "Live wallets:" : "Fixtures:");
+  const helperCount = mode === "double-claim" ? 2 : 1;
+  const fixtures = live
+    ? await createLiveFixtures({ helperCount, log })
+    : await createFixtures({ helperCount, log });
+  const starts = await readBalances(fixtures);
+  log(
+    `  starting balances: ${Object.entries(starts)
+      .map(([r, b]) => `${r} ${b}`)
+      .join(", ")}`,
+  );
   const ctx: OpsContext = { client: fixtures.client, config: fixtures.config };
   log(
     `  token issuer ${fixtures.config.XRPL_TOKEN_ISSUER}, vault ${fixtures.wallets.vault.classicAddress}`,
@@ -426,7 +482,8 @@ async function main() {
         ? await runFailure(fixtures, ctx)
         : await runDoubleClaim(fixtures, ctx);
   log(`${elapsed()}  flow finished: ${records.length} transactions in ${seconds(flowStart)}`);
-  await printBalances(fixtures, expected);
+  await printBalances(fixtures, starts, expected);
+  if (live) await sweepHelpers(fixtures, ctx);
   log();
   log(mismatches === 0 ? `PASS: ${mode}` : `FAIL: ${mode} (${mismatches} problems)`);
   await disconnect();

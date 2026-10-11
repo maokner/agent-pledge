@@ -40,6 +40,27 @@ To load it into a shell: `set -a; . packages/ledger/.env.testnet; set +a`.
 
 ## Scripts
 
+| Script        | What it does                                                                                             |
+| ------------- | -------------------------------------------------------------------------------------------------------- |
+| `setup`       | Creates and funds the vault, agent, and requester wallets. See below.                                    |
+| `spike`       | The open NFT offer spike from issue 2.                                                                   |
+| `demo`        | The success, failure, and double-claim flows on fixture wallets, or on the live wallets with `--live`.   |
+| `transfer`    | Moves the token between the live wallets: `run transfer requester agent 5`.                              |
+| `claim-rlusd` | Claims 10 testnet RLUSD for a live wallet with a tryrlusd.com session cookie.                            |
+
+Live mode runs the demo on the real vault, agent, and requester from `.env.testnet` with real RLUSD.
+Helper wallets are still made fresh from the faucet, and anything a helper earns is swept back to the requester at the end.
+The requester and the agent each need 5 RLUSD for one run.
+The failure flow returns every RLUSD, so use it for rehearsals.
+The success flow moves 4 RLUSD to the helper and then sweeps it back, so it also returns everything.
+
+```
+set -a; . packages/ledger/.env.testnet; set +a
+pnpm ledger:demo failure --live
+```
+
+On 2026-10-11 the live failure flow passed on the real wallets with real RLUSD: 10 transactions, requester 5 to 6, agent 5 to 4.
+
 Use `pnpm --filter @agent-pledge/ledger run <script>`, with `run`.
 Without `run`, `pnpm ... setup` starts pnpm's own built-in `setup` command, which changes your shell profile.
 
@@ -81,6 +102,9 @@ The script protects funded wallets:
 
 The RLUSD faucet: the tryrlusd.com page sends `POST /api/mint-xrpl` with `{"address": "r..."}`.
 Each call gives 10 RLUSD.
+The limit is one claim per GitHub account every 24 hours, not per address, so the team gets 10 RLUSD a day in total.
+`pnpm --filter @agent-pledge/ledger run claim-rlusd requester` claims for one wallet with `TRYRLUSD_SESSION_COOKIE` set.
+On 2026-10-11 this path worked with a real session cookie: the requester received 10 RLUSD.
 The API needs a GitHub login session (NextAuth), so a plain request gets `401 Authentication required`.
 To use it from the script, sign in at https://tryrlusd.com in a browser and copy the session cookie.
 Then set `TRYRLUSD_SESSION_COOKIE="__Secure-next-auth.session-token=..."` before you run the script.

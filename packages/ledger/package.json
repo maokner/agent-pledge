@@ -18,7 +18,9 @@
     "test": "vitest run --passWithNoTests",
     "setup": "tsx scripts/setup-wallets.ts",
     "spike": "tsx scripts/spike-open-offer.ts",
-    "demo": "tsx scripts/demo.ts"
+    "demo": "tsx scripts/demo.ts",
+    "transfer": "tsx scripts/transfer.ts",
+    "claim-rlusd": "tsx scripts/claim-rlusd.ts"
   },
   "dependencies": {
     "@agent-pledge/shared": "workspace:*",

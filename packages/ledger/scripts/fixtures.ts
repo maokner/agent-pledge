@@ -12,6 +12,7 @@ import {
   loadConfig,
   submitTx,
   tokenAmount,
+  walletFromSeed,
   type LedgerConfig,
 } from "../src/index.js";
 
@@ -24,7 +25,8 @@ export const FIXTURE_CURRENCY = Buffer.from("TSTUSD", "ascii")
 export const FIXTURE_ISSUED_AMOUNT = "100";
 
 export interface DemoWallets {
-  issuer: Wallet;
+  /** The fixture token issuer. Absent in live mode, where the token is real RLUSD. */
+  issuer?: Wallet;
   vault: Wallet;
   requester: Wallet;
   agent: Wallet;
@@ -141,4 +143,45 @@ export async function createFixtures(options: {
 
 export function seconds(since: number): string {
   return `${((Date.now() - since) / 1000).toFixed(1)}s`;
+}
+
+/**
+ * Live fixtures: the real vault, agent, and requester wallets from the env file that the setup
+ * script wrote (XRPL_VAULT_SEED, XRPL_AGENT_SEED, XRPL_REQUESTER_SEED), with the configured token,
+ * which is RLUSD unless the env overrides it. Helper wallets are still made fresh from the faucet,
+ * with a trust line to the token, the way the server makes them for real helpers.
+ * The requester and the agent must already hold enough of the token for the flow.
+ */
+export async function createLiveFixtures(options: {
+  helperCount: number;
+  log: Log;
+}): Promise<Fixtures> {
+  const { log } = options;
+  const config = loadConfig();
+  const missing = (["XRPL_VAULT_SEED", "XRPL_AGENT_SEED", "XRPL_REQUESTER_SEED"] as const).filter(
+    (key) => !config[key],
+  );
+  if (missing.length > 0) {
+    throw new Error(
+      `Live mode needs ${missing.join(", ")}. Load the setup env file first: set -a; . packages/ledger/.env.testnet; set +a`,
+    );
+  }
+  const client = await getClient(config);
+  const vault = walletFromSeed(config.XRPL_VAULT_SEED!);
+  const agent = walletFromSeed(config.XRPL_AGENT_SEED!);
+  const requester = walletFromSeed(config.XRPL_REQUESTER_SEED!);
+  log(
+    `  live wallets from env: vault ${vault.classicAddress}, agent ${agent.classicAddress}, requester ${requester.classicAddress}`,
+  );
+  let started = Date.now();
+  const helpers = await Promise.all(
+    Array.from({ length: options.helperCount }, (_, i) =>
+      fundWithRetry(client, `helper${i + 1}`, log),
+    ),
+  );
+  log(`  ${helpers.length} helper wallet(s) funded from the faucet in ${seconds(started)}`);
+  started = Date.now();
+  await Promise.all(helpers.map((w) => ensureTrustLine(client, w, config)));
+  log(`  helper trust lines set in ${seconds(started)}`);
+  return { client, config, wallets: { vault, requester, agent, helpers } };
 }
