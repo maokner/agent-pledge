@@ -1,6 +1,8 @@
 "use client";
 
-import type { ClaimView } from "@agent-pledge/shared";
+/* eslint-disable @next/next/no-img-element -- the photo URL comes from the API server */
+
+import { MAX_PIN_ATTEMPTS, type ClaimView } from "@agent-pledge/shared";
 import Link from "next/link";
 import { useState } from "react";
 import { FixtureBadge } from "@/components/ui/FixtureBadge";
@@ -9,7 +11,7 @@ import { useClaim } from "@/lib/claim/use-claim";
 import { ClaimButton } from "./ClaimButton";
 import { ClaimClosed } from "./ClaimClosed";
 import { PaidView } from "./PaidView";
-import { ErrorNotice, SECONDARY_BUTTON } from "./parts";
+import { ErrorNotice, SECONDARY_BUTTON, TEXT_BUTTON } from "./parts";
 import { PhotoForm } from "./PhotoForm";
 import { PinForm } from "./PinForm";
 import { SubtaskSummary } from "./SubtaskSummary";
@@ -61,7 +63,7 @@ function ClaimFlow({
   onUpdate: (view: ClaimView) => void;
   refresh: () => Promise<ClaimView | null>;
 }) {
-  const [photoSkipped] = useState(false);
+  const [photoSkipped, setPhotoSkipped] = useState(false);
   const step = stepFor(view, { photoSkipped });
 
   switch (step) {
@@ -78,7 +80,14 @@ function ClaimFlow({
         <>
           <YoursBanner />
           <SubtaskSummary view={view} left={left} compact />
-          {step === "photo" ? <PhotoForm claim={view} onUpdate={onUpdate} /> : <PinForm claim={view} onUpdate={onUpdate} />}
+          {step === "photo" ? (
+            <PhotoForm view={view} onUpdate={onUpdate} refresh={refresh} onSkip={() => setPhotoSkipped(true)} />
+          ) : (
+            <>
+              <PhotoRecap view={view} onAddPhoto={() => setPhotoSkipped(false)} />
+              <PinForm claim={view} onUpdate={onUpdate} />
+            </>
+          )}
         </>
       );
     case "paying":
@@ -92,6 +101,30 @@ function ClaimFlow({
         </>
       );
   }
+}
+
+/** On the PIN step: the photo that was sent, or a way back to add one. */
+function PhotoRecap({ view, onAddPhoto }: { view: ClaimView; onAddPhoto: () => void }) {
+  if (view.photo) {
+    return (
+      <div className="flex items-center gap-4 rounded-2xl bg-zinc-100 p-3 dark:bg-zinc-800">
+        <img src={view.photo.url} alt="Your photo of the saved seat" className="size-20 shrink-0 rounded-xl object-cover" />
+        <div>
+          <p className="text-lg font-semibold">Photo sent</p>
+          {view.photo.note && <p className="text-zinc-700 dark:text-zinc-300">{view.photo.note}</p>}
+        </div>
+      </div>
+    );
+  }
+  if (view.pin_attempts_left < MAX_PIN_ATTEMPTS) return null;
+  return (
+    <p className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-zinc-100 px-4 py-2 text-lg dark:bg-zinc-800">
+      No photo yet.
+      <button type="button" onClick={onAddPhoto} className={TEXT_BUTTON}>
+        Add a photo
+      </button>
+    </p>
+  );
 }
 
 function YoursBanner() {

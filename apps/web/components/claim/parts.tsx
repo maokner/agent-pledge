@@ -33,6 +33,22 @@ export function ErrorNotice({ message, action }: { message: string; action?: Rea
   );
 }
 
+/** "Step 2 of 3" over the step's title. Claim is step 1, the photo 2, the PIN 3. */
+export function StepHeading({ id, step, title }: { id: string; step: 2 | 3; title: string }) {
+  return (
+    <div>
+      <p className="text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Step {step} of 3</p>
+      <h2 id={id} className="text-2xl font-bold leading-tight">
+        {title}
+      </h2>
+    </div>
+  );
+}
+
+export function isAbortError(error: unknown): boolean {
+  return error instanceof Error && error.name === "AbortError";
+}
+
 export function BoardLink({ className = SECONDARY_BUTTON, children = "See the live board" }: { className?: string; children?: React.ReactNode }) {
   return (
     <Link href="/" className={className}>
