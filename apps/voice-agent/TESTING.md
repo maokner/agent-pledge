@@ -12,7 +12,8 @@ Run these from `apps/voice-agent`:
       It checks the payloads, the prompt rules, the transcripts, and the mock server.
 - [ ] `pnpm simulate` passes.
       It starts a mock server and sends the sample tool payloads.
-- [ ] `pnpm provision --dry-run` prints five requests: a secret, two tools, the agent, and (with `ELEVENLABS_PHONE_NUMBER_ID`) the phone number.
+- [ ] `pnpm provision --dry-run` prints four requests: the secret, the two tools, and the agent.
+      With `ELEVENLABS_PHONE_NUMBER_ID` set, it prints a fifth request for the phone number.
 - [ ] When the real server is deployed: `VOICE_TOOL_SECRET=... pnpm simulate --url https://<server>` passes.
       This checks that the server matches the contract.
       It creates two real tasks, so run it before a rehearsal and not during one.
