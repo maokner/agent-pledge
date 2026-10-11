@@ -98,3 +98,11 @@ describe("resultCode", () => {
     expect(resultCode({ result: {} } as unknown as TxResponse)).toBe("unknown");
   });
 });
+
+describe("tecPATH_DRY", () => {
+  it("names both causes seen on testnet", () => {
+    const error = errorForResult("tecPATH_DRY", payment, ACCOUNT);
+    expect(error).toBeInstanceOf(InsufficientFundsError);
+    expect(error.message).toContain("no trust line");
+  });
+});

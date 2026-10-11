@@ -37,8 +37,13 @@ export class AlreadyClaimedError extends LedgerError {
 
 /** The account does not have enough of the token or XRP, or not enough XRP for the reserve. HTTP 402 or 409. */
 export class InsufficientFundsError extends LedgerError {
-  constructor(account: string, cause?: unknown, details?: LedgerErrorDetails) {
-    super(`Account ${account} has insufficient funds`, "INSUFFICIENT_FUNDS", cause, details);
+  constructor(account: string, cause?: unknown, details?: LedgerErrorDetails, message?: string) {
+    super(
+      message ?? `Account ${account} has insufficient funds`,
+      "INSUFFICIENT_FUNDS",
+      cause,
+      details,
+    );
   }
 }
 

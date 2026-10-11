@@ -101,7 +101,16 @@ export function errorForResult(
   }
   switch (CODE_TO_ERROR.get(code)) {
     case "INSUFFICIENT_FUNDS":
-      return new InsufficientFundsError(account, cause, details);
+      // Testnet returns tecPATH_DRY both for a sender with no balance and for a receiver with no
+      // trust line (spike steps 11 and 12), so the message names both causes.
+      return new InsufficientFundsError(
+        account,
+        cause,
+        details,
+        code === "tecPATH_DRY"
+          ? `Account ${account} has no balance to send, or the receiver has no trust line for the token`
+          : undefined,
+      );
     case "NO_TRUST_LINE":
       return new NoTrustLineError(
         "Destination" in tx && tx.Destination ? String(tx.Destination) : account,
