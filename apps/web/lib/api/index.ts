@@ -3,7 +3,7 @@ import type { ApiClient } from "./client";
 import { createFixtureApiClient } from "./fixture-client";
 import { createHttpApiClient } from "./http-client";
 
-export { ApiError, errorMessage, type ApiClient } from "./client";
+export { ApiError, errorMessage, type ApiClient, type UploadOptions } from "./client";
 
 let client: ApiClient | null = null;
 
