@@ -70,7 +70,7 @@ export const taskStatusOutputSchema = z
 export const toolErrorSchema = z.object({
   error: z.string().min(1),
   message: z.string().min(1),
-  details: z.array(z.string()).optional(),
+  details: z.unknown().optional(),
 });
 
 export type ToolError = z.infer<typeof toolErrorSchema>;
