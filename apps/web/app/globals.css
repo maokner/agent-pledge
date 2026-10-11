@@ -1,0 +1,292 @@
+@import "tailwindcss";
+
+/*
+ * Design foundations for the three surfaces (docs/design/DIRECTION.md):
+ *
+ *   landing  /                    --color-landing-*
+ *   human    /human, /c/[code]    --color-human-*   docs/design/human-design-system.md
+ *   agent    /board, /preview     --color-term-*    docs/design/agent-design-system.md
+ *
+ * Each route group's layout puts data-surface="landing|human|agent" on its
+ * wrapper, which turns that surface's tokens on. A token used on the wrong
+ * surface has no value, so the mistake shows. Components use the Tailwind
+ * utilities below and never define their own colors; ask for a new token
+ * here instead.
+ */
+
+/*
+ * Big-screen mode (#43): <html data-projector> while the board is in
+ * big-screen mode (lib/board/use-projector-mode.ts). `projector:` styles
+ * apply inside it. The board stays dark in this mode too.
+ */
+@custom-variant projector (&:where([data-projector], [data-projector] *));
+
+/*
+ * Each surface has exactly one color scheme (landing and human light, agent
+ * dark), so `dark:` never applies. Style each surface with its own tokens.
+ */
+@custom-variant dark (&:where([data-color-scheme-unused]));
+
+/*
+ * In big-screen mode on a large display, size everything to the screen:
+ * 1rem is 20px on 1920x1080 and 13.3px on 1280x720, so the same layout fills
+ * both. Breakpoints still use the browser's 16px rem, so a narrow window
+ * keeps the stacked layout.
+ */
+@media (min-width: 1024px) {
+  :root[data-projector] {
+    font-size: min(1.0417vw, 1.852vh);
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Surface tokens                                                      */
+/* ------------------------------------------------------------------ */
+
+[data-surface="landing"] {
+  color-scheme: light;
+  --landing-bg: #ffffff;
+  --landing-fg: #1a1a18;
+  --landing-human-bg: #1c1c1a;
+  --landing-human-fg: #ffffff;
+  --landing-human-icon: #b8f0a0;
+  --landing-agent-bg: #84f45a;
+  --landing-agent-fg: #1c1c1a;
+  --landing-footer-fg: #6b6b66; /* 5.4:1 on white */
+  --landing-divider: #e2e2dc;
+  --landing-ring: #1c1c1a;
+}
+
+[data-surface="human"] {
+  color-scheme: light;
+  --human-bg: #fafafa;
+  --human-fg: #0f172a;
+  --human-muted: #f1f5f9;
+  --human-muted-fg: #64748b;
+  --human-accent: #0052ff;
+  --human-accent-2: #4d7cff;
+  --human-accent-fg: #ffffff;
+  --human-border: #e2e8f0;
+  --human-card: #ffffff;
+  --human-ring: #0052ff;
+  --human-inverted: #0f172a;
+  --human-inverted-fg: #f8fafc;
+  /* Added for the claim page's states; each passes AA on bg and card. */
+  --human-danger: #b91c1c;
+  --human-success: #047857;
+  --human-warning: #b45309;
+  /* Decoration: borders, icon backgrounds, badges, large gradient text. */
+  --human-gradient: linear-gradient(135deg, #0052ff, #4d7cff);
+  /* Behind button text: ends at #2E66FF so white text stays >= 4.71:1. */
+  --human-gradient-button: linear-gradient(to right, #0052ff, #2e66ff);
+  /* Faint accent wash for card hover, and a soft glow for the featured card's corner. */
+  --human-card-glow: linear-gradient(135deg, rgb(0 82 255 / 0.04), transparent 60%);
+  --human-corner-glow: radial-gradient(circle at 100% 0%, rgb(77 124 255 / 0.1), transparent 55%);
+  /* Faint dot grid for inverted (slate) blocks. */
+  --human-dots: radial-gradient(rgb(255 255 255 / 0.08) 1px, transparent 1px);
+}
+
+[data-surface="agent"] {
+  color-scheme: dark;
+  --term-bg: #0a0a0a;
+  --term-fg: #33ff00; /* 14.6:1 */
+  --term-fg-dim: #26b300; /* inactive text, 7.1:1 */
+  --term-amber: #ffb000; /* 10.8:1 */
+  --term-red: #ff3333; /* 5.4:1 */
+  --term-line: #1f521f; /* ~2:1: borders and decoration only, never text */
+
+  /* Board status map. Always pair with the text tag in the design doc. */
+  --term-status-open: var(--term-amber); /* [OPEN] */
+  --term-status-claimed: var(--term-fg); /* [CLAIMED] */
+  --term-status-done: var(--term-fg); /* [DONE], inverted block */
+  --term-status-failed: var(--term-red); /* [ERR] / FAILED */
+  --term-status-pending: var(--term-amber); /* [..] with progress bar or cursor */
+  --term-status-validated: var(--term-fg); /* [OK] */
+  --term-status-refund: var(--term-amber); /* [RFND] with a return arrow */
+
+  --term-scanline-opacity: 0.06;
+  font-family: var(--font-mono);
+}
+
+[data-projector] [data-surface="agent"],
+[data-projector][data-surface="agent"] {
+  /* Big screen: fainter scanlines so large text stays sharp. */
+  --term-scanline-opacity: 0.03;
+}
+
+/* The page behind each surface (overscroll, short pages) matches it. */
+body:has([data-surface="landing"]) { background: #ffffff; }
+body:has([data-surface="human"]) { background: #fafafa; }
+body:has([data-surface="agent"]) { background: #0a0a0a; }
+
+/* ------------------------------------------------------------------ */
+/* Tailwind theme                                                      */
+/* ------------------------------------------------------------------ */
+
+@theme inline {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Landing */
+  --color-landing-bg: var(--landing-bg);
+  --color-landing-fg: var(--landing-fg);
+  --color-landing-human-bg: var(--landing-human-bg);
+  --color-landing-human-fg: var(--landing-human-fg);
+  --color-landing-human-icon: var(--landing-human-icon);
+  --color-landing-agent-bg: var(--landing-agent-bg);
+  --color-landing-agent-fg: var(--landing-agent-fg);
+  --color-landing-footer-fg: var(--landing-footer-fg);
+  --color-landing-divider: var(--landing-divider);
+  --color-landing-ring: var(--landing-ring);
+
+  /* Human */
+  --color-human-bg: var(--human-bg);
+  --color-human-fg: var(--human-fg);
+  --color-human-muted: var(--human-muted);
+  --color-human-muted-fg: var(--human-muted-fg);
+  --color-human-accent: var(--human-accent);
+  --color-human-accent-2: var(--human-accent-2);
+  --color-human-accent-fg: var(--human-accent-fg);
+  --color-human-border: var(--human-border);
+  --color-human-card: var(--human-card);
+  --color-human-ring: var(--human-ring);
+  --color-human-inverted: var(--human-inverted);
+  --color-human-inverted-fg: var(--human-inverted-fg);
+  --color-human-danger: var(--human-danger);
+  --color-human-success: var(--human-success);
+  --color-human-warning: var(--human-warning);
+
+  /* Agent */
+  --color-term-bg: var(--term-bg);
+  --color-term-fg: var(--term-fg);
+  --color-term-fg-dim: var(--term-fg-dim);
+  --color-term-amber: var(--term-amber);
+  --color-term-red: var(--term-red);
+  --color-term-line: var(--term-line);
+  --color-term-status-open: var(--term-status-open);
+  --color-term-status-claimed: var(--term-status-claimed);
+  --color-term-status-done: var(--term-status-done);
+  --color-term-status-failed: var(--term-status-failed);
+  --color-term-status-pending: var(--term-status-pending);
+  --color-term-status-validated: var(--term-status-validated);
+  --color-term-status-refund: var(--term-status-refund);
+}
+
+@theme {
+  /* Human shadows */
+  --shadow-human-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+  --shadow-human-md: 0 4px 6px rgba(0, 0, 0, 0.07);
+  --shadow-human-lg: 0 10px 15px rgba(0, 0, 0, 0.08);
+  --shadow-human-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
+  --shadow-human-accent: 0 4px 14px rgba(0, 82, 255, 0.25);
+  --shadow-human-accent-lg: 0 8px 24px rgba(0, 82, 255, 0.35);
+
+  /* Agent phosphor glow: full in normal mode, subtle on the big screen. */
+  --text-shadow-term-glow: 0 0 5px rgba(51, 255, 0, 0.5);
+  --text-shadow-term-glow-subtle: 0 0 2px rgba(51, 255, 0, 0.3);
+
+  --ease-human: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Human: live dot pulse and entrance fade-up. */
+  --animate-human-pulse: human-pulse 2s ease-in-out infinite;
+  --animate-human-fade-up: human-fade-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-human-float: human-float 5s ease-in-out infinite;
+  --animate-human-spin-slow: human-spin 60s linear infinite;
+
+  /* Agent: cursor blink, new-task arrival flash, tx validated flash. */
+  --animate-term-blink: term-blink 1.06s steps(1, end) infinite;
+  --animate-term-arrive: term-arrive 0.8s steps(4, end);
+  --animate-term-validated: term-validated 1s steps(3, end);
+
+  @keyframes human-pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.3); opacity: 0.7; }
+  }
+  @keyframes human-float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+  @keyframes human-spin {
+    to { transform: rotate(360deg); }
+  }
+  @keyframes human-fade-up {
+    from { opacity: 0; transform: translateY(28px); }
+    to { opacity: 1; transform: none; }
+  }
+  /* Ends visible, so a cut-short (reduced-motion) blink rests on "on". */
+  @keyframes term-blink {
+    0% { opacity: 1; }
+    50% { opacity: 0; }
+    100% { opacity: 1; }
+  }
+  /* Short inverted green bar; distinct from the steady inverted [DONE]. */
+  @keyframes term-arrive {
+    0%, 60% { background-color: var(--term-fg); color: var(--term-bg); }
+    100% { background-color: transparent; color: inherit; }
+  }
+  @keyframes term-validated {
+    0% { background-color: color-mix(in oklab, var(--term-fg) 35%, transparent); }
+    100% { background-color: transparent; }
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Shared utilities                                                    */
+/* ------------------------------------------------------------------ */
+
+/* Gradient fills and gradient text (human). */
+@utility bg-human-gradient {
+  background-image: var(--human-gradient);
+}
+@utility bg-human-gradient-button {
+  background-image: var(--human-gradient-button);
+}
+@utility text-human-gradient {
+  background-image: var(--human-gradient);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+@utility bg-human-card-glow {
+  background-image: var(--human-card-glow);
+}
+@utility bg-human-corner-glow {
+  background-image: var(--human-corner-glow);
+}
+@utility bg-human-dots {
+  background-image: var(--human-dots);
+  background-size: 16px 16px;
+}
+
+/* Faint CRT scanlines (agent): put on an absolutely positioned overlay. */
+@utility term-scanlines {
+  pointer-events: none;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    rgb(51 255 0 / var(--term-scanline-opacity)) 0px,
+    rgb(51 255 0 / var(--term-scanline-opacity)) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+}
+
+body {
+  font-family: var(--font-sans);
+}
+
+/*
+ * Reduced motion, everywhere: no blinking cursor, typewriter, flashes or
+ * entrance animations. Animations are cut to their end state, which is the
+ * resting (visible) one for each keyframe above.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

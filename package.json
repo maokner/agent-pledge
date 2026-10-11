@@ -9,7 +9,9 @@
   "scripts": {
     "dev": "pnpm --filter @agent-pledge/server dev",
     "start": "pnpm --filter @agent-pledge/server start",
-    "lint": "eslint . && prettier --check .",
+    "dev:web": "pnpm --filter @agent-pledge/web dev",
+    "dev:web:fixtures": "pnpm --filter @agent-pledge/web dev:fixtures",
+    "lint": "eslint . && pnpm --filter @agent-pledge/web lint && prettier --check .",
     "format": "prettier --write .",
     "typecheck": "pnpm -r --if-present typecheck",
     "test": "pnpm -r --if-present test",

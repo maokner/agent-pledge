@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 400" role="img" aria-label="Fixture photo: a cold beer on the grass by a tree">
+  <rect width="640" height="400" fill="#cfe6f2"/>
+  <rect y="260" width="640" height="140" fill="#6fa35a"/>
+  <rect x="470" y="90" width="40" height="190" fill="#6b4a2b"/>
+  <circle cx="490" cy="90" r="80" fill="#3f7a3a"/>
+  <rect x="260" y="150" width="80" height="150" rx="10" fill="#d9a441"/>
+  <rect x="260" y="150" width="80" height="34" rx="10" fill="#f7f1e1"/>
+  <path d="M340 190 h26 a22 22 0 0 1 0 60 h-26" fill="none" stroke="#c99a3e" stroke-width="12"/>
+  <rect x="276" y="200" width="10" height="80" rx="4" fill="#f0c86a"/>
+  <text x="320" y="60" text-anchor="middle" font-family="sans-serif" font-size="28" fill="#24425a">Fixture photo: beer delivered</text>
+</svg>
