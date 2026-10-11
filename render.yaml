@@ -2,7 +2,7 @@
 # Spec: https://render.com/docs/blueprint-spec  (JSON schema: https://render.com/schema/render.yaml.json)
 #
 # One API server (Docker, apps/server/Dockerfile) plus one managed Postgres.
-# The board and claim page (apps/web, Next.js) are a second web service, commented out until apps/web exists.
+# The board and claim page (apps/web, Next.js) are a second web service, commented out below.
 # Every secret is `sync: false`: Render asks for the value once, when you create the Blueprint,
 # and it is never stored in git.
 
@@ -70,8 +70,9 @@ services:
       - key: AGENT_ADDRESS
         sync: false
 
-  # Board and claim page (apps/web, Next.js). Uncomment when apps/web exists and builds, then sync the
-  # Blueprint. Check the package name and the env var names the front end actually reads.
+  # Board and claim page (apps/web, Next.js). Uncomment to deploy it, then sync the Blueprint.
+  # The API container serves only the API here (its Dockerfile sets WEB_UPSTREAM_URL=""), so this
+  # service is a separate origin: set NEXT_PUBLIC_API_URL, and list this origin in the API's CORS_ORIGINS.
   # - type: web
   #   name: agent-pledge-web
   #   runtime: node

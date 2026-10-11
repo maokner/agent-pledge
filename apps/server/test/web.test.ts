@@ -32,8 +32,12 @@ async function startFakeWeb(): Promise<{ url: string; close(): Promise<void> }> 
       res.end(JSON.stringify(echo));
     });
   });
-  const wss = new WebSocketServer({ server, path: "/_next/webpack-hmr" });
-  wss.on("connection", (socket) => socket.send("hmr-hello"));
+  const wss = new WebSocketServer({ noServer: true });
+  server.on("upgrade", (req, socket, head) => {
+    const path = (req.url ?? "").split("?")[0];
+    if (path !== "/_next/hmr" && path !== "/_next/webpack-hmr") return socket.destroy();
+    wss.handleUpgrade(req, socket, head, (ws) => ws.send(`hmr-hello ${req.url}`));
+  });
   await new Promise<void>((r) => server.listen(0, "127.0.0.1", r));
   const { port } = server.address() as AddressInfo;
   return {
@@ -164,7 +168,10 @@ describe("web app proxy", () => {
   it("serves the board socket itself, and proxies only the dev hot reload socket", async () => {
     const snapshot = JSON.parse(await firstMessage(`ws://${base}/ws/board`));
     expect(snapshot.type).toBe("snapshot");
-    expect(await firstMessage(`ws://${base}/_next/webpack-hmr`)).toBe("hmr-hello");
+    expect(await firstMessage(`ws://${base}/_next/hmr?id=abc`)).toBe("hmr-hello /_next/hmr?id=abc");
+    expect(await firstMessage(`ws://${base}/_next/webpack-hmr`)).toBe(
+      "hmr-hello /_next/webpack-hmr",
+    );
   });
 });
 

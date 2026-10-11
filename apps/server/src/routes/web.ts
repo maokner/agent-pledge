@@ -20,8 +20,11 @@ export const API_PREFIXES = ["agent", "tools", "claim", "admin", "media", "ws", 
 /** Every method but OPTIONS: @fastify/cors owns OPTIONS for CORS preflights. */
 const PROXY_METHODS = ["DELETE", "GET", "HEAD", "PATCH", "POST", "PUT"];
 
-/** Next.js dev server's hot reload socket (`next dev` only; `next start` never opens it). */
-const NEXT_HMR_PATH = "/_next/webpack-hmr";
+/**
+ * Next.js dev server's hot reload sockets (`next dev` only; `next start` never opens them):
+ * /_next/hmr with Turbopack (Next 16), /_next/webpack-hmr with webpack.
+ */
+export const NEXT_HMR_PATHS = ["/_next/hmr", "/_next/webpack-hmr"] as const;
 
 type Headers = IncomingHttpHeaders | Http2IncomingHttpHeaders;
 
@@ -72,14 +75,16 @@ const webRoutes: FastifyPluginAsync = async (app) => {
     },
   });
 
-  // `next dev` hot reload. Scoped to its own path so the proxy never claims /ws/board or /ws/agent.
-  await app.register(httpProxy, {
-    upstream,
-    prefix: NEXT_HMR_PATH,
-    rewritePrefix: NEXT_HMR_PATH,
-    httpMethods: ["GET"],
-    websocket: true,
-  });
+  // `next dev` hot reload. Scoped to its own paths so the proxy never claims /ws/board or /ws/agent.
+  for (const path of NEXT_HMR_PATHS) {
+    await app.register(httpProxy, {
+      upstream,
+      prefix: path,
+      rewritePrefix: path,
+      httpMethods: ["GET"],
+      websocket: true,
+    });
+  }
 
   app.log.info({ upstream }, "web app proxied");
 };

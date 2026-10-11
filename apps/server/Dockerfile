@@ -15,9 +15,10 @@ COPY tsconfig.base.json ./
 COPY packages/shared packages/shared
 COPY packages/ledger packages/ledger
 COPY apps/server apps/server
-COPY apps/web apps/web
 
-ENV NODE_ENV=production HOST=0.0.0.0 PORT=3001
+# API only: on Render the web app (apps/web) is its own service, so nothing is proxied. For one
+# origin, run the web app next to this container and set WEB_UPSTREAM_URL to its address.
+ENV NODE_ENV=production HOST=0.0.0.0 PORT=3001 WEB_UPSTREAM_URL=""
 EXPOSE 3001
 WORKDIR /app/apps/server
 CMD ["node", "--import", "tsx", "src/server.ts"]
