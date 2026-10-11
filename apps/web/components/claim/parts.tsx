@@ -51,7 +51,7 @@ export function isAbortError(error: unknown): boolean {
 
 export function BoardLink({ className = SECONDARY_BUTTON, children = "See the live board" }: { className?: string; children?: React.ReactNode }) {
   return (
-    <Link href="/" className={className}>
+    <Link href="/board" className={className}>
       {children}
     </Link>
   );

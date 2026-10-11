@@ -6,7 +6,7 @@ const form = { description: "Save me a seat", place: "Main Stacks", time_limit_m
 describe("submitBackupTask", () => {
   it("posts the form and the passcode to the web app's route, and returns the PIN", async () => {
     const fetch = vi.fn<typeof globalThis.fetch>(async () =>
-      Response.json({ task_id: "tsk_1", pin: "4821", board_url: "/" }),
+      Response.json({ task_id: "tsk_1", pin: "4821", board_url: "/board" }),
     );
 
     const result = await submitBackupTask(form, "pw", fetch);
@@ -15,7 +15,7 @@ describe("submitBackupTask", () => {
     expect(url).toBe("/api/backup-task");
     expect(new Headers(init?.headers).get("x-backup-passcode")).toBe("pw");
     expect(JSON.parse(String(init?.body))).toEqual(form);
-    expect(result).toEqual({ task_id: "tsk_1", pin: "4821", board_url: "/" });
+    expect(result).toEqual({ task_id: "tsk_1", pin: "4821", board_url: "/board" });
   });
 
   it("throws the route's error with its per-field messages", async () => {

@@ -1,6 +1,8 @@
 # Web: board and claim page
 
-Next.js (App Router), TypeScript, Tailwind. Routes: `/` (board) and `/c/[code]` (claim page).
+Next.js (App Router), TypeScript, Tailwind. Routes: `/` (landing), `/board` (board), `/human` (open sub-tasks) and `/c/[code]` (claim page).
+Pages live in route groups that set each surface's design tokens: `app/(landing)`, `app/(human)` and
+`app/(agent)`. See `docs/design/DIRECTION.md`.
 Types come from `@agent-pledge/shared` (draft contract, see `packages/shared/CONTRACT.md`).
 
 ```sh
@@ -52,7 +54,7 @@ Claiming takes about 5 seconds in fixture mode, like the real ledger.
 
 ## Projector mode (#43, PRD 9.1)
 
-The board laid out for a projector, readable from the back of the room. Open `/?projector=1`, or click
+The board laid out for a projector, readable from the back of the room. Open `/board?projector=1`, or click
 "Projector mode" in the board's header (shown on screens 1024 px and wider). The choice is remembered in
 `localStorage` (`agent-pledge:projector`), so the projector laptop stays in projector mode across reloads.
 Leave it with "Normal view" or `?projector=0`. Logic: `lib/board/projector.ts`, `lib/board/use-projector-mode.ts`.
@@ -77,7 +79,7 @@ What changes:
   stays sharp. See `docs/design/agent-design-system.md`. Each status is also a text tag, never only a color.
 
 Checked in a browser at 1920x1080 and 1280x720 with `/preview?layout=one|three|stops&projector=1` and the
-live fixture stream. **Still to do at rehearsal (#30):** on the real projector, open `/?projector=1` in
+live fixture stream. **Still to do at rehearsal (#30):** on the real projector, open `/board?projector=1` in
 full screen (Chrome: View, Enter Full Screen) at the projector's native resolution, and walk to the back
 of the room: read the status, the amounts and the PIN tries left, and check that amber (pending) and
 sky (held in the vault) are still told apart on that projector.

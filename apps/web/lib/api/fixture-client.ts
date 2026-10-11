@@ -76,12 +76,12 @@ export function createFixtureApiClient(now: () => number = Date.now): ApiClient 
         created_at: item.created_at,
         parent_task_id: sub?.task_id ?? null,
         parent_nft_id: parent?.nft_id ?? null,
-        board_url: "/",
+        board_url: "/board",
       });
     },
     createTask: (request) => {
       console.info("[fixtures] create_task", request);
-      return delay({ task_id: `tsk_form_${now()}`, pin: FIXTURE_PIN, board_url: "/" });
+      return delay({ task_id: `tsk_form_${now()}`, pin: FIXTURE_PIN, board_url: "/board" });
     },
 
     getClaim: async (code) => delay(load(code)),

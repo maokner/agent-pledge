@@ -40,7 +40,7 @@ export function BoardPreview({ layout }: { layout: PreviewLayout }) {
           {PREVIEW_LAYOUTS[key]}
         </Link>
       ))}
-      <Link href="/" className="inline-flex min-h-9 items-center rounded border border-zinc-300 px-2 dark:border-zinc-600">
+      <Link href="/board" className="inline-flex min-h-9 items-center rounded border border-zinc-300 px-2 dark:border-zinc-600">
         Live board
       </Link>
     </nav>
