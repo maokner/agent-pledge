@@ -351,6 +351,89 @@ describe("payout ops", () => {
     expect(ledger.holders.get(nftId)).toBe(vault.classicAddress);
   });
 
+  const proof = "0f".repeat(32);
+
+  it("createPayoutOffer and acceptPayoutOffer write the proof memo", async () => {
+    const nftId = await heldByHelper();
+    const ids = { taskId: "t1", subtaskId: "s1", proofSha256: proof };
+    const offer = await createPayoutOffer(
+      { holder: helper, vaultAddress: vault.classicAddress, nftId, amount: "4", ...ids },
+      ledger.ctx,
+    );
+    expect(memosOf(last())).toEqual({
+      task: "t1",
+      subtask: "s1",
+      action: "payout.offer",
+      proof,
+    });
+    await accept(offer.offerId, nftId, ids);
+    expect(last()).toMatchObject({ TransactionType: "NFTokenAcceptOffer" });
+    expect(memosOf(last())).toEqual({
+      task: "t1",
+      subtask: "s1",
+      action: "payout.accept",
+      proof,
+    });
+  });
+
+  it("redeem writes the proof memo on both transactions", async () => {
+    const nftId = await heldByHelper();
+    const before = ledger.submitted.length;
+    await redeem(
+      {
+        holder: helper,
+        vault,
+        nftId,
+        amount: "4",
+        taskId: "t1",
+        subtaskId: "s1",
+        proofSha256: proof.toUpperCase(),
+      },
+      ledger.ctx,
+    );
+    const txs = ledger.submitted.slice(before);
+    expect(txs.map((tx) => memosOf(tx).proof)).toEqual([proof, proof]);
+  });
+
+  it("leaves the proof memo out without a proofSha256", async () => {
+    const nftId = await heldByHelper();
+    const before = ledger.submitted.length;
+    await redeem({ holder: helper, vault, nftId, amount: "4", taskId: "t1" }, ledger.ctx);
+    for (const tx of ledger.submitted.slice(before)) {
+      expect(memosOf(tx)).not.toHaveProperty("proof");
+    }
+  });
+
+  it.each(["", "abc", "z".repeat(64), "a".repeat(65)])(
+    "refuses the proof %j with INVALID_INPUT before it signs",
+    async (bad) => {
+      const nftId = await heldByHelper();
+      const offer = await createPayoutOffer(
+        { holder: helper, vaultAddress: vault.classicAddress, nftId, amount: "4" },
+        ledger.ctx,
+      );
+      const count = ledger.submitted.length;
+      const invalid = expect.objectContaining({ code: "INVALID_INPUT" });
+      await expect(
+        createPayoutOffer(
+          {
+            holder: helper,
+            vaultAddress: vault.classicAddress,
+            nftId,
+            amount: "4",
+            proofSha256: bad,
+          },
+          ledger.ctx,
+        ),
+      ).rejects.toEqual(invalid);
+      await expect(accept(offer.offerId, nftId, { proofSha256: bad })).rejects.toEqual(invalid);
+      await expect(
+        redeem({ holder: helper, vault, nftId, amount: "4", proofSha256: bad }, ledger.ctx),
+      ).rejects.toEqual(invalid);
+      expect(ledger.submitted.length).toBe(count);
+    },
+  );
+
   it("burnNft names the Owner only when someone other than the vault holds the NFT", async () => {
     const nftId = await heldByHelper();
     await burnNft({ vault, nftId, owner: helper.classicAddress, taskId: "t1" }, ledger.ctx);

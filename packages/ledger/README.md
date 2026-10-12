@@ -295,6 +295,7 @@ One codec writes and reads all of them.
 | `subtask`   | `agent-pledge/subtask`    | Sub-task ID.                                       |
 | `parentNft` | `agent-pledge/parent-nft` | The task NFT ID, on a sub-task mint.               |
 | `action`    | `agent-pledge/action`     | The `TxKind`, for example `task.fund` or `refund`. |
+| `proof`     | `agent-pledge/proof`      | sha256 (64 hex, lower case) of the proof photo, on payout transactions. |
 
 ```ts
 // buildMemos(fields: MemoFields): Memo[]
@@ -318,6 +319,7 @@ toHex("hi"); // "6869"
 
 Every memo has `MemoFormat` `text/plain`.
 `buildMemos` (and so `taskMemo`) throws a `LedgerError` with code `INVALID_INPUT` for an empty value, or for a task or sub-task ID with outer whitespace or longer than 256 bytes.
+It also throws `INVALID_INPUT` for a `proof` that is not exactly 64 hex characters (`checkProofSha256`), and writes the proof in lower case.
 The explorer shows the memos decoded on the Detailed tab of the transaction.
 
 ### Wallets
@@ -467,11 +469,11 @@ A zero token amount throws a `TypeError` before signing, because rippled rejects
 ### Payout (demo step 13)
 
 ```ts
-// redeem({ holder, vault, nftId, amount, taskId?, subtaskId? }): Promise<RedeemResult>
-await redeem({ holder: helper, vault, nftId: sub.nftId, amount: "4", taskId, subtaskId }); // { offer, accept }
+// redeem({ holder, vault, nftId, amount, taskId?, subtaskId?, proofSha256? }): Promise<RedeemResult>
+await redeem({ holder: helper, vault, nftId: sub.nftId, amount: "4", taskId, subtaskId, proofSha256 }); // { offer, accept }
 
 // The same in two calls, for example when the holder's wallet signs elsewhere:
-// createPayoutOffer({ holder, vaultAddress, nftId, amount, taskId?, subtaskId? }): Promise<OfferResult>
+// createPayoutOffer({ holder, vaultAddress, nftId, amount, taskId?, subtaskId?, proofSha256? }): Promise<OfferResult>
 const payout = await createPayoutOffer({
   holder: agent,
   vaultAddress,
@@ -479,7 +481,7 @@ const payout = await createPayoutOffer({
   amount: "6",
   taskId,
 });
-// acceptPayoutOffer({ vault, offerId, nftId, holderAddress, amount, taskId?, subtaskId? }): Promise<SubmittedTx>
+// acceptPayoutOffer({ vault, offerId, nftId, holderAddress, amount, taskId?, subtaskId?, proofSha256? }): Promise<SubmittedTx>
 await acceptPayoutOffer({
   vault,
   offerId: payout.offerId,
@@ -499,6 +501,11 @@ It checks that the offer with `offerId` exists for `nftId`, is owned by `holderA
 Any difference throws `OfferMismatchError` (`OFFER_MISMATCH`) with every problem, and nothing is submitted.
 An offer cannot change after it is created, so the check stays true until the accept.
 The PIN check (PRD R4 and R8) is not in this package: the server must check the PIN before it calls `redeem` or `acceptPayoutOffer`.
+
+`createPayoutOffer`, `acceptPayoutOffer`, and `redeem` take an optional `proofSha256`: the sha256 (64 hex characters) of the proof photo that released the payout.
+They write it as the `agent-pledge/proof` memo on both the holder's sell offer and the vault's accept, so the explorer shows which photo paid the helper.
+A malformed hash throws `INVALID_INPUT` before anything is signed.
+`XrplLedgerPort.createRedeemOffer` and `acceptRedeemOffer`, and the agent ledger's `createRedeemOffer`, pass `ctx.proofSha256` through.
 
 With a `taskId`, `createPayoutOffer`, `acceptPayoutOffer`, and `redeem` run under the task lock, the same one as `failTask` (see below).
 `burnNft` does not take the lock, because `failTask` calls it under the lock.

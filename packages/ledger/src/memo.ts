@@ -38,6 +38,20 @@ export function fromHex(hex: string): string | null {
   return Buffer.from(hex, "hex").toString("utf8");
 }
 
+/** sha256 in hex: exactly 64 hex digits, either case. */
+export const PROOF_SHA256_PATTERN = /^[0-9a-fA-F]{64}$/;
+
+/**
+ * Checks a proof photo hash (sha256, 64 hex digits) and returns it in lower case.
+ * Throws a LedgerError with code INVALID_INPUT for anything else.
+ */
+export function checkProofSha256(value: string): string {
+  if (!PROOF_SHA256_PATTERN.test(value)) {
+    throw new LedgerError("Proof sha256 must be exactly 64 hex characters", "INVALID_INPUT");
+  }
+  return value.toLowerCase();
+}
+
 /** Task and sub-task IDs: non-empty, no outer whitespace, at most 256 bytes. */
 function checkId(name: string, id: string): void {
   if (id.length === 0 || id.trim() !== id) {
@@ -60,8 +74,9 @@ export function encodeMemo(type: string, data: string): Memo {
 
 /**
  * Builds the memo list for a transaction, in a fixed order. Fields that are undefined are left out.
- * Throws a LedgerError with code INVALID_INPUT for an empty value, or for a task or sub-task ID with
- * outer whitespace or more than 256 bytes.
+ * Throws a LedgerError with code INVALID_INPUT for an empty value, for a task or sub-task ID with
+ * outer whitespace or more than 256 bytes, or for a proof that is not 64 hex characters.
+ * The proof is written in lower case.
  */
 export function buildMemos(fields: MemoFields): Memo[] {
   const memos: Memo[] = [];
@@ -70,7 +85,8 @@ export function buildMemos(fields: MemoFields): Memo[] {
     if (value === undefined) continue;
     if (key === "task") checkId("Task ID", value);
     if (key === "subtask") checkId("Sub-task ID", value);
-    memos.push(encodeMemo(MEMO_TYPES[key], value));
+    const data = key === "proof" ? checkProofSha256(value) : value;
+    memos.push(encodeMemo(MEMO_TYPES[key], data));
   }
   return memos;
 }

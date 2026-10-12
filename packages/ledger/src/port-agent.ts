@@ -126,6 +126,7 @@ export class XrplAgentLedger implements AgentLedger {
             nftId,
             amount: fromMoney(amount),
             taskId: ctx?.taskId,
+            proofSha256: ctx?.proofSha256,
           },
           this.c,
         ),
