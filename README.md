@@ -361,9 +361,16 @@ The claim page must:
 2. Show one "Claim" button.
 3. Make a wallet for the helper when the helper taps "Claim". The helper does not see the wallet.
 4. Show "Already claimed" if another person claimed first.
-5. Let the helper add a photo and a short note, for example "Front table, left side".
-6. Let the helper enter the PIN.
-7. Show "Paid $4.00" with an explorer link after the payout.
+5. Let the helper add the proof photo and a short note, for example "Front table, left side".
+   The photo pays the helper at once.
+   The vault pays the sub-task price, and the payout transactions carry the photo's sha256 in the `agent-pledge/proof` memo.
+6. Show "Paid $4.00" with an explorer link after the payout.
+   If the ledger fails, the server keeps the photo and the page retries the payout.
+7. Show the sub-task NFT and who holds it, the money that the vault holds for the sub-task, and every ledger transaction of the sub-task, each with an explorer link.
+
+The PIN is the alternative proof.
+With `PROOF_MODE=pin` on the server, the photo does not pay: the helper enters the requester's PIN, and the PIN pays.
+In the default photo mode the PIN still works, and after the photo payout it returns the same payout.
 
 The claim page must work well on a phone.
 
@@ -443,6 +450,7 @@ We enter Context.dev only if we build food delivery (see [section 12](#12-featur
 | 2026-10-11 | The base demo is the seat hold only. | It is fast, it is real, and it shows the full idea: a person calls, an agent hires a person, and the money moves on proof. |
 | 2026-10-11 | The local agent runs on our laptop and posts on Yik Yak from our logged-in browser. | Yik Yak has no public API for posts. Our own browser session makes the post real and visible to the judges. |
 | 2026-10-11 | The proof is a PIN from the requester to the helper. | It is simple, and the helper cannot fake it. |
+| 2026-10-11 | The proof photo pays the helper by default (`PROOF_MODE=photo`). The PIN is the alternative proof (`PROOF_MODE=pin`). | The helper is paid the moment the work is shown, with no wait for the requester. The photo's sha256 is in the payout memos, so the ledger shows which photo released the money. |
 | 2026-10-11 | Other features wait until the base demo works. | A small demo that works is better than a large demo that does not work. |
 | 2026-10-11 | Our general track is Most Creative. | The main idea is creative: an AI agent hires a person. |
 | 2026-10-11 | We also enter the YZi Labs track. | It accepts any chain. It asks for agents with wallets that people can trust, and for voice-first agents. |
