@@ -28,8 +28,9 @@ export function HumanShell({
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 -z-10 hidden overflow-hidden lg:block"
       >
-        <div className="absolute inset-x-0 top-0 h-[44rem] bg-human-corner-glow" />
-        <div className="absolute inset-x-0 top-0 h-[36rem] -scale-x-100 bg-human-corner-glow opacity-60" />
+        {/* Faded out at the bottom, so the glow never ends in a visible edge on wide screens. */}
+        <div className="absolute inset-x-0 top-0 h-[44rem] bg-human-corner-glow mask-b-from-40%" />
+        <div className="absolute inset-x-0 top-0 h-[36rem] -scale-x-100 bg-human-corner-glow opacity-60 mask-b-from-40%" />
       </div>
       <SiteNav current={current} />
       <main

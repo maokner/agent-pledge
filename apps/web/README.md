@@ -47,7 +47,9 @@ What the adapter covers, and what it works around until the server changes:
 | Sub-tasks have no description, place, time limit or PIN state | Taken from the parent task; time limit = deadline minus creation, rounded up |
 | Tx kinds `task_funding`, `task_offer`, `helper_redeem_offer`, `refund_requester`, … plus `wallet_setup` and `requester_funding` | Renamed to the DRAFT kinds; the XRPL type is derived; `explorer_url` used for links; transactions without a task are dropped |
 | Free-text `fail_reason` | Kept as `fail_reason`, mapped to `failure_reason` when it matches |
-| Claim view: `status`, `claimed_by_you`, `pin`, `payout`; no `server_time` or time limit | `ClaimState` derived; the phone's clock stands in for `server_time`; the time limit comes from `/board/state` once per sub-task |
+| Claim view: `status`, `claimed_by_you`, `pin`, `payout`, `proof`; no `server_time` or time limit | `ClaimState` derived (photo mode: a photo with no payout is `paying`); the phone's clock stands in for `server_time`; the time limit comes from `/board/state` once per sub-task |
+| Claim view: `proof_sha256`, `nft`, `escrow`, `transactions` (oldest first) | Carried as they are, tx kinds renamed as on the board; a server without them reads as PIN mode with nothing on the ledger |
+| `POST /claim/:code/photo` and `POST /claim/:code/pay` return `{claim, payout}` | The payout is put on the claim, so the claim comes back paid; pay is called when the photo did not pay (no payout, or a ledger error), and `GET /claim/:code` is polled every 3 s |
 | `POST /claim/:code/claim` returns `{helper_token, claim}` and answers 409 even to the phone holding the claim | Token kept per code in localStorage and sent as `x-helper-token`; the client GETs the claim first |
 | Photo field `file`, 8 MB limit, `{claim, media}`; 401 for the wrong phone | Sent as `file`, originals over 8 MB refused; 401 becomes `not_your_claim` |
 | Wrong PIN 422 `wrong_pin` (`details.attempts_left`), third wrong 423 `pin_locked`; the right PIN answers only after the payout | `wrong` / `locked` results after reloading the claim; no request timeout |
@@ -59,7 +61,8 @@ What the adapter covers, and what it works around until the server changes:
 | Path | What |
 |---|---|
 | `components/board/*` | Board UI (#32 to #38, #43), in the agent design system's terminal style. `Board.tsx` wires `useBoard` to the cards, or to `ProjectorBoard` in projector mode. `term.tsx` has the board's own terminal pieces (panes, status tags, buttons, ASCII bars, money, countdown, explorer links, zoomable image). |
-| `components/claim/*` | Claim page UI (#39 to #42). `ClaimScreen.tsx` loads the claim and picks a view per state: on desktop the sub-task on the left and a sticky step panel (with `StepIndicator`) on the right, stacked on phones. |
+| `components/claim/*` | Claim page UI (#39 to #42). `ClaimScreen.tsx` loads the claim and picks a view per state: on desktop the sub-task on the left and the step panel (with `StepIndicator`) and `LedgerPanel` ("On the ledger": the NFT, the escrow, the proof hash and every transaction, live) on the right; on phones one column with the ledger right under the sub-task. |
+| `lib/claim/*` | The claim page's logic: `flow.ts` (the step per state and proof mode), `ledger.ts` (transaction labels, who holds the NFT, when to poll), `payout.ts` (photo mode's pay call and its retries), and the hooks (`use-claim.ts` polls every 3 s from the claim until the NFT is burned). |
 | `components/landing/*` | Landing page (`/`): the two role buttons and the "powered by" footer. |
 | `components/human/*` | Human design system pieces (button, card, input, badge, live dot, pay amount, countdown, notice, icon tile) for `/human` and the claim page, and the shared page frame: `SiteNav` (sticky top bar) and `HumanShell` (skip link, nav, `max-w-6xl` main). |
 | `components/open-list/*`, `lib/open-list/*` | The `/human` page: the bento grid of open sub-tasks (`bento.ts`: the highest pay gets the featured card, the rest soonest deadline first; `icon.ts`: an icon per sub-task), polling, expiry and announcements, plus the How it works strip and the stats band. |
@@ -81,18 +84,21 @@ connection and skip an event, to exercise reconnect and resync.
 three tasks, or one task at each point in the flow, to check the card layout without waiting for the stream. Add `&projector=1` to see
 them in projector mode.
 
-Claim codes for `/c/<code>` (the PIN is `4821`; state lives in memory, so reload to reset):
+Claim codes for `/c/<code>` (state lives in memory, so reload to reset).
+Every code is in photo mode (the proof photo pays, steps Claim, Proof, Paid) except `PINS` and `LOCK`, which are in PIN mode (steps Claim, Photo, PIN, Paid; the PIN is `4821`).
+Each claim's "On the ledger" panel shows its NFT and transactions, and new ones arrive and validate as time passes.
 
 | Code | Starts as |
 |---|---|
-| `OPEN` | open (click Claim, add a photo, enter the PIN) |
-| `MINE` | claimed by you, no photo |
-| `PHOT` | claimed by you, photo added, one wrong PIN |
-| `TAKN` | already claimed |
-| `EXPD` | expired |
-| `LOCK` | locked |
-| `PAYG` | paying, then paid after about 4 seconds |
+| `OPEN` | open (click Claim, add a photo: the photo call pays in about 4 seconds, then the NFT is burned) |
+| `MINE` | claimed by you, no photo; the photo call answers without a payout, so the page calls pay |
+| `PHOT` | photo sent, payout not through: the page calls pay, the first try fails with a ledger error (a red row), the retry pays |
+| `TAKN` | already claimed (the NFT is held by another helper) |
+| `EXPD` | expired (refunded and burned) |
+| `LOCK` | locked (PIN mode) |
+| `PAYG` | paying, then paid about 4 seconds after the first load |
 | `PAID` | paid |
+| `PINS` | PIN mode: claimed by you, no photo (add one or skip, then enter `4821`) |
 | `RACE` | open, but tapping Claim loses to another phone ("Already claimed") |
 | `FLAK` | open, on a bad signal: the first claim response is lost (the claim went through) and the first photo upload fails part way |
 | `SOON` | open with 20 seconds left, then expired |
@@ -102,7 +108,7 @@ The real server makes codes from `ABCDEFGHJKMNPQRSTUVWXYZ23456789` (no 0, O, 1, 
 Most fixture codes use O, I or L, so the server could never issue them. They stay, because they are easy to read
 and fixture mode never talks to the server.
 
-Claiming takes about 5 seconds in fixture mode, like the real ledger.
+Claiming takes about 5 seconds in fixture mode, like the real ledger, and a payout about 4 seconds.
 
 Open sub-tasks (`getApiClient().listOpenSubtasks()`, the DRAFT `GET /subtasks/open` for the `/human` list) are
 the codes that start open: `OPEN`, `RACE`, `FLAK` and `SOON`, each with its own pay, place and deadline, so

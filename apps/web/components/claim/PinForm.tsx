@@ -69,7 +69,7 @@ export function PinForm({
     <Card>
       <form onSubmit={submit} className="flex flex-col gap-5" aria-labelledby="pin-step" noValidate>
         <div className="flex flex-col gap-2">
-          <StepHeading id="pin-step" step={3} title="Enter the PIN" />
+          <StepHeading id="pin-step" step={3} of={4} title="Enter the PIN" />
           <p className="text-lg leading-relaxed text-human-muted-fg">
             When the requester arrives, ask them for their 4-digit PIN. You get paid when it is
             right.

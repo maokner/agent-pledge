@@ -16,8 +16,10 @@
 export { boardMessageFromBackend, boardSnapshotFromBackend, subtasksOf } from "./board";
 export {
   claimStateOf,
+  claimTxsFromBackend,
   claimViewFromBackend,
   createHelperTokenStore,
+  withPayout,
   type HelperTokenStore,
 } from "./claim";
 export { apiErrorFromBackend, attemptsLeftFrom, type ErrorContext } from "./errors";

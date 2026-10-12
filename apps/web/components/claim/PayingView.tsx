@@ -1,18 +1,28 @@
+"use client";
+
 import type { ClaimView } from "@/lib/contract";
 import { ExternalLink } from "lucide-react";
+import { useState } from "react";
 import { Badge } from "@/components/human/Badge";
 import { buttonVariants } from "@/components/human/Button";
 import { Card } from "@/components/human/Card";
 import { PayAmount } from "@/components/human/PayAmount";
 import { Spinner } from "@/components/human/Spinner";
+import { payingMessage } from "@/lib/claim/payout";
 import { explorerTxUrl } from "@/lib/format";
+import { useNow } from "@/lib/use-now";
 
-/** The PIN was right and the payment is on its way (PRD 2.1 step 13). The page polls until it lands. */
+/**
+ * The proof is in (the photo, or the right PIN) and the payment is on its way
+ * (PRD 2.1 step 13). The page reloads the claim, and in photo mode asks the
+ * server to pay, until it lands.
+ */
 export function PayingView({ view }: { view: ClaimView }) {
+  const [since] = useState(() => Date.now());
+  const now = useNow(1000);
   return (
     <Card
       as="section"
-      aria-live="polite"
       aria-labelledby="paying-title"
       className="flex flex-col items-center gap-4 py-8 text-center lg:py-12"
     >
@@ -23,14 +33,14 @@ export function PayingView({ view }: { view: ClaimView }) {
         <Spinner className="size-8" />
       </span>
       <Badge size="sm" dot="pulse">
-        PIN is right
+        {view.proof === "photo" ? "Photo received" : "PIN is right"}
       </Badge>
       <h2 id="paying-title" className="text-4xl font-bold leading-[1.1] tracking-[-0.02em]">
         Paying you{" "}
         <PayAmount amount={view.payout?.amount ?? view.subtask.price} size="md" tone="gradient" />
       </h2>
-      <p className="text-lg leading-relaxed text-human-muted-fg">
-        Your money is on its way. This takes a few seconds.
+      <p className="text-lg leading-relaxed text-balance text-human-muted-fg" aria-live="polite">
+        {payingMessage(now === null ? 0 : now - since)}
       </p>
       {view.payout && (
         <a

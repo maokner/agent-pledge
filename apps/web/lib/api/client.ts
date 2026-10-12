@@ -32,13 +32,21 @@ export interface ApiClient {
   getClaim(code: ClaimCode): Promise<ClaimView>;
   /** POST /claim/:code/claim. Throws ApiError "already_claimed" if another phone won. */
   claimSubtask(code: ClaimCode): Promise<ClaimView>;
-  /** POST /claim/:code/photo (multipart). Reports upload progress; aborts with an "AbortError". */
+  /**
+   * POST /claim/:code/photo (multipart). Reports upload progress; aborts with an "AbortError".
+   * In photo mode the photo pays the helper: the claim comes back paid, or paying if the payout did not go through.
+   */
   uploadPhoto(
     code: ClaimCode,
     photo: Blob,
     note: string,
     options?: UploadOptions,
   ): Promise<ClaimView>;
+  /**
+   * POST /claim/:code/pay. Photo mode: pays for the photo already sent, when the photo call
+   * did not. Idempotent. Throws ApiError "conflict" without a photo or in PIN mode.
+   */
+  pay(code: ClaimCode): Promise<ClaimView>;
   /** POST /claim/:code/pin */
   submitPin(code: ClaimCode, pin: string): Promise<SubmitPinResponse>;
 

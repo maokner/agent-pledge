@@ -198,6 +198,7 @@ body:has([data-surface="agent"]) {
   /* Human: live dot pulse and entrance fade-up. */
   --animate-human-pulse: human-pulse 2s ease-in-out infinite;
   --animate-human-fade-up: human-fade-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-human-row-in: human-row-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
   --animate-human-float: human-float 5s ease-in-out infinite;
   --animate-human-spin-slow: human-spin 60s linear infinite;
 
@@ -229,6 +230,24 @@ body:has([data-surface="agent"]) {
   @keyframes human-spin {
     to {
       transform: rotate(360deg);
+    }
+  }
+  /* A new row in a live list: a short rise and fade, and a faint accent wash that clears. */
+  @keyframes human-row-in {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+      background-color: color-mix(in srgb, var(--human-accent) 8%, transparent);
+    }
+    60% {
+      opacity: 1;
+      transform: none;
+      background-color: color-mix(in srgb, var(--human-accent) 6%, transparent);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+      background-color: transparent;
     }
   }
   @keyframes human-fade-up {

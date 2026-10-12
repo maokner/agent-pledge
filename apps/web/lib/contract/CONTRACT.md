@@ -45,6 +45,7 @@ Changes made for the real server are additive and marked "real server".
 | Helper | `GET /claim/:code` | | `ClaimView` |
 | Helper | `POST /claim/:code/claim` | none | `ClaimView` (409 `already_claimed`). Real server: `{ helper_token, claim }` |
 | Helper | `POST /claim/:code/photo` | multipart `photo`, `note`. Real server: `file`, at most 8 MB | `ClaimView`. Real server: `{ claim, media }` |
+| Helper | `POST /claim/:code/pay` | none | `PayResponse` (photo mode; idempotent; 409 `conflict` without a photo or in PIN mode). Real server: `{ claim, payout }` |
 | Helper | `POST /claim/:code/pin` | `SubmitPinRequest` | `SubmitPinResponse` (always 200 for a well-formed PIN). Real server: 422 `wrong_pin` / 423 `pin_locked` |
 | Public | `GET /subtasks/open` (**DRAFT, new; not on the real server**) | | `ListOpenSubtasksResponse` |
 | Public | `GET /board/state` | | `BoardSnapshot` |
@@ -157,6 +158,10 @@ these types grew, additively:
   (`pin_locked` maps to `locked`, a 401 on a claim-page call to `not_your_claim`).
 - `CreateTaskRequest.caller_phone` is optional; `CreateTaskResponse` may carry `status`, `price`, `deadline_at`.
 - `ClaimView.payout` may carry `explorer_url`. `server_time` is the phone's clock until the server sends one.
+- `ClaimView` carries the server's `proof` (`photo | pin`), `proof_sha256`, `nft` (`ClaimNft`), `escrow`
+  (`ClaimEscrow`) and `transactions` (`ClaimTx[]`, oldest first, kinds renamed as on the board). A server that
+  does not send them yet reads as PIN mode with no NFT, no escrow and no transactions.
+- `POST /claim/:code/photo` may carry a top-level `payout` (the photo paid the helper); the adapter puts it on the claim.
 - `TaskNftData`: `time_limit_minutes` and `created_at` may be null (the server sends neither); optional
   `deadline_at`, `status`, `nft_id`.
 - Agent log IDs stay strings: the server's numeric IDs are converted.

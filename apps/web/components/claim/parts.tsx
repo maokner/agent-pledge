@@ -3,11 +3,26 @@ import { Badge } from "@/components/human/Badge";
 import { buttonVariants } from "@/components/human/Button";
 import { cn } from "@/lib/cn";
 
-/** "Step 2 of 3" over the step's title. Claim is step 1, the photo 2, the PIN 3. */
-export function StepHeading({ id, step, title }: { id: string; step: 2 | 3; title: string }) {
+/**
+ * "Step 2 of 3" over the step's title. Photo mode: Claim, Proof, Paid.
+ * PIN mode: Claim, Photo, PIN, Paid.
+ */
+export function StepHeading({
+  id,
+  step,
+  of,
+  title,
+}: {
+  id: string;
+  step: number;
+  of: number;
+  title: string;
+}) {
   return (
     <div className="flex flex-col items-start gap-3">
-      <Badge size="sm">Step {step} of 3</Badge>
+      <Badge size="sm">
+        Step {step} of {of}
+      </Badge>
       <h2 id={id} className="text-2xl font-semibold leading-tight tracking-[-0.01em]">
         {title}
       </h2>
