@@ -3,6 +3,7 @@ import { createHelperTokenStore, type HelperTokenStore } from "../backend/claim"
 import {
   backendBoardState,
   backendClaim,
+  backendClaimTxs,
   backendLogEntry,
   backendMedia,
   backendSubtask,
@@ -361,12 +362,14 @@ describe("createHttpApiClient against the real server", () => {
       xhr.progress(50, 100);
       xhr.respond(200, {
         claim: backendClaim({
+          proof: "pin",
           status: "claimed",
           claimed_by_you: true,
           photo: backendMedia(),
           helper_note: "Front table",
         }),
         media: backendMedia(),
+        payout: null,
       });
       const claim = await upload;
 
@@ -381,6 +384,59 @@ describe("createHttpApiClient against the real server", () => {
       expect((xhr.sent as FormData).get("file")).toBeInstanceOf(Blob);
       expect((xhr.sent as FormData).get("photo")).toBeNull();
       expect(progress).toEqual([0.5, 1]);
+    });
+
+    describe("photo mode: the photo pays", () => {
+      const payout = {
+        amount: "4.00",
+        tx_hash: hash(0x56),
+        explorer_url: `https://testnet.xrpl.org/transactions/${hash(0x56)}`,
+      };
+      const withPhoto = (overrides = {}) =>
+        backendClaim({
+          status: "claimed",
+          claimed_by_you: true,
+          photo: backendMedia(),
+          proof_sha256: "ab".repeat(32),
+          ...overrides,
+        });
+
+      async function uploadAnswering(body: unknown) {
+        const xhr = new FakeXhr();
+        const api = createHttpApiClient({
+          baseUrl: BASE,
+          fetch: server({ "GET /board/state": json(200, boardWithSub()) }),
+          tokens: memoryTokens(),
+          now: () => NOW,
+          xhr: () => xhr as unknown as XMLHttpRequest,
+        });
+        const upload = api.uploadPhoto("7Q2K", new Blob(["jpeg"]), "");
+        xhr.respond(200, body);
+        return upload;
+      }
+
+      it("is paid when the response carries the payout next to the claim", async () => {
+        const claim = await uploadAnswering({
+          claim: withPhoto(),
+          media: backendMedia(),
+          payout,
+        });
+
+        expect(claim.state).toBe("paid");
+        expect(claim.payout).toEqual({ ...payout, status: "validated" });
+        expect(claim.proof_sha256).toBe("ab".repeat(32));
+      });
+
+      it("is paying when the photo is in but the payout is not (the page then calls pay)", async () => {
+        const claim = await uploadAnswering({
+          claim: withPhoto(),
+          media: backendMedia(),
+          payout: null,
+        });
+
+        expect(claim.state).toBe("paying");
+        expect(claim.payout).toBeNull();
+      });
     });
 
     it("maps 401 to not_your_claim and passes 410 and 413 through", async () => {
@@ -431,6 +487,66 @@ describe("createHttpApiClient against the real server", () => {
 
       expect(xhr.aborted).toBe(true);
       expect(await upload).toMatchObject({ name: "AbortError" });
+    });
+  });
+
+  describe("pay", () => {
+    const payout = {
+      amount: "4.00",
+      tx_hash: hash(0x56),
+      explorer_url: `https://testnet.xrpl.org/transactions/${hash(0x56)}`,
+    };
+
+    it("posts to /claim/:code/pay with the token and unwraps {claim, payout} into a paid claim", async () => {
+      const tokens = memoryTokens();
+      tokens.set("7Q2K", "tok.sig");
+      const claimInside = backendClaim({
+        status: "done",
+        claimed_by_you: true,
+        photo: backendMedia(),
+        transactions: backendClaimTxs("helper_payout"),
+      });
+      const { api, fetch } = client(
+        { "POST /claim/7Q2K/pay": json(200, { claim: claimInside, payout }) },
+        tokens,
+      );
+
+      const claim = await api.pay("7Q2K");
+
+      const call = fetch.mock.calls.findIndex(([url]) => String(url).endsWith("/claim/7Q2K/pay"));
+      expect(fetch.mock.calls[call]?.[1]?.method).toBe("POST");
+      expect(header(fetch, call, "x-helper-token")).toBe("tok.sig");
+      expect(claim.state).toBe("paid");
+      expect(claim.payout).toEqual({ ...payout, status: "validated" });
+      expect(claim.transactions.at(-1)?.kind).toBe("helper_payout");
+    });
+
+    it("passes 409 conflict (no photo yet, or PIN mode) and 502 ledger_error through", async () => {
+      const { api } = client({
+        "POST /claim/7Q2K/pay": [
+          json(409, { error: "conflict", message: "No proof photo yet" }),
+          json(502, { error: "ledger_error", message: "tecPATH_DRY" }),
+        ],
+      });
+
+      expect(await api.pay("7Q2K").catch((e: unknown) => e)).toMatchObject({
+        status: 409,
+        code: "conflict",
+      });
+      expect(await api.pay("7Q2K").catch((e: unknown) => e)).toMatchObject({
+        status: 502,
+        code: "ledger_error",
+      });
+    });
+
+    it("maps 401 to not_your_claim", async () => {
+      const { api } = client({
+        "POST /claim/7Q2K/pay": json(401, { error: "unauthorized", message: "Not yours" }),
+      });
+
+      expect(await api.pay("7Q2K").catch((e: unknown) => e)).toMatchObject({
+        code: "not_your_claim",
+      });
     });
   });
 

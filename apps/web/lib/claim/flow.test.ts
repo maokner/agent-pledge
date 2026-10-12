@@ -1,7 +1,7 @@
 import type { ClaimView } from "@/lib/contract";
 import { describe, expect, it } from "vitest";
 import { ApiError } from "../api/client";
-import { afterError, claimingMessage, stepFor } from "./flow";
+import { afterError, claimingMessage, progressFor, PROGRESS_STEPS, stepFor } from "./flow";
 import { PLAIN_FALLBACK_MESSAGE } from "./plain-words";
 
 function view(overrides: Partial<ClaimView> = {}): ClaimView {
@@ -19,6 +19,11 @@ function view(overrides: Partial<ClaimView> = {}): ClaimView {
     pin_attempts_left: 3,
     payout: null,
     server_time: "2026-10-11T19:00:00.000Z",
+    proof: "photo",
+    proof_sha256: null,
+    nft: null,
+    escrow: null,
+    transactions: [],
     ...overrides,
   };
 }
@@ -32,21 +37,55 @@ const photo = {
 describe("stepFor", () => {
   it("shows the Claim button while the sub-task is open", () => {
     expect(stepFor(view(), { photoSkipped: false })).toBe("claim");
+    expect(stepFor(view({ proof: "pin" }), { photoSkipped: false })).toBe("claim");
   });
 
-  it("asks for a photo first after this phone claims", () => {
-    expect(stepFor(view({ state: "claimed_by_you" }), { photoSkipped: false })).toBe("photo");
+  describe("photo mode (the photo pays)", () => {
+    it("asks for the proof photo after this phone claims, with no way to skip it", () => {
+      expect(stepFor(view({ state: "claimed_by_you" }), { photoSkipped: false })).toBe("photo");
+      expect(stepFor(view({ state: "claimed_by_you" }), { photoSkipped: true })).toBe("photo");
+    });
+
+    it("never shows the PIN, even after a PIN try", () => {
+      expect(
+        stepFor(view({ state: "claimed_by_you", pin_attempts_left: 2 }), { photoSkipped: false }),
+      ).toBe("photo");
+    });
+
+    it("shows Paying as soon as the photo is sent and its answer (the payout) is awaited", () => {
+      expect(
+        stepFor(view({ state: "claimed_by_you" }), { photoSkipped: false, sending: true }),
+      ).toBe("paying");
+    });
+
+    it("follows the server once it answers: paying, then paid", () => {
+      expect(
+        stepFor(view({ state: "paying", photo }), { photoSkipped: false, sending: true }),
+      ).toBe("paying");
+      expect(stepFor(view({ state: "paid", photo }), { photoSkipped: false })).toBe("paid");
+    });
   });
 
-  it("moves to the PIN once the photo is added or skipped", () => {
-    expect(stepFor(view({ state: "claimed_by_you", photo }), { photoSkipped: false })).toBe("pin");
-    expect(stepFor(view({ state: "claimed_by_you" }), { photoSkipped: true })).toBe("pin");
-  });
+  describe("PIN mode", () => {
+    const pin = (overrides: Partial<ClaimView> = {}) =>
+      view({ proof: "pin", state: "claimed_by_you", ...overrides });
 
-  it("goes straight to the PIN if a PIN was already tried, even without a photo", () => {
-    expect(
-      stepFor(view({ state: "claimed_by_you", pin_attempts_left: 2 }), { photoSkipped: false }),
-    ).toBe("pin");
+    it("asks for a photo first after this phone claims", () => {
+      expect(stepFor(pin(), { photoSkipped: false })).toBe("photo");
+    });
+
+    it("moves to the PIN once the photo is added or skipped", () => {
+      expect(stepFor(pin({ photo }), { photoSkipped: false })).toBe("pin");
+      expect(stepFor(pin(), { photoSkipped: true })).toBe("pin");
+    });
+
+    it("goes straight to the PIN if a PIN was already tried, even without a photo", () => {
+      expect(stepFor(pin({ pin_attempts_left: 2 }), { photoSkipped: false })).toBe("pin");
+    });
+
+    it("does not jump to Paying while a photo is being sent: the photo does not pay", () => {
+      expect(stepFor(pin(), { photoSkipped: false, sending: true })).toBe("photo");
+    });
   });
 
   it("maps the end states to their own screens", () => {
@@ -57,6 +96,30 @@ describe("stepFor", () => {
     );
     expect(stepFor(view({ state: "expired" }), { photoSkipped: false })).toBe("expired");
     expect(stepFor(view({ state: "locked" }), { photoSkipped: false })).toBe("locked");
+  });
+});
+
+describe("progressFor", () => {
+  it("has three steps in photo mode and four in PIN mode", () => {
+    expect(PROGRESS_STEPS.photo).toEqual(["Claim", "Proof", "Paid"]);
+    expect(PROGRESS_STEPS.pin).toEqual(["Claim", "Photo", "PIN", "Paid"]);
+  });
+
+  it("puts paying on the last step, still running, and paid on it, done", () => {
+    expect(progressFor("claim", "photo")).toEqual({ index: 0, running: false });
+    expect(progressFor("photo", "photo")).toEqual({ index: 1, running: false });
+    expect(progressFor("paying", "photo")).toEqual({ index: 2, running: true });
+    expect(progressFor("paid", "photo")).toEqual({ index: 2, running: false });
+    expect(progressFor("pin", "pin")).toEqual({ index: 2, running: false });
+    expect(progressFor("paying", "pin")).toEqual({ index: 3, running: true });
+    expect(progressFor("paid", "pin")).toEqual({ index: 3, running: false });
+  });
+
+  it("shows no progress for the closed states", () => {
+    for (const step of ["already_claimed", "expired", "locked"] as const) {
+      expect(progressFor(step, "photo"), step).toBeNull();
+      expect(progressFor(step, "pin"), step).toBeNull();
+    }
   });
 });
 

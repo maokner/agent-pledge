@@ -7,6 +7,7 @@
 import type {
   BackendAgentLogEntry,
   BackendBoardState,
+  BackendClaimNft,
   BackendClaimView,
   BackendMediaView,
   BackendSubtaskView,
@@ -19,7 +20,7 @@ export const API = "http://localhost:3001";
 export const WEB = "http://localhost:3000";
 
 export const ADDRESSES = {
-  vault: "rVaultXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+  vault: "r37hDaqXGUL574V8y91XSoktYDpc9HpPjN",
   requester: "rRequesterXXXXXXXXXXXXXXXXXXXXXXXX",
   agent: "rAgentXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
   helper: "rHelperXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
@@ -27,6 +28,111 @@ export const ADDRESSES = {
 };
 
 export const hash = (n: number) => n.toString(16).toUpperCase().padStart(64, "0");
+
+export const EXPLORER = "https://testnet.xrpl.org";
+
+/** NFTokenIDs shaped like the vault's: flags 0008 (transferable), fee 0, the vault's account ID, taxon, sequence. */
+export const NFT_IDS = {
+  task: "000800005A0B6C2E1F3D4A5B6C7D8E9F0A1B2C3D4E5F60718D3A2E0C00000041",
+  subtask: "000800005A0B6C2E1F3D4A5B6C7D8E9F0A1B2C3D4E5F6071B26F1C4A00000042",
+};
+
+export function backendClaimNft(overrides: Partial<BackendClaimNft> = {}): BackendClaimNft {
+  const id = overrides.id ?? NFT_IDS.subtask;
+  return {
+    id,
+    explorer_url: `${EXPLORER}/nft/${id}`,
+    holder: "vault",
+    parent_nft_id: NFT_IDS.task,
+    parent_explorer_url: `${EXPLORER}/nft/${NFT_IDS.task}`,
+    ...overrides,
+  };
+}
+
+/**
+ * The sub-task's transactions up to `upTo`, all validated, oldest first, the
+ * way the claim view lists them: funding, mint, offer, claim, payout offer, payout, burn.
+ */
+export function backendClaimTxs(
+  upTo:
+    | "subtask_offer"
+    | "subtask_claim"
+    | "helper_redeem_offer"
+    | "helper_payout"
+    | "subtask_nft_burn" = "subtask_offer",
+): BackendTxView[] {
+  const sub = { task_id: "task_k3j9x0c2m1q8z7w4", subtask_id: "sub_a1b2c3d4e5f6g7h8" };
+  const all: BackendTxView[] = [
+    backendTx({
+      ...sub,
+      hash: hash(0x51),
+      kind: "subtask_funding",
+      amount: "4.00",
+      from: ADDRESSES.agent,
+      to: ADDRESSES.vault,
+    }),
+    backendTx({
+      ...sub,
+      hash: hash(0x52),
+      kind: "subtask_nft_mint",
+      amount: null,
+      currency: null,
+      from: ADDRESSES.vault,
+      to: null,
+      nft_id: NFT_IDS.subtask,
+    }),
+    backendTx({
+      ...sub,
+      hash: hash(0x53),
+      kind: "subtask_offer",
+      amount: "0.00",
+      from: ADDRESSES.vault,
+      to: null,
+      nft_id: NFT_IDS.subtask,
+    }),
+    backendTx({
+      ...sub,
+      hash: hash(0x54),
+      kind: "subtask_claim",
+      amount: null,
+      currency: null,
+      from: ADDRESSES.helper,
+      to: ADDRESSES.vault,
+      nft_id: NFT_IDS.subtask,
+    }),
+    backendTx({
+      ...sub,
+      hash: hash(0x55),
+      kind: "helper_redeem_offer",
+      amount: "4.00",
+      from: ADDRESSES.helper,
+      to: ADDRESSES.vault,
+      nft_id: NFT_IDS.subtask,
+      memo: "agent-pledge/proof",
+    }),
+    backendTx({
+      ...sub,
+      hash: hash(0x56),
+      kind: "helper_payout",
+      amount: "4.00",
+      from: ADDRESSES.vault,
+      to: ADDRESSES.helper,
+      nft_id: NFT_IDS.subtask,
+      memo: "agent-pledge/proof",
+    }),
+    backendTx({
+      ...sub,
+      hash: hash(0x57),
+      kind: "subtask_nft_burn",
+      amount: null,
+      currency: null,
+      from: ADDRESSES.vault,
+      to: null,
+      nft_id: NFT_IDS.subtask,
+    }),
+  ];
+  return all.slice(0, all.findIndex((tx) => tx.kind === upTo) + 1);
+}
 
 export function backendTx(overrides: Partial<BackendTxView> = {}): BackendTxView {
   const h = overrides.hash ?? hash(1);
@@ -166,6 +272,15 @@ export function backendClaim(overrides: Partial<BackendClaimView> = {}): Backend
     photo: null,
     pin: { attempts: 0, attempts_left: 3, locked: false, verified: false },
     payout: null,
+    proof: "photo",
+    proof_sha256: null,
+    nft: backendClaimNft(),
+    escrow: {
+      amount: "4.00",
+      vault_address: ADDRESSES.vault,
+      vault_explorer_url: `${EXPLORER}/accounts/${ADDRESSES.vault}`,
+    },
+    transactions: backendClaimTxs("subtask_offer"),
     ...overrides,
   };
 }

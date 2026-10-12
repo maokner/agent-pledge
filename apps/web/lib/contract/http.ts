@@ -13,6 +13,7 @@ import type {
   TaskId,
   TxHash,
   WorkStatus,
+  XrplAddress,
 } from "./common.ts";
 import type {
   AgentLogLevel,
@@ -21,6 +22,7 @@ import type {
   Photo,
   Subtask,
   Task,
+  TxKind,
   TxStatus,
 } from "./entities.ts";
 import type { BoardSnapshot } from "./events.ts";
@@ -203,7 +205,7 @@ export interface AgentLogResponse {
  * - already_claimed: another phone claimed first
  * - expired: the deadline passed before payout (sub-task failed)
  * - locked: three wrong PINs
- * - paying: PIN correct, payout transaction pending
+ * - paying: the proof is in (the photo, or the right PIN), payout not landed yet
  * - paid: payout validated; show "Paid $4.00" with the explorer link
  */
 export type ClaimState =
@@ -219,6 +221,52 @@ export const CLAIM_STATES = [
   "paid",
 ] as const satisfies readonly ClaimState[];
 
+/**
+ * What pays the helper (the server's PROOF_MODE, default "photo"):
+ * - photo: uploading the proof photo pays at once
+ * - pin: the requester's 4-digit PIN does
+ */
+export type ProofMode = "photo" | "pin";
+
+/**
+ * Who holds the sub-task NFT, from the asking phone's point of view.
+ * vault: nobody claimed it yet, or it came back with the payout or refund;
+ * you: this phone claimed it; helper: another phone did; burned: closed for good.
+ */
+export type NftHolder = "vault" | "you" | "helper" | "burned";
+
+/** The sub-task NFT: whoever holds it has the only right to do the task and to the payout. */
+export interface ClaimNft {
+  id: NftId;
+  explorer_url: string;
+  holder: NftHolder;
+  /** The parent task NFT (PRD 5.3). */
+  parent_nft_id: NftId | null;
+  parent_explorer_url: string | null;
+}
+
+/** The sub-task's money, held by the vault until the proof is in. */
+export interface ClaimEscrow {
+  amount: RlusdAmount;
+  vault_address: XrplAddress;
+  vault_explorer_url: string;
+}
+
+/** One ledger transaction of the sub-task, as the claim page lists it. */
+export interface ClaimTx {
+  hash: TxHash;
+  kind: TxKind;
+  status: TxStatus;
+  /** RLUSD moved. Null for mints, burns, zero-amount offers and XRP. */
+  amount: RlusdAmount | null;
+  explorer_url: string;
+  nft_id: NftId | null;
+  submitted_at: IsoDateTime;
+  validated_at: IsoDateTime | null;
+  /** Why it failed, in the server's words. */
+  error: string | null;
+}
+
 /** GET /claim/:code. Also the body of every successful claim-page response. */
 export interface ClaimView {
   code: ClaimCode;
@@ -233,7 +281,7 @@ export interface ClaimView {
   /** Only shown to the phone that claimed. */
   photo: Photo | null;
   pin_attempts_left: number;
-  /** Set once the PIN is correct. */
+  /** Set once the payout landed (photo mode) or the PIN is correct (PIN mode, pending at first). */
   payout: {
     amount: RlusdAmount;
     tx_hash: TxHash;
@@ -246,6 +294,16 @@ export interface ClaimView {
    * The real server does not send one yet; its adapter puts the phone's clock here.
    */
   server_time: IsoDateTime;
+  /** What pays the helper. A server from before proof modes is "pin". */
+  proof: ProofMode;
+  /** sha256 (hex) of the stored proof photo, written into the payout memo. Null until a photo is in. */
+  proof_sha256: string | null;
+  /** The sub-task NFT. Null until minted. */
+  nft: ClaimNft | null;
+  /** Null only from a server that does not send it yet. */
+  escrow: ClaimEscrow | null;
+  /** Every ledger transaction of the sub-task, oldest first. */
+  transactions: ClaimTx[];
 }
 
 /**
@@ -267,6 +325,14 @@ export interface UploadPhotoFields {
 }
 
 export type UploadPhotoResponse = ClaimView;
+
+/**
+ * POST /claim/:code/pay (no body). Photo mode only: pays the helper for a
+ * sub-task that already has its proof photo, when the photo call did not
+ * (a ledger error or a lost response). Idempotent: a retry returns the same payout.
+ * 409 "conflict" without a photo or in PIN mode. Real server: `{ claim, payout }`.
+ */
+export type PayResponse = ClaimView;
 
 /** POST /claim/:code/pin */
 export interface SubmitPinRequest {
@@ -374,6 +440,7 @@ export const apiPaths = {
   claimSubtask: (code: ClaimCode) => `/claim/${enc(code)}/claim`,
   claimPhoto: (code: ClaimCode) => `/claim/${enc(code)}/photo`,
   claimPin: (code: ClaimCode) => `/claim/${enc(code)}/pin`,
+  claimPay: (code: ClaimCode) => `/claim/${enc(code)}/pay`,
 
   /** DRAFT (#17). Not under /claim/, where it would collide with /claim/:code. */
   openSubtasks: () => "/subtasks/open",

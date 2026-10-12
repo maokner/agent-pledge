@@ -290,9 +290,9 @@ export function txsFromBackend(txs: BackendTxView[]): LedgerTx[] {
 
 /** Null for a transaction that belongs to no task (a pooled helper wallet's setup) or has a kind the board does not know. */
 export function txFromBackend(tx: BackendTxView): LedgerTx | null {
-  const kind = TX_KIND[tx.kind];
+  const kind = txKindFromBackend(tx.kind);
   if (!kind || !tx.task_id) return null;
-  const status: TxStatus = TX_STATUSES.has(tx.status) ? tx.status : "pending";
+  const status = txStatusFromBackend(tx.status);
   return {
     hash: tx.hash,
     kind,
@@ -312,6 +312,16 @@ export function txFromBackend(tx: BackendTxView): LedgerTx | null {
     currency: tx.currency,
     error: tx.error,
   };
+}
+
+/** The server's tx kind as the web app's, or null for a kind it does not know. */
+export function txKindFromBackend(kind: string): TxKind | null {
+  return TX_KIND[kind] ?? null;
+}
+
+/** The server's tx status; anything unknown reads as pending. */
+export function txStatusFromBackend(status: string): TxStatus {
+  return TX_STATUSES.has(status) ? (status as TxStatus) : "pending";
 }
 
 export function logLineFromBackend(entry: BackendAgentLogEntry): AgentLogLine {

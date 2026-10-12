@@ -27,6 +27,7 @@ import type {
   MediaView,
   Money,
   NftUriData,
+  PayResponse,
   PhotoResponse,
   PinErrorDetails,
   PinResponse,
@@ -70,8 +71,12 @@ export type BackendClaimView = ClaimView;
 export type BackendPayout = NonNullable<ClaimView["payout"]>;
 /** POST /claim/:code/claim */
 export type BackendClaimSubtaskResponse = ClaimSubtaskResponse;
-/** POST /claim/:code/photo */
+/** POST /claim/:code/photo. `payout` is set when the photo paid the helper. */
 export type BackendPhotoResponse = PhotoResponse;
+/** POST /claim/:code/pay */
+export type BackendPayResponse = PayResponse;
+/** The sub-task NFT on a claim view. */
+export type BackendClaimNft = NonNullable<ClaimView["nft"]>;
 /** POST /claim/:code/pin, 200 */
 export type BackendPinResponse = PinResponse;
 /** 422 wrong_pin and 423 pin_locked `details`. */

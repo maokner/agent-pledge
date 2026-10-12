@@ -22,6 +22,7 @@ import {
   taskNftDataFromBackend,
   type ErrorContext,
   type HelperTokenStore,
+  withPayout,
 } from "../backend";
 import type {
   BackendBoardState,
@@ -29,6 +30,7 @@ import type {
   BackendClaimView,
   BackendCreateTaskResponse,
   BackendNftUriData,
+  BackendPayResponse,
   BackendPhotoResponse,
   BackendPinResponse,
 } from "../backend/types";
@@ -151,7 +153,16 @@ export function createHttpApiClient({
       const response = xhr
         ? await send<BackendPhotoResponse>(xhr(), `${baseUrl}${path}`, form, headers, options)
         : await request<BackendPhotoResponse>("POST", path, { body: form, headers, helper: true });
-      return toClaimView(response.claim);
+      // Photo mode: the payout may come next to the claim rather than in it.
+      return toClaimView(withPayout(response.claim, response.payout));
+    },
+
+    async pay(code) {
+      const { claim, payout } = await request<BackendPayResponse>("POST", apiPaths.claimPay(code), {
+        headers: helperHeaders(code),
+        helper: true,
+      });
+      return toClaimView(withPayout(claim, payout));
     },
 
     async submitPin(code, pin) {
