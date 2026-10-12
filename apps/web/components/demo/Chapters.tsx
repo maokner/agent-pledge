@@ -96,37 +96,35 @@ function ChapterLedger({ txs }: { txs: LedgerTx[] }) {
       <ol className="divide-y divide-human-border overflow-hidden rounded-2xl border border-human-border bg-human-card shadow-human-sm">
         {txs.map((tx) => {
           const amount = amountLabel(tx);
+          const n = txNumber(tx);
           return (
-            <li
-              key={tx.hash}
-              className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:gap-4"
-            >
+            <li key={tx.hash} className="flex flex-col gap-1.5 px-4 py-3">
               <span className="flex items-center gap-3">
-                <span className="w-6 shrink-0 text-sm font-semibold tabular-nums text-human-muted-fg">
-                  {txNumber(tx)}
+                <span className="w-5 shrink-0 text-sm font-semibold tabular-nums text-human-muted-fg">
+                  {n}
                 </span>
                 <TypePill type={tx.type} />
+                <span className="ml-auto text-sm tabular-nums text-human-muted-fg">
+                  {elapsedLabel(tx.closeTime)}
+                </span>
               </span>
-              <span className="min-w-0 flex-1 text-base font-medium leading-snug">
+              <span className="flex items-baseline justify-between gap-4">
                 <a
-                  href={`#tx-${txNumber(tx)}`}
-                  className="rounded-sm outline-none hover:text-human-accent focus-visible:ring-2 focus-visible:ring-human-ring"
+                  href={`#tx-${n}`}
+                  className="min-w-0 rounded-sm text-base font-medium leading-snug outline-none hover:text-human-accent focus-visible:ring-2 focus-visible:ring-human-ring"
                 >
                   {TX_COPY[tx.kind].title}
                 </a>
-              </span>
-              <span className="flex items-center gap-4 sm:justify-end">
-                {amount && (
-                  <span className="text-base font-bold tabular-nums tracking-[-0.01em]">
-                    {amount}
-                  </span>
-                )}
-                <span className="text-sm tabular-nums text-human-muted-fg">
-                  {elapsedLabel(tx.closeTime)}
+                <span className="flex shrink-0 items-baseline gap-3">
+                  {amount && (
+                    <span className="text-base font-bold tracking-[-0.01em] tabular-nums">
+                      {amount}
+                    </span>
+                  )}
+                  <ExplorerLink href={tx.explorerUrl} className="min-h-0 text-sm">
+                    Explorer
+                  </ExplorerLink>
                 </span>
-                <ExplorerLink href={tx.explorerUrl} className="min-h-0 text-sm">
-                  Explorer
-                </ExplorerLink>
               </span>
             </li>
           );
@@ -213,7 +211,7 @@ function YikYakCard() {
           <MessageSquare aria-hidden="true" className="size-4 text-human-accent" />
           The Yik Yak post
         </span>
-        <blockquote className="text-lg leading-relaxed font-medium text-human-fg">
+        <blockquote className="text-lg leading-relaxed font-medium text-human-fg [overflow-wrap:anywhere]">
           “{SUBTASK.post_text}”
         </blockquote>
         <p className="text-sm leading-relaxed text-human-muted-fg">
@@ -242,7 +240,7 @@ function HelperPhotoCard() {
           <Camera aria-hidden="true" className="size-4 text-human-accent" />
           The helper’s photo
         </span>
-        <blockquote className="text-lg leading-relaxed font-medium text-human-fg">
+        <blockquote className="text-lg leading-relaxed font-medium text-human-fg [overflow-wrap:anywhere]">
           “{SUBTASK.helper_note}”
         </blockquote>
         <p className="text-sm leading-relaxed text-human-muted-fg">

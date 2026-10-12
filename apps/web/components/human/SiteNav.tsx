@@ -16,7 +16,7 @@ const LINKS = [
 export type NavPage = "/human" | "/demo";
 
 const LINK_CLASS = [
-  "inline-flex min-h-11 items-center whitespace-nowrap rounded-lg px-3 text-[15px] font-medium text-human-muted-fg",
+  "inline-flex min-h-11 items-center whitespace-nowrap rounded-lg px-2.5 text-[15px] font-medium text-human-muted-fg lg:px-3",
   "transition-colors duration-200 ease-human outline-none hover:text-human-fg",
   "focus-visible:ring-2 focus-visible:ring-human-ring focus-visible:ring-offset-2 focus-visible:ring-offset-human-bg",
   "aria-[current=page]:font-semibold aria-[current=page]:text-human-fg",
@@ -89,7 +89,7 @@ export function SiteNav({ current }: { current?: NavPage }) {
             </Link>
           </div>
         </div>
-        {links("-mx-3 flex items-center gap-0.5 pb-1 lg:hidden")}
+        {links("-mx-2.5 flex flex-wrap items-center gap-0.5 pb-1 lg:hidden")}
       </nav>
     </header>
   );

@@ -69,7 +69,7 @@ export function DemoHero() {
             <dt className="text-xs font-medium uppercase tracking-[0.15em] text-human-muted-fg">
               {stat.label}
             </dt>
-            <dd className="text-3xl font-bold leading-none tracking-[-0.03em] tabular-nums sm:text-4xl lg:text-5xl">
+            <dd className="text-3xl font-bold leading-none tracking-[-0.03em] whitespace-nowrap tabular-nums sm:text-4xl">
               {stat.value}
             </dd>
           </div>
