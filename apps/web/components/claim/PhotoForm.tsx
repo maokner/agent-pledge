@@ -3,110 +3,59 @@
 
 import type { ClaimView } from "@/lib/contract";
 import { Camera, Images, RotateCw } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
 import { Button, buttonVariants } from "@/components/human/Button";
 import { Card } from "@/components/human/Card";
 import { Field, Input } from "@/components/human/Input";
 import { Notice } from "@/components/human/Notice";
 import { ProgressBar } from "@/components/human/ProgressBar";
 import { Spinner } from "@/components/human/Spinner";
-import { getApiClient } from "@/lib/api";
-import { afterError } from "@/lib/claim/flow";
-import { PhotoError, preparePhoto } from "@/lib/claim/prepare-photo";
-import { isAbortError, StepHeading } from "./parts";
+import type { PhotoUpload } from "@/lib/claim/use-photo-upload";
+import { formatRlusd } from "@/lib/format";
+import { StepHeading } from "./parts";
 
 const NOTE_MAX = 140;
 
-type Picked = { file: File; previewUrl: string };
-type Phase = "idle" | "preparing" | "uploading";
-
 /**
- * Photo of the finished task (the saved seat) and a short note (PRD 2.1 step 11, 9.2 step 5).
- * Camera or gallery, a preview, upload progress, cancel and retry. Optional:
- * the helper can skip to the PIN.
+ * The photo of the finished task (the saved seat) and a short note (PRD 2.1 step 11, 9.2 step 5).
+ * Camera or gallery, a preview, upload progress, cancel and retry.
+ *
+ * Photo mode (the default): the photo is the proof and sending it pays the
+ * helper, so it is required and a note alone does nothing. PIN mode: the photo
+ * is optional and the helper can skip to the PIN.
  */
 export function PhotoForm({
   view,
-  onUpdate,
-  refresh,
+  upload,
   onSkip,
 }: {
   view: ClaimView;
-  onUpdate: (view: ClaimView) => void;
-  refresh: () => Promise<ClaimView | null>;
+  upload: PhotoUpload;
   onSkip: () => void;
 }) {
-  const [picked, setPicked] = useState<Picked | null>(null);
-  const [note, setNote] = useState("");
-  const [phase, setPhase] = useState<Phase>("idle");
-  const [progress, setProgress] = useState(0);
-  const [error, setError] = useState<string | null>(null);
-  const upload = useRef<AbortController | null>(null);
-
-  // Free the preview when it changes or the step ends; stop an upload if the page moves on.
-  useEffect(() => () => void (picked && URL.revokeObjectURL(picked.previewUrl)), [picked]);
-  useEffect(() => () => upload.current?.abort(), []);
-
-  async function pick(event: React.ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    event.target.value = ""; // so picking the same photo again still fires
-    if (!file) return;
-    setPhase("preparing");
-    setError(null);
-    try {
-      const prepared = await preparePhoto(file);
-      setPicked({ file: prepared, previewUrl: URL.createObjectURL(prepared) });
-    } catch (e) {
-      setError(
-        e instanceof PhotoError ? e.message : "This photo could not be read. Try another one.",
-      );
-    } finally {
-      setPhase("idle");
-    }
-  }
-
-  async function send() {
-    if (!picked || upload.current) return;
-    const controller = new AbortController();
-    upload.current = controller;
-    setPhase("uploading");
-    setProgress(0);
-    setError(null);
-    try {
-      onUpdate(
-        await getApiClient().uploadPhoto(view.code, picked.file, note.trim(), {
-          onProgress: setProgress,
-          signal: controller.signal,
-        }),
-      );
-    } catch (e) {
-      if (isAbortError(e)) return;
-      const outcome = afterError(view, e);
-      if (outcome.kind === "state") {
-        onUpdate(outcome.view);
-      } else if (outcome.kind === "retry") {
-        setError(outcome.message);
-      } else {
-        // The photo may have arrived before the connection dropped.
-        const fresh = await refresh();
-        if (!fresh?.photo) setError(`${outcome.message} Your photo is still here.`);
-      }
-    } finally {
-      upload.current = null;
-      setPhase("idle");
-    }
-  }
-
-  const uploading = phase === "uploading";
+  const { picked, note, setNote, phase, progress, error, pick, send, cancel, uploading } = upload;
+  const pays = view.proof === "photo";
   const percent = Math.round(progress * 100);
+  const pay = formatRlusd(view.subtask.price);
 
   return (
     <Card as="section" className="flex flex-col gap-5" aria-labelledby="photo-step">
       <div className="flex flex-col gap-2">
-        <StepHeading id="photo-step" step={2} title="Add a photo" />
-        <p className="text-lg leading-relaxed text-human-muted-fg">
-          Show the requester it is done, for example the seat you saved. This step is optional.
-        </p>
+        {pays ? (
+          <>
+            <StepHeading id="photo-step" step={2} of={3} title="Send a photo to get paid" />
+            <p className="text-lg leading-relaxed text-human-muted-fg">
+              Take a photo that shows it is done, for example the seat you saved. Sending it pays
+              you {pay} right away.
+            </p>
+          </>
+        ) : (
+          <>
+            <StepHeading id="photo-step" step={2} of={4} title="Add a photo" />
+            <p className="text-lg leading-relaxed text-human-muted-fg">
+              Show the requester it is done, for example the seat you saved. This step is optional.
+            </p>
+          </>
+        )}
       </div>
 
       {phase === "preparing" ? (
@@ -149,7 +98,15 @@ export function PhotoForm({
         </div>
       )}
 
-      <Field label="Note" optional>
+      <Field
+        label="Note"
+        optional
+        hint={
+          pays && !picked && note.trim()
+            ? "A note alone does not pay. Add the photo: it is what gets you paid."
+            : undefined
+        }
+      >
         <Input
           type="text"
           value={note}
@@ -170,12 +127,7 @@ export function PhotoForm({
               <Spinner className="text-human-accent" />
               {percent < 100 ? `Sending… ${percent}%` : "Almost done…"}
             </span>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => upload.current?.abort()}
-              className="w-auto"
-            >
+            <Button variant="ghost" size="sm" onClick={cancel} className="w-auto">
               Cancel
             </Button>
           </p>
@@ -187,16 +139,18 @@ export function PhotoForm({
             trailingArrow={!error}
             icon={error ? <RotateCw aria-hidden="true" className="size-5" /> : undefined}
           >
-            {error ? "Try again" : "Send photo"}
+            {error ? "Try again" : pays ? "Send photo and get paid" : "Send photo"}
           </Button>
         )
       )}
 
       {error && <Notice tone="danger">{error}</Notice>}
 
-      <Button variant="ghost" size="sm" onClick={onSkip} disabled={uploading}>
-        Skip and enter the PIN
-      </Button>
+      {!pays && (
+        <Button variant="ghost" size="sm" onClick={onSkip} disabled={uploading}>
+          Skip and enter the PIN
+        </Button>
+      )}
     </Card>
   );
 }

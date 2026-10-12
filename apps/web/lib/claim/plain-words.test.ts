@@ -3,7 +3,7 @@ import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
-import { hasCryptoWord, PLAIN_FALLBACK_MESSAGE, plainMessage } from "./plain-words";
+import { hasCryptoWord, hasJargon, PLAIN_FALLBACK_MESSAGE, plainMessage } from "./plain-words";
 
 const WEB_ROOT = fileURLToPath(new URL("../../", import.meta.url));
 
@@ -90,6 +90,17 @@ describe("hasCryptoWord", () => {
   });
 });
 
+describe("hasJargon (the page's own copy)", () => {
+  it("lets the ledger panel say NFT, XRPL and ledger, and nothing else", () => {
+    for (const text of ["View NFT", "Paying you on the XRPL…", "On the ledger"]) {
+      expect(hasJargon(text), text).toBe(false);
+    }
+    for (const text of ["Your wallet", "the XRP Ledger", "RLUSD", "Tokens", "testnet"]) {
+      expect(hasJargon(text), text).toBe(true);
+    }
+  });
+});
+
 describe("plainMessage", () => {
   it("keeps a plain server message", () => {
     expect(plainMessage("Someone else claimed this first.")).toBe(
@@ -145,10 +156,10 @@ describe("the human side's copy (PRD R7)", () => {
     );
   });
 
-  it("has no crypto words: wallet, NFT, XRPL, XRP Ledger, RLUSD, ledger, token or testnet", () => {
+  it("has no crypto words beyond NFT, XRPL and ledger: no wallet, XRP Ledger, RLUSD, token or testnet", () => {
     const offenders = SCANNED.flatMap(sourceFiles).flatMap((file) =>
       userFacingStrings(file, readFileSync(file, "utf8"))
-        .filter(hasCryptoWord)
+        .filter(hasJargon)
         .map((text) => `${relative(WEB_ROOT, file)}: ${JSON.stringify(text)}`),
     );
     expect(offenders).toEqual([]);

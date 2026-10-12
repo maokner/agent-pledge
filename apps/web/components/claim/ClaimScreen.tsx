@@ -10,10 +10,14 @@ import { Button, buttonVariants } from "@/components/human/Button";
 import { Card } from "@/components/human/Card";
 import { Notice } from "@/components/human/Notice";
 import { type ClaimStep, stepFor } from "@/lib/claim/flow";
+import { needsPayCall } from "@/lib/claim/payout";
 import { useClaim } from "@/lib/claim/use-claim";
+import { usePayout } from "@/lib/claim/use-payout";
+import { usePhotoUpload } from "@/lib/claim/use-photo-upload";
 import { cn } from "@/lib/cn";
 import { ClaimButton } from "./ClaimButton";
 import { ClaimClosed } from "./ClaimClosed";
+import { LedgerPanel } from "./LedgerPanel";
 import { PaidView } from "./PaidView";
 import { PayingView } from "./PayingView";
 import { PhotoForm } from "./PhotoForm";
@@ -26,8 +30,10 @@ const COLUMNS = "grid grid-cols-1 gap-5 lg:grid-cols-[1.1fr_0.9fr] lg:items-star
 
 /**
  * The claim page (PRD 9.2) for /c/<code>, opened on a phone from the Yik Yak post.
- * Loads the claim, then shows the step that matches its state:
- * Claim, then photo (optional), then PIN, then Paid.
+ * Loads the claim, then shows the step that matches its state. Photo mode
+ * (the default): Claim, then the proof photo, which pays, then Paid. PIN mode:
+ * Claim, an optional photo, the PIN, then Paid. The "On the ledger" panel
+ * shows in every state.
  */
 export function ClaimScreen({ code }: { code: string }) {
   const { load, left, timeUp, accept, refresh, retry } = useClaim(code);
@@ -110,7 +116,15 @@ function ClaimFlow({
   refresh: () => Promise<ClaimView | null>;
 }) {
   const [photoSkipped, setPhotoSkipped] = useState(false);
-  const step = stepFor(view, { photoSkipped });
+  const upload = usePhotoUpload({ view, onUpdate, refresh });
+  // Photo mode: once the photo is sent, its answer is the payout, so show "Paying you" already.
+  const step = stepFor(view, { photoSkipped, sending: upload.awaitingAnswer });
+  usePayout({
+    code: view.code,
+    enabled: needsPayCall(view, { uploading: upload.uploading }),
+    onUpdate,
+    refresh,
+  });
 
   let panel: React.ReactNode;
   switch (step) {
@@ -137,12 +151,7 @@ function ClaimFlow({
             Finish it before the time runs out.
           </Notice>
           {step === "photo" ? (
-            <PhotoForm
-              view={view}
-              onUpdate={onUpdate}
-              refresh={refresh}
-              onSkip={() => setPhotoSkipped(true)}
-            />
+            <PhotoForm view={view} upload={upload} onSkip={() => setPhotoSkipped(true)} />
           ) : (
             <>
               <PhotoRecap view={view} onAddPhoto={() => setPhotoSkipped(false)} />
@@ -162,15 +171,30 @@ function ClaimFlow({
       panel = <ClaimClosed reason={step} />;
   }
 
+  // Phones: one column, the ledger always right under the sub-task; the outcome
+  // first once there is one. Desktop: the sub-task on the left; the progress,
+  // the step and the ledger on the right. The right column's wrapper is
+  // `contents` on phones, so its two blocks take part in the phone ordering.
+  const outcomeFirst = OUTCOME_FIRST.includes(step);
   return (
     <div className={COLUMNS}>
-      <div className={cn(OUTCOME_FIRST.includes(step) && "order-2 lg:order-none")}>
+      <div
+        className={cn("lg:sticky lg:top-24 lg:order-none", outcomeFirst ? "order-2" : "order-1")}
+      >
         <SubtaskSummary view={view} left={left} compact={step !== "claim"} />
       </div>
-      <div className="flex flex-col gap-5 lg:sticky lg:top-24">
-        <StepIndicator step={step} />
-        {/* Keyed by step, so each new step fades up once. */}
-        <Step key={step}>{panel}</Step>
+      <div className="contents lg:sticky lg:top-24 lg:flex lg:flex-col lg:gap-5">
+        <div
+          className={cn("flex flex-col gap-5 lg:order-none", outcomeFirst ? "order-1" : "order-3")}
+        >
+          <StepIndicator step={step} proof={view.proof} />
+          {/* Keyed by step, so each new step fades up once. */}
+          <Step key={step}>{panel}</Step>
+        </div>
+        <LedgerPanel
+          view={view}
+          className={cn("lg:order-none", outcomeFirst ? "order-3" : "order-2")}
+        />
       </div>
     </div>
   );

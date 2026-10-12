@@ -18,7 +18,8 @@
  *   SiteNav                  sticky top bar: name, page links, agent board link, "Fixture data" badge in fixture mode
  *   HumanShell               page frame: skip link, SiteNav, max-w-6xl <main>, a faint glow on large screens
  *
- * Copy on this side never uses crypto words (PRD R7); lib/claim/plain-words.test.ts
+ * Copy on this side uses no crypto words beyond "NFT", "XRPL" and "ledger" (PRD R7,
+ * widened for the claim page's "On the ledger" panel); lib/claim/plain-words.test.ts
  * checks the strings in this folder.
  */
 export { Badge, badgeVariants, type BadgeProps } from "./Badge";

@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ApiError, errorMessage, getApiClient } from "../api";
 import { useNow } from "../use-now";
 import { clockOffsetMs, msLeft } from "./clock";
+import { LEDGER_POLL_MS, shouldPollLedger } from "./ledger";
 import { plainMessage } from "./plain-words";
 
 export type ClaimLoad =
@@ -13,13 +14,11 @@ export type ClaimLoad =
   | { status: "error"; message: string }
   | { status: "ready"; view: ClaimView; offsetMs: number };
 
-const PAYING_POLL_MS = 2000;
-const TIME_UP_POLL_MS = 3000;
-
 /**
- * Loads /claim/:code and keeps it fresh: polls while the payout is pending and
- * after the deadline (until the server marks it expired), and reloads when the
- * helper comes back to the tab (for example from the camera app).
+ * Loads /claim/:code and keeps it fresh: polls every LEDGER_POLL_MS from the
+ * claim until the NFT is burned (so the payout and every transaction show up as
+ * they happen) and after the deadline (until the server marks it expired), and
+ * reloads when the helper comes back to the tab (for example from the camera app).
  */
 export function useClaim(code: string) {
   const [load, setLoad] = useState<ClaimLoad>({ status: "loading" });
@@ -60,14 +59,17 @@ export function useClaim(code: string) {
       ? msLeft(load.view.subtask.deadline_at, now, load.offsetMs)
       : null;
   const timeUp = (state === "open" || state === "claimed_by_you") && left === 0;
-  const pollMs = state === "paying" ? PAYING_POLL_MS : timeUp ? TIME_UP_POLL_MS : null;
+  const ledgerMoving = load.status === "ready" && shouldPollLedger(load.view);
+  const polling = ledgerMoving || timeUp;
   useEffect(() => {
-    if (pollMs === null) return;
-    // At the deadline, ask at once; while paying, the last answer is fresh.
-    if (pollMs === TIME_UP_POLL_MS) void refresh();
-    const timer = setInterval(refresh, pollMs);
+    if (!polling) return;
+    const timer = setInterval(refresh, LEDGER_POLL_MS);
     return () => clearInterval(timer);
-  }, [pollMs, refresh]);
+  }, [polling, refresh]);
+  useEffect(() => {
+    // At the deadline, ask at once.
+    if (timeUp) void refresh();
+  }, [timeUp, refresh]);
 
   useEffect(() => {
     const onVisible = () => {

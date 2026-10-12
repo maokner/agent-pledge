@@ -1,34 +1,39 @@
-import type { ClaimStep } from "@/lib/claim/flow";
+import type { ProofMode } from "@/lib/contract";
+import { type ClaimStep, PROGRESS_STEPS, progressFor } from "@/lib/claim/flow";
 import { cn } from "@/lib/cn";
 
-const STEPS = ["Claim", "Photo", "PIN", "Paying", "Paid"] as const;
-
-const INDEX: Partial<Record<ClaimStep, number>> = {
-  claim: 0,
-  photo: 1,
-  pin: 2,
-  paying: 3,
-  paid: 4,
-};
+const COLUMNS: Record<ProofMode, string> = { photo: "grid-cols-3", pin: "grid-cols-4" };
 
 /**
- * Where the Helper is: Claim, Photo, PIN, Paying, Paid, as five segments with
- * labels. The current one is bold and marked `aria-current="step"`; each label
- * also says "done" or "now" to screen readers, so color is never the only sign.
- * Nothing for the closed states (already claimed, time is up, locked).
+ * Where the Helper is, as segments with labels: Claim, Proof, Paid (photo
+ * mode) or Claim, Photo, PIN, Paid (PIN mode). The current one is bold and
+ * marked `aria-current="step"`; while the payout is on its way the last
+ * segment pulses and reads "in progress". Each label also says "done" or "now"
+ * to screen readers, so color is never the only sign. Nothing for the closed
+ * states (already claimed, time is up, locked).
  */
-export function StepIndicator({ step, className }: { step: ClaimStep; className?: string }) {
-  const current = INDEX[step];
-  if (current === undefined) return null;
+export function StepIndicator({
+  step,
+  proof,
+  className,
+}: {
+  step: ClaimStep;
+  proof: ProofMode;
+  className?: string;
+}) {
+  const progress = progressFor(step, proof);
+  if (!progress) return null;
+  const { index: current, running } = progress;
   return (
     <ol
       aria-label="Progress"
       className={cn(
-        "grid grid-cols-5 gap-1.5 rounded-2xl border border-human-border bg-human-card p-4 shadow-human-sm",
+        "grid gap-1.5 rounded-2xl border border-human-border bg-human-card p-4 shadow-human-sm",
+        COLUMNS[proof],
         className,
       )}
     >
-      {STEPS.map((label, i) => (
+      {PROGRESS_STEPS[proof].map((label, i) => (
         <li
           key={label}
           aria-current={i === current ? "step" : undefined}
@@ -39,6 +44,7 @@ export function StepIndicator({ step, className }: { step: ClaimStep; className?
             className={cn(
               "h-1.5 rounded-full",
               i <= current ? "bg-human-gradient" : "bg-human-border",
+              i === current && running && "motion-safe:animate-pulse",
             )}
           />
           <span
@@ -52,7 +58,9 @@ export function StepIndicator({ step, className }: { step: ClaimStep; className?
             )}
           >
             {label}
-            <span className="sr-only">{i < current ? ", done" : i === current ? ", now" : ""}</span>
+            <span className="sr-only">
+              {i < current ? ", done" : i === current ? (running ? ", in progress" : ", now") : ""}
+            </span>
           </span>
         </li>
       ))}
