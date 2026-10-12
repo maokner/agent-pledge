@@ -258,6 +258,16 @@ prepare_env_files() {
   fi
   ok "PUBLIC_API_URL -> $PUBLIC_URL"
   ok "PUBLIC_BASE_URL (claim links, board link) -> $(base_url); CORS_ORIGINS -> $cors"
+  if [ -n "$WEB_URL" ]; then
+    # The hosted web app bakes the API URL in at build time; this committed file carries it.
+    env_set "$ROOT/apps/web/.env.production" NEXT_PUBLIC_API_URL "$PUBLIC_URL"
+    chmod 644 "$ROOT/apps/web/.env.production"
+    if git -C "$ROOT" diff --quiet -- apps/web/.env.production 2>/dev/null; then
+      ok "apps/web/.env.production already points at $PUBLIC_URL"
+    else
+      warn "apps/web/.env.production now points at $PUBLIC_URL: commit and push it so $WEB_URL redeploys (or set NEXT_PUBLIC_API_URL in its dashboard)"
+    fi
+  fi
   ok "WEB_UPSTREAM_URL -> $(web_upstream) (the server proxies the web app)"
 
   # Ledger mode.
