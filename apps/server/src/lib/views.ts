@@ -5,6 +5,7 @@
 import {
   fromCents,
   PIN_MAX_ATTEMPTS,
+  TxKind,
   type AgentLogEntry,
   type AgentTask,
   type BoardState,
@@ -16,7 +17,7 @@ import {
   type TaskView,
   type TxView,
 } from "@agent-pledge/shared";
-import { asc, desc, eq, inArray } from "drizzle-orm";
+import { asc, desc, eq, inArray, sql } from "drizzle-orm";
 import type { Config } from "../config";
 import type { Db } from "../db/client";
 import {
@@ -32,7 +33,7 @@ import {
   type TaskRow,
   type TransactionRow,
 } from "../db/schema";
-import { boardUrl, claimUrl, mediaUrl } from "./urls";
+import { boardUrl, claimUrl, explorerAccountUrl, mediaUrl } from "./urls";
 
 export interface ViewCtx {
   config: Config;
@@ -281,6 +282,44 @@ export function taskRowToAgentTask(ctx: ViewCtx, t: TaskRow): AgentTask {
   };
 }
 
+/**
+ * sha256 (lower-case hex) of a stored image's bytes, the exact bytes GET /media/:id serves.
+ * The proof photo's hash: the payout memos carry it, and the claim view shows it.
+ */
+export async function loadMediaSha256(db: Db, mediaId: string): Promise<string | null> {
+  const [row] = await db
+    .select({ sha256: sql<string>`encode(sha256(${media.bytes}), 'hex')` })
+    .from(media)
+    .where(eq(media.id, mediaId));
+  return row?.sha256 ?? null;
+}
+
+/** Ledger order of a sub-task's transactions when two share a timestamp. */
+const txKindRank = (k: TxView["kind"]) => TxKind.options.indexOf(k);
+
+/** Every transaction of a sub-task, oldest first. */
+export async function loadSubtaskTxViews(db: Db, subtaskId: string): Promise<TxView[]> {
+  const rows = await db
+    .select()
+    .from(transactions)
+    .where(eq(transactions.subtaskId, subtaskId))
+    .orderBy(asc(transactions.createdAt));
+  return rows
+    .map(txRowToView)
+    .sort(
+      (a, b) => a.created_at.localeCompare(b.created_at) || txKindRank(a.kind) - txKindRank(b.kind),
+    );
+}
+
+/** Who holds the sub-task NFT, as the claim page shows it. */
+function nftHolder(s: SubtaskRow, claimedByYou: boolean): NonNullable<ClaimView["nft"]>["holder"] {
+  if (s.burnedAt) return "burned";
+  // The payout swaps the NFT back to the vault; only the burn is left.
+  if (s.paidAt) return "vault";
+  if (s.helperWalletId) return claimedByYou ? "you" : "helper";
+  return "vault";
+}
+
 /** The claim page view of a sub-task, by claim code. */
 export async function loadClaimView(
   db: Db,
@@ -290,19 +329,19 @@ export async function loadClaimView(
 ): Promise<ClaimView | null> {
   const [s] = await db.select().from(subtasks).where(eq(subtasks.claimCode, code));
   if (!s) return null;
-  const [[t], [p], mediaRows, payoutTx] = await Promise.all([
+  const [[t], [p], mediaRows, txs, proofSha256] = await Promise.all([
     db.select().from(tasks).where(eq(tasks.id, s.taskId)),
     db.select().from(pins).where(eq(pins.taskId, s.taskId)),
     s.photoMediaId
       ? db.select(mediaMetaColumns).from(media).where(eq(media.id, s.photoMediaId))
       : Promise.resolve([] as MediaMeta[]),
-    s.payoutTxHash
-      ? db.select().from(transactions).where(eq(transactions.hash, s.payoutTxHash))
-      : Promise.resolve([] as TransactionRow[]),
+    loadSubtaskTxViews(db, s.id),
+    s.photoMediaId ? loadMediaSha256(db, s.photoMediaId) : Promise.resolve(null),
   ]);
   if (!t) return null;
   const photo = mediaRows[0];
-  const ptx = payoutTx[0];
+  const ptx = s.payoutTxHash ? txs.find((x) => x.hash === s.payoutTxHash) : undefined;
+  const vaultAddress = ctx.vaultAddress ?? "";
   return {
     code: s.claimCode,
     subtask_id: s.id,
@@ -321,9 +360,26 @@ export async function loadClaimView(
         ? {
             amount: fromCents(s.priceCents),
             tx_hash: s.payoutTxHash,
-            explorer_url: ptx?.explorerUrl ?? "",
+            explorer_url: ptx?.explorer_url ?? "",
           }
         : null,
+    proof: ctx.config.PROOF_MODE,
+    proof_sha256: proofSha256,
+    nft: s.nftId
+      ? {
+          id: s.nftId,
+          explorer_url: ctx.explorerNftUrl(s.nftId),
+          holder: nftHolder(s, claimedByYou),
+          parent_nft_id: t.nftId,
+          parent_explorer_url: t.nftId ? ctx.explorerNftUrl(t.nftId) : null,
+        }
+      : null,
+    escrow: {
+      amount: fromCents(s.priceCents),
+      vault_address: vaultAddress,
+      vault_explorer_url: vaultAddress ? explorerAccountUrl(ctx.config, vaultAddress) : "",
+    },
+    transactions: txs,
   };
 }
 

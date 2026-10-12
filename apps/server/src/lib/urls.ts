@@ -11,3 +11,6 @@ export const boardUrl = (cfg: Config, taskId?: string) =>
 export const nftUri = (cfg: Config, id: string) => `${trim(cfg.PUBLIC_API_URL)}/tasks/${id}.json`;
 /** <PUBLIC_API_URL>/media/<id> */
 export const mediaUrl = (cfg: Config, id: string) => `${trim(cfg.PUBLIC_API_URL)}/media/${id}`;
+/** The XRPL explorer page of an account: <XRPL_EXPLORER_URL>/accounts/<address> */
+export const explorerAccountUrl = (cfg: Config, address: string) =>
+  `${trim(cfg.XRPL_EXPLORER_URL)}/accounts/${address}`;
