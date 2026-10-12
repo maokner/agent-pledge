@@ -7,6 +7,7 @@ This is the design direction for the web app (`apps/web`). Read it before changi
 | Landing | `/` | Its own small set, from the mockup below | `--color-landing-*` |
 | Human side | `/human`, `/c/[code]` | [human-design-system.md](human-design-system.md) | `--color-human-*` |
 | Agent side | `/board` (and the fixture-only `/preview`) | [agent-design-system.md](agent-design-system.md) | `--color-term-*` |
+| Demo | `/demo` | The human design system, with the exceptions below | `--color-human-*` |
 
 The tokens live in `apps/web/app/globals.css`. Each route group's layout sets `data-surface="landing" | "human" | "agent"` on its wrapper, and that is what turns its tokens on. A token used on the wrong surface has no value, which makes the mistake easy to see. Don't define colors in components. If you need a token that doesn't exist, ask for it to be added to `globals.css`.
 
@@ -51,6 +52,18 @@ Use the agent design system. The board (#32 to #38, #43) is shown on a big scree
 - **Big-screen mode (#43, `?projector=1`):** must be readable from the back of the room. That means large type, scanlines faint enough not to hurt legibility, and only a subtle phosphor glow so large text stays sharp.
 - **Always dark:** the board is in dark terminal style in every mode, including big-screen mode. The demo screen shows black fine, so the old light-only projector rule is gone.
 - **Behavior stays the same:** live updates, the money tree, transaction lists, images, the agent log, the backup form and big-screen mode.
+
+## Demo (`/demo`)
+
+The recorded run, as a walkthrough for judges: `apps/web/app/(demo)/demo`.
+It is static. Everything on it comes from `apps/web/lib/demo/walkthrough.ts`, which reads a copy of `docs/evidence/task_ibubjgka23gcd8ad/evidence.json`; the screenshots are copies in `apps/web/public/demo`.
+When the evidence is regenerated (`pnpm demo:evidence`), copy the JSON and the screenshots over again.
+
+- **Look:** the human design system (light, Inter, electric blue), in the same shell and nav as `/human`. Same cards, badges, buttons and motion rules.
+- **Crypto words are allowed here.** This page exists to show the ledger, so it names the XRPL, the NFTs, the vault and the wallets. The R7 rule stays in force on `/human` and `/c/[code]`.
+- **Monospace for hashes only:** addresses, hashes, NFT IDs and signatures use `font-mono` so they can be compared with the explorer. All other text is Inter.
+- **Every claim links out:** each transaction, account and NFT has a link to the public explorer, and the page footer links to the evidence folder on GitHub.
+- **Screenshots are framed** as a browser window or a phone, cropped from the top so a grid lines up, and open full size in a native `<dialog>`.
 
 ## Rules for every surface
 

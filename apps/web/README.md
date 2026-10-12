@@ -1,8 +1,8 @@
 # Web: board and claim page
 
-Next.js (App Router), TypeScript, Tailwind. Routes: `/` (landing), `/board` (board), `/human` (open sub-tasks) and `/c/[code]` (claim page).
-Pages live in route groups that set each surface's design tokens: `app/(landing)`, `app/(human)` and
-`app/(agent)`. See `docs/design/DIRECTION.md`.
+Next.js (App Router), TypeScript, Tailwind. Routes: `/` (landing), `/board` (board), `/human` (open sub-tasks), `/c/[code]` (claim page) and `/demo` (the recorded run, for judges).
+Pages live in route groups that set each surface's design tokens: `app/(landing)`, `app/(human)`, `app/(agent)` and
+`app/(demo)`. See `docs/design/DIRECTION.md`.
 The web app's own model lives in `lib/contract` (imported as `@/lib/contract`; the former DRAFT contract, see `lib/contract/CONTRACT.md`).
 The server's wire types come from `@agent-pledge/shared` (`packages/shared`, documented in `docs/api.md`).
 

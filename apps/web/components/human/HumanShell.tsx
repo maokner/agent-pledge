@@ -1,8 +1,8 @@
 import { cn } from "@/lib/cn";
-import { SiteNav } from "./SiteNav";
+import { SiteNav, type NavPage } from "./SiteNav";
 
 /**
- * The page frame for /human and /c/[code]: a skip link, the sticky SiteNav,
+ * The page frame for /human, /c/[code] and /demo: a skip link, the sticky SiteNav,
  * and a centered `max-w-6xl` <main>. On large screens a faint accent glow sits
  * behind the top of the page (decoration only, hidden on phones).
  */
@@ -12,7 +12,7 @@ export function HumanShell({
   children,
 }: {
   /** The page, so the nav marks its link as current. */
-  current?: "/human";
+  current?: NavPage;
   className?: string;
   children: React.ReactNode;
 }) {

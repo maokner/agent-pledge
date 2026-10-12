@@ -9,7 +9,11 @@ const LINKS = [
   { href: "/human", label: "Open tasks", page: "/human" },
   { href: "/human#how-it-works", label: "How it works", page: null },
   { href: "/board", label: "Live board", page: "/board" },
+  { href: "/demo", label: "Demo", page: "/demo" },
 ] as const;
+
+/** The pages that have their own nav link. */
+export type NavPage = "/human" | "/demo";
 
 const LINK_CLASS = [
   "inline-flex min-h-11 items-center whitespace-nowrap rounded-lg px-3 text-[15px] font-medium text-human-muted-fg",
@@ -19,16 +23,16 @@ const LINK_CLASS = [
 ];
 
 /**
- * The human side's top bar (/human and /c/[code]): the name on the left
- * (links home), the page links in the middle, and the way to the agent board
- * on the right, with a "Fixture data" badge in fixture mode. No accounts, so
- * no Log in or Sign up. Sticky, light and translucent.
+ * The human side's top bar (/human, /c/[code] and /demo): the name on the
+ * left (links home), the page links in the middle, and the way to the agent
+ * board on the right, with a "Fixture data" badge in fixture mode. No
+ * accounts, so no Log in or Sign up. Sticky, light and translucent.
  *
  * Below lg the links move to a second row under the name. `current` marks
  * the page's own link with aria-current (passed in, not read from the URL,
  * so the claim page can still prerender its shell).
  */
-export function SiteNav({ current }: { current?: "/human" }) {
+export function SiteNav({ current }: { current?: NavPage }) {
   const links = (className?: string) => (
     <ul className={className}>
       {LINKS.map(({ href, label, page }) => (

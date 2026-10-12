@@ -166,6 +166,15 @@ export function backendClaim(overrides: Partial<BackendClaimView> = {}): Backend
     photo: null,
     pin: { attempts: 0, attempts_left: 3, locked: false, verified: false },
     payout: null,
+    proof: "pin",
+    proof_sha256: null,
+    nft: null,
+    escrow: {
+      amount: "4.00",
+      vault_address: ADDRESSES.vault,
+      vault_explorer_url: `https://testnet.xrpl.org/accounts/${ADDRESSES.vault}`,
+    },
+    transactions: [],
     ...overrides,
   };
 }
