@@ -194,6 +194,47 @@ describe("createXrplLedger port: success flow", () => {
     expect(ledger.holders.has(mint.nftId)).toBe(false);
   });
 
+  it("passes ctx.proofSha256 to the helper's offer and the vault's accept as the proof memo", async () => {
+    const { subMint } = await claimAndSubtask();
+    const proof = "c4".repeat(32);
+    const ctx = { taskId: "t1", subtaskId: "sub_1", proofSha256: proof };
+    const before = ledger.submitted.length;
+    const redeem = await port.createRedeemOffer(helper.seed!, subMint.nftId, "4.00", ctx);
+    await port.acceptRedeemOffer(redeem.offerId, ctx);
+    const txs = ledger.submitted.slice(before);
+    expect(txs.map((tx) => tx.TransactionType)).toEqual([
+      "NFTokenCreateOffer",
+      "NFTokenAcceptOffer",
+    ]);
+    expect(txs.map((tx) => readMemos(tx.Memos))).toEqual([
+      { task: "t1", subtask: "sub_1", action: "payout.offer", proof },
+      { task: "t1", subtask: "sub_1", action: "payout.accept", proof },
+    ]);
+  });
+
+  it("the agent ledger passes ctx.proofSha256 to its redeem offer", async () => {
+    const { mint } = await claimAndSubtask();
+    const proof = "d5".repeat(32);
+    await agent.createRedeemOffer(mint.nftId, "6.00", { taskId: "t1", proofSha256: proof });
+    expect(readMemos(ledger.submitted.at(-1)!.Memos)).toMatchObject({
+      action: "payout.offer",
+      proof,
+    });
+  });
+
+  it("rejects a malformed ctx.proofSha256 before it signs", async () => {
+    const { subMint } = await claimAndSubtask();
+    const before = ledger.submitted.length;
+    await expect(
+      port.createRedeemOffer(helper.seed!, subMint.nftId, "4.00", {
+        taskId: "t1",
+        subtaskId: "sub_1",
+        proofSha256: "not-a-hash",
+      }),
+    ).rejects.toBeInstanceOf(LedgerTxFailedError);
+    expect(ledger.submitted.length).toBe(before);
+  });
+
   it("writes the placeholder parent when the task NFT is unknown", async () => {
     const mint = await port.mintSubtaskNft("sub_x", URI("sub_x"));
     const tx = ledger.submitted.at(-1)!;

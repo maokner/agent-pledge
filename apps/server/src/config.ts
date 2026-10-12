@@ -57,6 +57,12 @@ export const ConfigSchema = z.object({
     .enum(["true", "false", "1", "0", ""])
     .default("false")
     .transform((v) => v === "true" || v === "1"),
+  /**
+   * What pays the helper. photo (default) = the helper's proof photo pays (POST /claim/:code/photo,
+   * retried with POST /claim/:code/pay); the payout memos carry the photo's sha256.
+   * pin = only the requester's PIN pays (POST /claim/:code/pin). The PIN works in both modes.
+   */
+  PROOF_MODE: z.enum(["photo", "pin"]).default("photo"),
   PLEDGE_AMOUNT: Money.default("1.00"),
   /** Treasury -> new requester wallet. Empty = exactly the task price. */
   REQUESTER_FUNDING_AMOUNT: z.union([Money, z.literal("")]).default(""),

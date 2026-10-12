@@ -100,7 +100,10 @@ describe("POST /claim/:code/photo", () => {
     expect(res.json().media).toMatchObject({ width: 1280, height: 640 });
   });
 
-  it("accepts a note alone and keeps the earlier photo", async () => {
+  it("accepts a note alone and keeps the earlier photo (PIN mode, so the photo does not pay)", async () => {
+    await t.close();
+    t = await buildTestApp({ config: { PROOF_MODE: "pin" } });
+    t.bus.subscribe((e) => events.push(e));
     const c = await claimed();
     await uploadPhoto(
       c.code,

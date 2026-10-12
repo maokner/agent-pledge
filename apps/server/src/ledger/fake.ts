@@ -48,6 +48,16 @@ export const fakeAddress = () => "r" + randomFrom(XRPL_ALPHABET, 33);
 export const fakeSeed = () => "s" + randomFrom(XRPL_ALPHABET, 28);
 
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+/** Like the real ledger package: a proof hash must be 64 hex characters, checked before signing. */
+function checkProof(ctx: TxContext): void {
+  if (ctx.proofSha256 !== undefined && !/^[0-9a-fA-F]{64}$/.test(ctx.proofSha256)) {
+    throw new LedgerTxFailedError(
+      "Proof sha256 must be exactly 64 hex characters",
+      "INVALID_INPUT",
+    );
+  }
+}
+
 const memoFor = (ctx: TxContext) =>
   ctx.subtaskId
     ? `agent-pledge:subtask:${ctx.subtaskId}`
@@ -111,6 +121,8 @@ export class FakeLedger implements LedgerPort {
   private readonly nfts = new Map<string, FakeNft>();
   private readonly offers = new Map<string, FakeOffer>();
   private readonly txs = new Map<string, FakeTx>();
+  /** The agent-pledge/proof memo of each payout transaction (lower-case hex), by hash. */
+  private readonly proofs = new Map<string, string>();
   private readonly failedTasks = new Map<string, Promise<TxResult[]>>();
   private readonly listeners = new Set<TxListener>();
 
@@ -173,6 +185,10 @@ export class FakeLedger implements LedgerPort {
   addressForSeed(seed: string): string | undefined {
     return this.seedToAddress.get(seed);
   }
+  /** The proof photo hash a transaction carries in its agent-pledge/proof memo, if any. */
+  proofOf(hash: string): string | undefined {
+    return this.proofs.get(hash);
+  }
 
   // ---------- events ----------
 
@@ -226,6 +242,7 @@ export class FakeLedger implements LedgerPort {
       done: new Promise<void>((r) => (resolveDone = r)),
     };
     this.txs.set(hash, tx);
+    if (spec.ctx?.proofSha256) this.proofs.set(hash, spec.ctx.proofSha256.toLowerCase());
     this.emit(tx);
     await sleep(this.latencyMs);
     let result: T & { nftId?: string; offerId?: string };
@@ -413,13 +430,14 @@ export class FakeLedger implements LedgerPort {
     return this.sellOffer(this.vaultAddress, nftId, 0, undefined, "subtask_offer", { subtaskId });
   }
 
-  createRedeemOffer(
+  async createRedeemOffer(
     holderSeed: string,
     nftId: string,
     amount: Money,
     ctx: TxContext,
   ): Promise<OfferTxResult> {
     const kind = ctx.subtaskId ? "helper_redeem_offer" : "agent_redeem_offer";
+    checkProof(ctx);
     return this.sellOffer(
       this.seedAddress(holderSeed),
       nftId,
@@ -430,7 +448,8 @@ export class FakeLedger implements LedgerPort {
     );
   }
 
-  acceptRedeemOffer(offerId: string, ctx: TxContext): Promise<TxResult> {
+  async acceptRedeemOffer(offerId: string, ctx: TxContext): Promise<TxResult> {
+    checkProof(ctx);
     return this.accept(
       this.vaultAddress,
       offerId,

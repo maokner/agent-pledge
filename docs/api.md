@@ -89,13 +89,42 @@ Sub-task creation: `price` is what the helper earns. The server funds nothing it
 
 | Endpoint | Auth | Body | Response | Errors | Board events |
 |---|---|---|---|---|---|
-| `GET /claim/:code` | none (helper token optional, sets `claimed_by_you`) | — | `ClaimView` | 404 | — |
+| `GET /claim/:code` | none (helper token optional, sets `claimed_by_you` and `nft.holder: "you"`) | none | `ClaimView` | 404 | none |
 | `POST /claim/:code/claim` | none | — | `{ helper_token, claim: ClaimView }` + cookie | 409 `already_claimed`, 410 `expired` | `subtask.claimed`, `tx.*` |
-| `POST /claim/:code/photo` | helper | multipart: `file?` (image), `note?` (≤280 chars); at least one | `{ claim, media }` | 401, 410 | `photo.added` |
+| `POST /claim/:code/photo` | helper | multipart: `file?` (image), `note?` (≤280 chars); at least one | `PhotoResponse { claim, media, payout }` | 401, 409 `conflict` (finished, or payout under way), 410, 502 `ledger_error` | `photo.added`; with a payout also `subtask.paid`, `tx.*` |
+| `POST /claim/:code/pay` | helper | none | `PayResponse { claim, payout }` | 401, 409 `conflict` (no photo yet, or PIN mode), 410, 502 `ledger_error` | `subtask.paid`, `tx.*` |
 | `POST /claim/:code/pin` | helper | `{ pin: "4821" }` | `{ claim, payout: { amount, tx_hash, explorer_url } }` | 422 `wrong_pin`, 423 `pin_locked`, 410 | `pin.failed`, `pin.locked`, `subtask.paid`, `tx.*` |
 
-The PIN endpoint is idempotent: a repeat after success returns the same payout and pays nothing twice.
-After the helper is paid, the server sends `task.redeemable` to the local agent, which redeems the task NFT (section 6); `task.paid` follows.
+**Proof modes.** The server config `PROOF_MODE` decides what pays the helper; `ClaimView.proof` tells the client.
+
+- `photo` (default): the proof photo pays.
+  `POST /claim/:code/photo` saves the photo exactly as before, then pays the helper and returns `payout`.
+  The helper's payout offer and the vault's accept carry the sha256 (hex) of the stored, re-encoded image bytes in the `agent-pledge/proof` memo; `ClaimView.proof_sha256` is the same hash, so anyone can hash `GET /media/:id` and compare.
+  A note alone returns `payout: null`.
+  If the ledger fails after the photo is saved, the answer is 502 `ledger_error` and the photo stays; the client retries with `POST /claim/:code/pay`.
+  Once the payout has started, the photo cannot change (409), so the memo hash always matches the stored photo.
+- `pin`: the photo never pays (`payout: null`), `POST /claim/:code/pay` answers 409 `conflict` ("The requester's PIN pays this task"), and the PIN pays as before.
+
+`POST /claim/:code/pay` pays for a sub-task that already has a proof photo.
+It is idempotent: after success, or after a lost response, it returns the same payout, even past the deadline.
+Before the payout it answers 409 `conflict` without a photo, and 410 `expired` when the deadline passed or the task failed.
+
+**PIN notes.** The PIN endpoint works in both modes.
+It is idempotent: a repeat after success returns the same payout and pays nothing twice.
+After a photo payout, the correct PIN is recorded (`pin.verified`) and returns the same payout, even past the deadline; a wrong PIN still counts as a wrong attempt.
+No payout ever happens twice: the photo, pay, and PIN endpoints share one payout per sub-task (`subtasks.payout_started_at` and `paid_at`, section 7).
+
+After the helper is paid (by the photo, the pay endpoint, or the PIN), the server sends `task.redeemable` to the local agent, which redeems the task NFT (section 6); `task.paid` follows.
+
+**Claim view ledger fields.** `ClaimView` also carries:
+
+- `proof`: `"photo"` or `"pin"`, from `PROOF_MODE`.
+- `proof_sha256`: the sha256 (lower-case hex) of the stored photo bytes, or null without a photo.
+- `nft`: the sub-task NFT (`id`, `explorer_url`), null until minted.
+  `holder` is `vault` while the sub-task is open (and after the payout swap, until the burn), `you` when the request's helper token belongs to the helper who claimed it, `helper` when someone else claimed it, and `burned` once the NFT is burned.
+  `parent_nft_id` and `parent_explorer_url` are the task NFT (PRD 5.3).
+- `escrow`: the sub-task price that the vault holds, the vault address (the same as `BoardState.vault_address`), and its explorer page (`<XRPL_EXPLORER_URL>/accounts/<address>`).
+- `transactions`: every `TxView` of this sub-task, oldest first: funding, mint, offer, claim, payout offer, payout, burn (or the refund).
 
 ### 3.4 Board, NFT data, media, admin
 
@@ -151,7 +180,7 @@ Server → agent:
 | `type` | Fields | Notes |
 |---|---|---|
 | `task.new` | `task: AgentTask` (`id, description, place, time_limit_minutes, deadline, price, pledge, status, nft_id, offer_id, vault_address, board_url, created_at`) | Resent on every (re)connect until acked |
-| `task.redeemable` | `task_id, subtask_id, nft_id, amount, vault_address` | The helper entered the correct PIN and was paid. `amount` = price + pledge. Resent on reconnect while the task is redeemable and unpaid. |
+| `task.redeemable` | `task_id, subtask_id, nft_id, amount, vault_address` | The helper was paid (proof photo or correct PIN). `amount` = price + pledge. Resent on reconnect while the task is redeemable and unpaid. |
 
 Agent → server:
 
@@ -186,8 +215,8 @@ In the server, only `apps/server/src/ledger/xrpl.ts` imports `@agent-pledge/ledg
 | `acceptOffer(claimerSeed, offerId, ctx)` → `{ nftId, holder }` | `subtask_claim` (or `task_claim`) | 10. Helper claim |
 | `mintSubtaskNft(subtaskId, uri)` → `nftId` | `subtask_nft_mint` | 8. Sub-task NFT |
 | `offerSubtaskToAnyone(nftId, subtaskId)` → `offerId` | `subtask_offer` | 8. Open offer |
-| `createRedeemOffer(holderSeed, nftId, amount, ctx)` → `offerId` | `helper_redeem_offer` | 13. Helper payout (offer) |
-| `acceptRedeemOffer(offerId, ctx)` | `helper_payout` / `agent_payout` | 13. Payout swap |
+| `createRedeemOffer(holderSeed, nftId, amount, ctx)` → `offerId` | `helper_redeem_offer` | 13. Helper payout (offer); `ctx.proofSha256` → `agent-pledge/proof` memo |
+| `acceptRedeemOffer(offerId, ctx)` | `helper_payout` / `agent_payout` | 13. Payout swap; `ctx.proofSha256` → `agent-pledge/proof` memo |
 | `burn(nftId, ctx)` | `subtask_nft_burn` / `task_nft_burn` | 13. Close |
 | `failTask(FailTaskInput)` | burns + `refund_requester` + `refund_agent` | Failure (PRD 2.3); idempotent per task |
 | `verifyTx(hash, expect)` | — | Checks a transaction the local agent submitted; emits its `validated`/`failed` event |

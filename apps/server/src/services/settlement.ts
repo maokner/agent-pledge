@@ -8,7 +8,7 @@ import type { FastifyInstance } from "fastify";
 import { subtasks, tasks, wallets, type SubtaskRow, type TaskRow } from "../db/schema";
 import { HttpError, notFound } from "../lib/http";
 import { decryptSeed } from "../lib/seed-crypto";
-import { loadSubtaskView, loadTaskView } from "../lib/views";
+import { loadMediaSha256, loadSubtaskView, loadTaskView } from "../lib/views";
 
 export interface HelperPayout {
   amount: Money;
@@ -48,9 +48,12 @@ async function paidResult(app: FastifyInstance, s: SubtaskRow): Promise<HelperPa
 // ---------- Helper payout (#23) ----------
 
 /**
- * Pays the helper of a sub-task whose PIN was verified: helper redeem offer (server-held helper seed),
- * vault accepts it (NFT back, helper paid), vault burns the NFT. Marks the sub-task done and paid,
- * broadcasts subtask.paid, and sends task.redeemable to the local agent.
+ * Pays the helper of a sub-task whose proof is in (the proof photo in PROOF_MODE=photo, or the
+ * verified PIN): helper redeem offer (server-held helper seed), vault accepts it (NFT back, helper
+ * paid), vault burns the NFT. Marks the sub-task done and paid, broadcasts subtask.paid, and sends
+ * task.redeemable to the local agent.
+ * In PROOF_MODE=photo, the offer and the accept carry the stored photo's sha256 in the
+ * `agent-pledge/proof` memo (when the sub-task has a photo).
  * Idempotent: a second call (concurrent or later) pays nothing and returns the same result.
  */
 export function payHelper(app: FastifyInstance, subtaskId: string): Promise<HelperPayout> {
@@ -107,19 +110,25 @@ async function runHelperPayout(app: FastifyInstance, subtaskId: string): Promise
 
   if (!s.payoutTxHash) {
     if (!s.nftId || !s.helperWalletId) throw conflict("The sub-task has no claimed NFT");
+    // The photo cannot change any more: addHelperPhoto refuses once payout_started_at is set.
+    const proofSha256 =
+      config.PROOF_MODE === "photo" && s.photoMediaId
+        ? ((await loadMediaSha256(db, s.photoMediaId)) ?? undefined)
+        : undefined;
+    const payCtx = { ...ctx, ...(proofSha256 ? { proofSha256 } : {}) };
     const [w] = await db.select().from(wallets).where(eq(wallets.id, s.helperWalletId));
     if (!w?.encryptedSeed) throw conflict("The helper wallet has no seed");
     const helperSeed = decryptSeed(w.encryptedSeed, config.SEED_ENCRYPTION_KEY);
     let offerId = s.helperRedeemOfferId;
     if (!offerId) {
-      const offer = await ledger.createRedeemOffer(helperSeed, s.nftId, amount, ctx);
+      const offer = await ledger.createRedeemOffer(helperSeed, s.nftId, amount, payCtx);
       offerId = offer.offerId;
       await db
         .update(subtasks)
         .set({ helperRedeemOfferId: offerId, updatedAt: clock.now() })
         .where(eq(subtasks.id, subtaskId));
     }
-    const payout = await ledger.acceptRedeemOffer(offerId, ctx);
+    const payout = await ledger.acceptRedeemOffer(offerId, payCtx);
     const at = clock.now();
     await db
       .update(subtasks)

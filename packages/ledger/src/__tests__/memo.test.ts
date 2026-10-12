@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import { LedgerError } from "../errors.js";
 import {
   buildMemos,
+  checkProofSha256,
   encodeMemo,
+  MEMO_TYPES,
   fromHex,
   readMemos,
   readTaskMemo,
@@ -104,5 +106,42 @@ describe("memos", () => {
   it("reads the task memo that taskMemo writes, so both views agree", () => {
     expect(readMemos(taskMemo("t9"))).toEqual({ task: "t9" });
     expect(readTaskMemo({ Memos: buildMemos({ task: "t9", action: "refund" }) })).toBe("t9");
+  });
+});
+
+describe("proof memo", () => {
+  const sha = "ab".repeat(32);
+
+  it("writes agent-pledge/proof after the action memo, and readMemos returns it", () => {
+    const memos = buildMemos({ task: "t1", subtask: "s1", action: "payout.offer", proof: sha });
+    expect(memos).toHaveLength(4);
+    expect(memos[3]).toEqual(encodeMemo(MEMO_TYPES.proof, sha));
+    expect(fromHex(memos[3]!.Memo.MemoType!)).toBe("agent-pledge/proof");
+    expect(readMemos(memos)).toEqual({
+      task: "t1",
+      subtask: "s1",
+      action: "payout.offer",
+      proof: sha,
+    });
+  });
+
+  it("writes the hash in lower case", () => {
+    const memos = buildMemos({ proof: sha.toUpperCase() });
+    expect(readMemos(memos)).toEqual({ proof: sha });
+    expect(checkProofSha256("AB".repeat(32))).toBe(sha);
+  });
+
+  it.each([
+    ["empty", ""],
+    ["63 hex characters", "a".repeat(63)],
+    ["65 hex characters", "a".repeat(65)],
+    ["a non-hex character", `${"a".repeat(63)}g`],
+    ["outer whitespace", ` ${"a".repeat(64)}`],
+    ["a 0x prefix", `0x${"a".repeat(62)}`],
+  ])("rejects a proof with %s with INVALID_INPUT", (_, value) => {
+    expect(() => buildMemos({ proof: value })).toThrow(
+      expect.objectContaining({ code: "INVALID_INPUT" }),
+    );
+    expect(() => checkProofSha256(value)).toThrow(LedgerError);
   });
 });

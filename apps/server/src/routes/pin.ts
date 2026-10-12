@@ -1,6 +1,8 @@
 // Owner: bundle D (#23). POST /claim/:code/pin. Needs the helper token (requireHelper from auth.ts).
 // Wrong PIN -> 422 wrong_pin + pin.failed; third wrong -> 423 pin_locked + pin.locked.
 // Correct PIN -> services/settlement.ts pays the helper, then notifies the agent (task.redeemable).
+// Works in both PROOF_MODEs. When the proof photo already paid the helper, the correct PIN is recorded
+// and returns the same payout (payHelper is idempotent).
 import {
   ErrorCode,
   normalizeCode,
@@ -50,13 +52,17 @@ const pinRoutes: FastifyPluginAsync = async (app) => {
       return respond();
     }
 
-    if (t.refundStartedAt || t.status === "failed" || s.status === "failed")
-      throw new HttpError(410, ErrorCode.expired, "This task has failed");
-    if (clock.now().getTime() > t.deadline.getTime())
-      throw new HttpError(410, ErrorCode.expired, "The time limit has passed");
+    // The proof photo already paid this helper: the time limit no longer applies.
+    const paid = !!(s.paidAt && s.payoutTxHash);
+    if (!paid) {
+      if (t.refundStartedAt || t.status === "failed" || s.status === "failed")
+        throw new HttpError(410, ErrorCode.expired, "This task has failed");
+      if (clock.now().getTime() > t.deadline.getTime())
+        throw new HttpError(410, ErrorCode.expired, "The time limit has passed");
+    }
     if (p.verifiedAt)
       throw new HttpError(409, ErrorCode.conflict, "Another helper already entered the PIN");
-    if (s.status !== "claimed")
+    if (!paid && s.status !== "claimed")
       throw new HttpError(409, ErrorCode.conflict, "This sub-task is not claimed");
     if (p.locked) throw pinLocked(p.attempts);
 

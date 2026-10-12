@@ -1,21 +1,24 @@
 // Owner: bundle C (#21, #22). Claim page API. Public GET; claim issues a helper token
-// (issueHelperToken + setHelperCookie from auth.ts); photo needs the helper token (requireHelper).
-// POST /claim/:code/pin lives in routes/pin.ts (bundle D).
-// Business logic goes in services/claims.ts and services/media.ts.
+// (issueHelperToken + setHelperCookie from auth.ts); photo and pay need the helper token (requireHelper).
+// In PROOF_MODE=photo the proof photo pays the helper (services/settlement.ts payHelper), and
+// POST /claim/:code/pay retries that payout. POST /claim/:code/pin lives in routes/pin.ts (bundle D).
+// Business logic goes in services/claims.ts, services/media.ts, and services/settlement.ts.
 import {
   ErrorCode,
   PhotoFields,
   type ClaimSubtaskResponse,
   type ClaimView,
+  type PayResponse,
   type PhotoResponse,
 } from "@agent-pledge/shared";
 import type { FastifyInstance, FastifyPluginAsync, FastifyRequest } from "fastify";
 import { helperFromRequest, requireHelper, setHelperCookie } from "../auth";
-import type { SubtaskRow } from "../db/schema";
+import type { SubtaskRow, TaskRow } from "../db/schema";
 import { HttpError, notFound, parseOrThrow } from "../lib/http";
 import { loadClaimView } from "../lib/views";
 import { claimSubtask, expired, findByCode, isExpired } from "../services/claims";
 import { addHelperPhoto, readUpload } from "../services/media";
+import { payHelper, type HelperPayout } from "../services/settlement";
 import { setupHelperWalletPool } from "../services/wallet-pool";
 
 type CodeParams = { Params: { code: string } };
@@ -24,6 +27,24 @@ type CodeParams = { Params: { code: string } };
 function isClaimer(req: FastifyRequest, code: string, s: SubtaskRow): boolean {
   const h = helperFromRequest(req, code, s.id);
   return !!h && !!s.helperWalletId && h.wid === s.helperWalletId;
+}
+
+/** The helper token must belong to the wallet that claimed this sub-task. */
+function requireClaimer(req: FastifyRequest, code: string, s: SubtaskRow): void {
+  const h = requireHelper(req, code, s.id);
+  if (h.wid !== s.helperWalletId) {
+    throw new HttpError(401, ErrorCode.unauthorized, "You did not claim this task");
+  }
+}
+
+const isPaid = (s: SubtaskRow) => !!(s.paidAt && s.payoutTxHash);
+
+/** The photo and pay endpoints work only on a claimed, live sub-task. */
+function requireWorkable(app: FastifyInstance, s: SubtaskRow, t: TaskRow): void {
+  if (isExpired(app, s, t)) throw expired();
+  if (s.status !== "claimed") {
+    throw new HttpError(409, ErrorCode.conflict, "This task is already finished");
+  }
 }
 
 async function claimView(app: FastifyInstance, code: string, byYou: boolean): Promise<ClaimView> {
@@ -52,18 +73,34 @@ const claimRoutes: FastifyPluginAsync = async (app) => {
 
   app.post<CodeParams>("/claim/:code/photo", async (req) => {
     const { code, subtask, task } = await findByCode(app, req.params.code);
-    const h = requireHelper(req, code, subtask.id);
-    if (h.wid !== subtask.helperWalletId) {
-      throw new HttpError(401, ErrorCode.unauthorized, "You did not claim this task");
-    }
-    if (isExpired(app, subtask, task)) throw expired();
-    if (subtask.status !== "claimed") {
-      throw new HttpError(409, ErrorCode.conflict, "This task is already finished");
-    }
+    requireClaimer(req, code, subtask);
+    requireWorkable(app, subtask, task);
     const upload = await readUpload(req);
     const fields = parseOrThrow(PhotoFields, { note: upload.fields.note || undefined });
     const media = await addHelperPhoto(app, subtask, { file: upload.file, note: fields.note });
-    const body: PhotoResponse = { claim: await claimView(app, code, true), media };
+    // The photo is saved. In photo mode it is the proof: pay now. A ledger error answers 502 and
+    // keeps the photo; the client retries with POST /claim/:code/pay.
+    let payout: HelperPayout | null = null;
+    if (app.config.PROOF_MODE === "photo" && media) payout = await payHelper(app, subtask.id);
+    const body: PhotoResponse = { claim: await claimView(app, code, true), media, payout };
+    return body;
+  });
+
+  app.post<CodeParams>("/claim/:code/pay", async (req) => {
+    const { code, subtask, task } = await findByCode(app, req.params.code);
+    requireClaimer(req, code, subtask);
+    if (app.config.PROOF_MODE === "pin") {
+      throw new HttpError(409, ErrorCode.conflict, "The requester's PIN pays this task");
+    }
+    // Idempotent: after success (or a lost response) return the same payout.
+    if (!isPaid(subtask)) {
+      requireWorkable(app, subtask, task);
+      if (!subtask.photoMediaId) {
+        throw new HttpError(409, ErrorCode.conflict, "Send the proof photo first");
+      }
+    }
+    const payout = await payHelper(app, subtask.id);
+    const body: PayResponse = { claim: await claimView(app, code, true), payout };
     return body;
   });
 };

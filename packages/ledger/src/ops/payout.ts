@@ -1,6 +1,6 @@
 import type { Client, NFTOffer, Wallet } from "xrpl";
 import { OfferMismatchError } from "../errors.js";
-import { buildMemos, type MemoFields } from "../memo.js";
+import { buildMemos, checkProofSha256, type MemoFields } from "../memo.js";
 import type { SubmittedTx } from "../types.js";
 import { compareIouValues, tokenAmount, type DecimalInput } from "./amount.js";
 import { resolveContext, submitOp, type OpsContext } from "./context.js";
@@ -15,11 +15,26 @@ export interface AuditIds {
   subtaskId?: string | undefined;
 }
 
-function auditMemos(ids: AuditIds, action: MemoFields["action"]) {
-  return buildMemos({ task: ids.taskId, subtask: ids.subtaskId, action });
+/** Payout transactions also carry the proof photo hash, when the proof was a photo. */
+export interface PayoutIds extends AuditIds {
+  /**
+   * sha256 (64 hex characters) of the proof photo that released the payout. Written as the
+   * `agent-pledge/proof` memo on the holder's offer and on the vault's accept. Checked before
+   * anything is signed: anything else throws a LedgerError with code INVALID_INPUT.
+   */
+  proofSha256?: string | undefined;
 }
 
-export interface CreatePayoutOfferInput extends AuditIds {
+function auditMemos(ids: PayoutIds, action: MemoFields["action"]) {
+  return buildMemos({ task: ids.taskId, subtask: ids.subtaskId, action, proof: ids.proofSha256 });
+}
+
+/** Validates the optional proof hash up front, so a bad one fails before any request or signature. */
+function checkProof(ids: PayoutIds): void {
+  if (ids.proofSha256 !== undefined) checkProofSha256(ids.proofSha256);
+}
+
+export interface CreatePayoutOfferInput extends PayoutIds {
   holder: Wallet;
   vaultAddress: string;
   nftId: string;
@@ -49,11 +64,12 @@ export async function createPayoutOffer(
   input: CreatePayoutOfferInput,
   ctx?: Partial<OpsContext>,
 ): Promise<OfferResult> {
+  checkProof(input);
   const c = await resolveContext(ctx);
   return withTaskLock(input.vaultAddress, input.taskId, () => createPayoutOfferUnlocked(input, c));
 }
 
-export interface AcceptPayoutOfferInput extends AuditIds {
+export interface AcceptPayoutOfferInput extends PayoutIds {
   vault: Wallet;
   offerId: string;
   /** The NFT the offer must sell. */
@@ -160,13 +176,14 @@ export async function acceptPayoutOffer(
   input: AcceptPayoutOfferInput,
   ctx?: Partial<OpsContext>,
 ): Promise<SubmittedTx> {
+  checkProof(input);
   const c = await resolveContext(ctx);
   return withTaskLock(input.vault.classicAddress, input.taskId, () =>
     acceptPayoutOfferUnlocked(input, c),
   );
 }
 
-export interface RedeemInput extends AuditIds {
+export interface RedeemInput extends PayoutIds {
   holder: Wallet;
   vault: Wallet;
   nftId: string;
@@ -177,10 +194,16 @@ export interface RedeemInput extends AuditIds {
  * Demo step 13 (payout swap): the holder sells the NFT to the vault for the payout, then the vault
  * checks the offer and accepts. Returns both transactions. With a taskId, both run under one task
  * lock, so a failTask for the same task waits until the swap is done (and then finds it paid out).
+ * With a proofSha256, both transactions carry the `agent-pledge/proof` memo.
  */
 export async function redeem(input: RedeemInput, ctx?: Partial<OpsContext>): Promise<RedeemResult> {
+  checkProof(input);
   const c = await resolveContext(ctx);
-  const ids: AuditIds = { taskId: input.taskId, subtaskId: input.subtaskId };
+  const ids: PayoutIds = {
+    taskId: input.taskId,
+    subtaskId: input.subtaskId,
+    proofSha256: input.proofSha256,
+  };
   const vaultAddress = input.vault.classicAddress;
   return withTaskLock(vaultAddress, input.taskId, async () => {
     const offer = await createPayoutOfferUnlocked(

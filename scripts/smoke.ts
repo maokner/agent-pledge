@@ -7,12 +7,15 @@
  *
  * Needs a server with LEDGER_MODE=fake: the agent steps omit tx hashes, so the server performs them with
  * the fake agent account (docs/api.md section 6). Stop the real local agent first; this script is the agent.
+ * Works with either PROOF_MODE (the claim view's `proof` says which): photo (default) = the photo pays,
+ * then POST /claim/:code/pay and the PIN return the same payout; pin = the PIN pays.
  *
  * Env: SMOKE_API_URL (default http://localhost:3001), VOICE_SHARED_SECRET, AGENT_TOKEN (default: the server's
  * dev secret), SMOKE_TIMEOUT_MS (default 20000, per wait), SMOKE_FLOWS=success,failure (default both),
  * SMOKE_AGENT_WS=0 to skip the /ws/agent checks.
  * Exit code 0 when every check passed, 1 otherwise.
  */
+import { createHash } from "node:crypto";
 import {
   AdminFailResponse,
   AgentServerMessage,
@@ -27,6 +30,7 @@ import {
   CreateTaskResponse,
   HealthResponse,
   NftUriData,
+  PayResponse,
   PinErrorDetails,
   PinResponse,
   PhotoResponse,
@@ -473,20 +477,33 @@ async function successFlow(board: WsWatch | null, agentWs: WsWatch | null) {
   });
   await boardEvent(board, "yikyak.posted", evFlat("yikyak.posted", subId));
 
-  await step("GET /claim/:code (phone A, before claiming)", async () => {
+  const before = await step("GET /claim/:code (phone A, before claiming)", async () => {
     const v = await call("GET", `/claim/${code.toLowerCase()}`, { schema: ClaimView });
     assert(
       v.status === "open" && !v.claimed_by_you,
       `claim view: status ${v.status}, claimed_by_you ${v.claimed_by_you}`,
     );
     assert(v.price === subPrice, `claim view: price ${v.price}`);
+    assert(v.nft?.holder === "vault", `claim view: NFT holder ${v.nft?.holder}`);
+    assert(v.nft.parent_nft_id, "claim view: no parent task NFT");
+    assert(v.escrow.amount === subPrice, `claim view: escrow ${v.escrow.amount}`);
+    assert(v.escrow.vault_address, "claim view: escrow has no vault address");
+    assert(
+      v.transactions.some((x) => x.kind === "subtask_nft_mint"),
+      "claim view: the sub-task mint is not in transactions",
+    );
+    assert(v.proof_sha256 === null, "claim view: proof_sha256 before any photo");
+    return v;
   });
+  const photoPays = before.proof === "photo";
+  log(`      proof mode: ${before.proof}`);
 
   const helper = await step("POST /claim/:code/claim (phone A)", () =>
     call("POST", `/claim/${code}/claim`, { schema: ClaimSubtaskResponse }),
   );
   assert(helper.claim.claimed_by_you, "claim: claimed_by_you is false");
   assert(helper.claim.status === "claimed", `claim: status ${helper.claim.status}`);
+  assert(helper.claim.nft?.holder === "you", `claim: NFT holder ${helper.claim.nft?.holder}`);
   const helperAuth = bearer(helper.helper_token);
   await boardEvent(board, "subtask.claimed", evSubtask("subtask.claimed", subId));
 
@@ -500,24 +517,65 @@ async function successFlow(board: WsWatch | null, agentWs: WsWatch | null) {
     }),
   );
 
-  const photo = await step("POST /claim/:code/photo (photo + note)", () =>
-    call("POST", `/claim/${code}/photo`, {
-      headers: helperAuth,
-      form: photoForm({ note: "Front table, left side" }, "seat.png"),
-      schema: PhotoResponse,
-    }),
+  if (photoPays) {
+    await step("POST /claim/:code/pay before the photo -> 409 conflict", () =>
+      callError("POST", `/claim/${code}/pay`, 409, "conflict", { headers: helperAuth }),
+    );
+  }
+
+  const photo = await step(
+    `POST /claim/:code/photo (photo + note)${photoPays ? " -> helper paid" : ""}`,
+    () =>
+      call("POST", `/claim/${code}/photo`, {
+        headers: helperAuth,
+        form: photoForm({ note: "Front table, left side" }, "seat.png"),
+        schema: PhotoResponse,
+      }),
   );
   assert(photo.media, "photo: media is null");
   await boardEvent(board, "photo.added", evFlat("photo.added", subId));
 
-  await step("GET /media/:id (photo bytes)", async () => {
+  const photoSha256 = await step("GET /media/:id (photo bytes)", async () => {
     const res = await fetch(photo.media!.url);
     assert(res.ok, `GET ${photo.media!.url}: HTTP ${res.status}`);
     assert(
       res.headers.get("content-type")?.startsWith("image/"),
       `media content-type ${res.headers.get("content-type")}`,
     );
+    return createHash("sha256")
+      .update(Buffer.from(await res.arrayBuffer()))
+      .digest("hex");
   });
+  assert(
+    photo.claim.proof_sha256 === photoSha256,
+    `photo: proof_sha256 ${photo.claim.proof_sha256}, the stored bytes hash to ${photoSha256}`,
+  );
+
+  let payout: NonNullable<PhotoResponse["payout"]>;
+  if (photoPays) {
+    assert(photo.payout, "photo: payout is null in photo mode");
+    assert(
+      photo.payout.amount === subPrice,
+      `payout amount ${photo.payout.amount}, expected ${subPrice}`,
+    );
+    assert(photo.claim.status === "done", `photo: claim status ${photo.claim.status}`);
+    payout = photo.payout;
+    log(`      helper payout ${payout.amount} tx ${payout.tx_hash}`);
+    await boardEvent(board, "subtask.paid", evSubtask("subtask.paid", subId));
+
+    await step("POST /claim/:code/pay -> same payout (idempotent)", async () => {
+      const again = await call("POST", `/claim/${code}/pay`, {
+        headers: helperAuth,
+        schema: PayResponse,
+      });
+      assert(again.payout.tx_hash === payout.tx_hash, "pay returned a different payout tx");
+    });
+  } else {
+    assert(photo.payout === null, "photo: payout is set in PIN mode");
+    await step("POST /claim/:code/pay in PIN mode -> 409 conflict", () =>
+      callError("POST", `/claim/${code}/pay`, 409, "conflict", { headers: helperAuth }),
+    );
+  }
 
   const wrong = await step("POST /claim/:code/pin (wrong PIN) -> 422 wrong_pin", () =>
     callError("POST", `/claim/${code}/pin`, 422, "wrong_pin", {
@@ -532,19 +590,26 @@ async function successFlow(board: WsWatch | null, agentWs: WsWatch | null) {
   );
   await boardEvent(board, "pin.failed", evFlat("pin.failed", subId));
 
-  const paid = await step("POST /claim/:code/pin (correct PIN) -> helper paid", () =>
-    call("POST", `/claim/${code}/pin`, {
-      headers: helperAuth,
-      json: { pin: created.pin },
-      schema: PinResponse,
-    }),
+  const paid = await step(
+    `POST /claim/:code/pin (correct PIN) -> ${photoPays ? "same payout" : "helper paid"}`,
+    () =>
+      call("POST", `/claim/${code}/pin`, {
+        headers: helperAuth,
+        json: { pin: created.pin },
+        schema: PinResponse,
+      }),
   );
   assert(
     paid.payout.amount === subPrice,
     `payout amount ${paid.payout.amount}, expected ${subPrice}`,
   );
-  log(`      helper payout ${paid.payout.amount} tx ${paid.payout.tx_hash}`);
-  await boardEvent(board, "subtask.paid", evSubtask("subtask.paid", subId));
+  if (photoPays) {
+    assert(paid.payout.tx_hash === payout!.tx_hash, "the PIN returned a different payout tx");
+  } else {
+    payout = paid.payout;
+    log(`      helper payout ${payout.amount} tx ${payout.tx_hash}`);
+    await boardEvent(board, "subtask.paid", evSubtask("subtask.paid", subId));
+  }
 
   await step("POST /claim/:code/pin again -> same payout (idempotent)", async () => {
     const again = await call("POST", `/claim/${code}/pin`, {
@@ -555,6 +620,24 @@ async function successFlow(board: WsWatch | null, agentWs: WsWatch | null) {
     assert(
       again.payout.tx_hash === paid.payout.tx_hash,
       "repeat PIN returned a different payout tx",
+    );
+  });
+
+  await step("GET /claim/:code: NFT burned, the payout and the burn in transactions", async () => {
+    const v = await call("GET", `/claim/${code}`, { headers: helperAuth, schema: ClaimView });
+    assert(v.nft?.holder === "burned", `claim view: NFT holder ${v.nft?.holder}`);
+    assert(v.payout?.tx_hash === payout.tx_hash, "claim view: payout differs");
+    assert(v.proof_sha256 === photoSha256, "claim view: proof_sha256 differs from the photo");
+    const kinds = v.transactions.map((x) => x.kind);
+    for (const k of ["subtask_claim", "helper_redeem_offer", "helper_payout", "subtask_nft_burn"]) {
+      assert(
+        kinds.includes(k as TxKind),
+        `claim view: no ${k} in transactions (${kinds.join(", ")})`,
+      );
+    }
+    assert(
+      v.transactions.every((x) => x.subtask_id === subId),
+      "claim view: a transaction of another sub-task",
     );
   });
 

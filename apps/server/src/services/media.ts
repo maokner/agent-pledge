@@ -1,10 +1,10 @@
 // Owner: bundle C (#22). Store photos and Yik Yak screenshots in the media table (bytea): size limit,
 // resize (sharp), strip EXIF (including GPS), width/height. Sets media.task_id AND media.subtask_id.
 import type { MultipartFile } from "@fastify/multipart";
-import { newId, type MediaKind, type MediaView } from "@agent-pledge/shared";
+import { ErrorCode, newId, type MediaKind, type MediaView } from "@agent-pledge/shared";
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import sharp from "sharp";
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { media, subtasks, type SubtaskRow } from "../db/schema";
 import { badRequest, HttpError } from "../lib/http";
 import { mediaMetaColumns, mediaToView } from "../lib/views";
@@ -99,7 +99,11 @@ async function readFile(part: MultipartFile): Promise<Buffer> {
 
 const tooLarge = () => new HttpError(413, "payload_too_large", "The image is too large");
 
-/** Helper's seat photo and/or note: store, update the sub-task, broadcast photo.added. */
+/**
+ * Helper's seat photo and/or note: store, update the sub-task, broadcast photo.added.
+ * Refuses (409) once the helper payout has started, so the photo whose hash the payout memos
+ * carry stays the sub-task's photo.
+ */
 export async function addHelperPhoto(
   app: FastifyInstance,
   s: SubtaskRow,
@@ -117,12 +121,16 @@ export async function addHelperPhoto(
       ...(note ? { helperNote: note } : {}),
       updatedAt: app.clock.now(),
     })
-    .where(eq(subtasks.id, s.id))
+    .where(and(eq(subtasks.id, s.id), isNull(subtasks.payoutStartedAt)))
     .returning({ helperNote: subtasks.helperNote, photoMediaId: subtasks.photoMediaId });
+  if (!row) {
+    if (view) await app.db.delete(media).where(eq(media.id, view.id));
+    throw new HttpError(409, ErrorCode.conflict, "This task is already being paid");
+  }
 
   // Report the sub-task's current photo, so a note-only update still carries the earlier photo.
   let current = view;
-  if (!current && row?.photoMediaId) {
+  if (!current && row.photoMediaId) {
     const [m] = await app.db
       .select(mediaMetaColumns)
       .from(media)
@@ -133,7 +141,7 @@ export async function addHelperPhoto(
     task_id: s.taskId,
     subtask_id: s.id,
     media: current,
-    helper_note: row?.helperNote ?? null,
+    helper_note: row.helperNote ?? null,
   });
   return view;
 }
