@@ -1,0 +1,1046 @@
+{
+  "generated_at": "2026-10-12T08:41:39.606Z",
+  "network": "wss://s.altnet.rippletest.net:51233",
+  "explorer": "https://testnet.xrpl.org",
+  "api": "http://localhost:3002",
+  "task": {
+    "id": "task_tocrvmv90cv1ojpy",
+    "board_code": "23J8",
+    "description": "Deliver me a peach-flavored Ghost energy drink",
+    "place": "1234 Main St, Berkeley CA",
+    "time_limit_minutes": 240,
+    "deadline": "2026-10-12T12:31:15.591Z",
+    "price": "7.00",
+    "pledge": "1.00",
+    "status": "done",
+    "requester_address": "rBSSq1ZKWbjhF5wxzYWzFVygiWfyQqLxeg",
+    "agent_address": "rpRVQjEZW5a31V7imzBfng8yxTKPgQZFZg",
+    "nft_id": "0009000051E6CA35EFA0073E1A0E033047455779DEB5BBFDBAB6151101478675",
+    "nft_explorer_url": "https://testnet.xrpl.org/nft/0009000051E6CA35EFA0073E1A0E033047455779DEB5BBFDBAB6151101478675",
+    "offer_id": "30C1E49E287E35E7AE41206F331811B5FFE06AF8328D534A92ADE0C4D07D2538",
+    "created_at": "2026-10-12T08:31:15.591Z",
+    "claimed_at": "2026-10-12T08:34:04.040Z",
+    "done_at": "2026-10-12T08:41:12.885Z",
+    "failed_at": null,
+    "fail_reason": null,
+    "paid_at": "2026-10-12T08:41:12.885Z",
+    "refunded_at": null,
+    "pin": {
+      "attempts": 0,
+      "attempts_left": 3,
+      "locked": false,
+      "verified": false
+    },
+    "subtasks": [
+      {
+        "id": "sub_m1eefzkvud77hgws",
+        "task_id": "task_tocrvmv90cv1ojpy",
+        "price": "5.50",
+        "deadline": "2026-10-12T12:31:15.591Z",
+        "status": "done",
+        "claim_code": "3ZYY",
+        "claim_url": "https://www.yopledge.site/c/3ZYY",
+        "helper_address": "rNeoVmPNgr1LQM23q95RaXrN4Hr1E2PwSn",
+        "nft_id": "0009000051E6CA35EFA0073E1A0E033047455779DEB5BBFD4418FB140147867B",
+        "nft_explorer_url": "https://testnet.xrpl.org/nft/0009000051E6CA35EFA0073E1A0E033047455779DEB5BBFD4418FB140147867B",
+        "offer_id": "D24ABC3952F323EF03FC8F9AA43B0B8A8E27D61CF253AAEBA55FF4D66A0082EA",
+        "helper_note": "Left it with the front desk, peach Ghost, cold",
+        "photo": {
+          "id": "med_d8ekf39v12nhz08q",
+          "kind": "photo",
+          "task_id": "task_tocrvmv90cv1ojpy",
+          "subtask_id": "sub_m1eefzkvud77hgws",
+          "url": "https://consideration-auditor-equations-think.trycloudflare.com/media/med_d8ekf39v12nhz08q",
+          "mime_type": "image/jpeg",
+          "width": 1200,
+          "height": 900,
+          "created_at": "2026-10-12T08:40:36.051Z"
+        },
+        "post_text": "I'll pay $5.50 if you deliver a peach-flavored Ghost energy drink at 1234 Main St, Berkeley CA in the next 240 min. First to claim gets it: https://www.yopledge.site/c/3ZYY",
+        "yikyak_screenshot": {
+          "id": "med_1iovel13uci9v3sf",
+          "kind": "yikyak_screenshot",
+          "task_id": "task_tocrvmv90cv1ojpy",
+          "subtask_id": "sub_m1eefzkvud77hgws",
+          "url": "https://consideration-auditor-equations-think.trycloudflare.com/media/med_1iovel13uci9v3sf",
+          "mime_type": "image/jpeg",
+          "width": 420,
+          "height": 294,
+          "created_at": "2026-10-12T08:34:20.791Z"
+        },
+        "yikyak_posted_at": "2026-10-12T08:34:20.774Z",
+        "created_at": "2026-10-12T08:34:10.641Z",
+        "claimed_at": "2026-10-12T08:37:26.447Z",
+        "done_at": "2026-10-12T08:40:44.915Z",
+        "failed_at": null,
+        "paid_at": "2026-10-12T08:40:44.915Z",
+        "payout_tx_hash": "A7DA8F81E9C9F8E0A67DD616292F3B2C73072C9868C424D36A794B18BF8569EF"
+      }
+    ],
+    "transactions": [
+      {
+        "hash": "F5C3C91AB099841F2F7F7BBE0B0E9748E08469B33CF8F0E4742F5A246D7A072E",
+        "kind": "requester_funding",
+        "status": "validated",
+        "amount": "7.00",
+        "currency": "RLUSD",
+        "from": "rDL6eSZQm3RMxdNQCEQtbKtjGNFN3K8e8W",
+        "to": "rBSSq1ZKWbjhF5wxzYWzFVygiWfyQqLxeg",
+        "memo": "agent-pledge:task:task_tocrvmv90cv1ojpy",
+        "task_id": "task_tocrvmv90cv1ojpy",
+        "subtask_id": null,
+        "nft_id": null,
+        "offer_id": null,
+        "explorer_url": "https://testnet.xrpl.org/transactions/F5C3C91AB099841F2F7F7BBE0B0E9748E08469B33CF8F0E4742F5A246D7A072E",
+        "error": null,
+        "created_at": "2026-10-12T08:31:29.847Z",
+        "validated_at": "2026-10-12T08:31:36.363Z"
+      },
+      {
+        "hash": "245F6D2DD2483771A7C3C0C409DB66E88B33212BF232AAD7ABE5D6DED104F458",
+        "kind": "task_funding",
+        "status": "validated",
+        "amount": "7.00",
+        "currency": "RLUSD",
+        "from": "rBSSq1ZKWbjhF5wxzYWzFVygiWfyQqLxeg",
+        "to": "r37hDaqXGUL574V8y91XSoktYDpc9HpPjN",
+        "memo": "agent-pledge:task:task_tocrvmv90cv1ojpy",
+        "task_id": "task_tocrvmv90cv1ojpy",
+        "subtask_id": null,
+        "nft_id": null,
+        "offer_id": null,
+        "explorer_url": "https://testnet.xrpl.org/transactions/245F6D2DD2483771A7C3C0C409DB66E88B33212BF232AAD7ABE5D6DED104F458",
+        "error": null,
+        "created_at": "2026-10-12T08:31:36.446Z",
+        "validated_at": "2026-10-12T08:31:44.188Z"
+      },
+      {
+        "hash": "A1488F09BF0E5C16EF8C00925FB11320C603DD6BF458F44218A0414D198C10C8",
+        "kind": "task_nft_mint",
+        "status": "validated",
+        "amount": null,
+        "currency": null,
+        "from": "r37hDaqXGUL574V8y91XSoktYDpc9HpPjN",
+        "to": null,
+        "memo": "agent-pledge:task:task_tocrvmv90cv1ojpy",
+        "task_id": "task_tocrvmv90cv1ojpy",
+        "subtask_id": null,
+        "nft_id": "0009000051E6CA35EFA0073E1A0E033047455779DEB5BBFDBAB6151101478675",
+        "offer_id": null,
+        "explorer_url": "https://testnet.xrpl.org/transactions/A1488F09BF0E5C16EF8C00925FB11320C603DD6BF458F44218A0414D198C10C8",
+        "error": null,
+        "created_at": "2026-10-12T08:31:44.446Z",
+        "validated_at": "2026-10-12T08:31:51.716Z"
+      },
+      {
+        "hash": "7F6BFE30FD05CC1A28C813D0F10BEAB4205C38BE72C9634010B6A49DB8A10DA2",
+        "kind": "task_offer",
+        "status": "validated",
+        "amount": "1.00",
+        "currency": "RLUSD",
+        "from": "r37hDaqXGUL574V8y91XSoktYDpc9HpPjN",
+        "to": "rpRVQjEZW5a31V7imzBfng8yxTKPgQZFZg",
+        "memo": "agent-pledge:task:task_tocrvmv90cv1ojpy",
+        "task_id": "task_tocrvmv90cv1ojpy",
+        "subtask_id": null,
+        "nft_id": "0009000051E6CA35EFA0073E1A0E033047455779DEB5BBFDBAB6151101478675",
+        "offer_id": "30C1E49E287E35E7AE41206F331811B5FFE06AF8328D534A92ADE0C4D07D2538",
+        "explorer_url": "https://testnet.xrpl.org/transactions/7F6BFE30FD05CC1A28C813D0F10BEAB4205C38BE72C9634010B6A49DB8A10DA2",
+        "error": null,
+        "created_at": "2026-10-12T08:31:51.910Z",
+        "validated_at": "2026-10-12T08:31:57.387Z"
+      },
+      {
+        "hash": "7DD95960D367A3FF716778579F76F83324861BCB7F122A68E4B9BB96EF207292",
+        "kind": "task_claim",
+        "status": "validated",
+        "amount": "1.00",
+        "currency": "RLUSD",
+        "from": "rpRVQjEZW5a31V7imzBfng8yxTKPgQZFZg",
+        "to": "r37hDaqXGUL574V8y91XSoktYDpc9HpPjN",
+        "memo": "agent-pledge:task:task_tocrvmv90cv1ojpy",
+        "task_id": "task_tocrvmv90cv1ojpy",
+        "subtask_id": null,
+        "nft_id": "0009000051E6CA35EFA0073E1A0E033047455779DEB5BBFDBAB6151101478675",
+        "offer_id": "30C1E49E287E35E7AE41206F331811B5FFE06AF8328D534A92ADE0C4D07D2538",
+        "explorer_url": "https://testnet.xrpl.org/transactions/7DD95960D367A3FF716778579F76F83324861BCB7F122A68E4B9BB96EF207292",
+        "error": null,
+        "created_at": "2026-10-12T08:34:04.040Z",
+        "validated_at": "2026-10-12T08:34:04.040Z"
+      },
+      {
+        "hash": "25E2B77A271EF6ACFBFE91485B6502F63DE3EE48F2B13C11B6A5BFA11EB90CDC",
+        "kind": "subtask_funding",
+        "status": "validated",
+        "amount": "5.50",
+        "currency": "RLUSD",
+        "from": "rpRVQjEZW5a31V7imzBfng8yxTKPgQZFZg",
+        "to": "r37hDaqXGUL574V8y91XSoktYDpc9HpPjN",
+        "memo": "agent-pledge:subtask:sub_m1eefzkvud77hgws",
+        "task_id": "task_tocrvmv90cv1ojpy",
+        "subtask_id": "sub_m1eefzkvud77hgws",
+        "nft_id": null,
+        "offer_id": null,
+        "explorer_url": "https://testnet.xrpl.org/transactions/25E2B77A271EF6ACFBFE91485B6502F63DE3EE48F2B13C11B6A5BFA11EB90CDC",
+        "error": null,
+        "created_at": "2026-10-12T08:34:10.636Z",
+        "validated_at": "2026-10-12T08:34:10.636Z"
+      },
+      {
+        "hash": "7D4EF37D4D082B7877F0B5FF640EFC3C2E57EA8ACAED57EF18CBA1A5C599BBFF",
+        "kind": "subtask_nft_mint",
+        "status": "validated",
+        "amount": null,
+        "currency": null,
+        "from": "r37hDaqXGUL574V8y91XSoktYDpc9HpPjN",
+        "to": null,
+        "memo": "agent-pledge:subtask:sub_m1eefzkvud77hgws",
+        "task_id": "task_tocrvmv90cv1ojpy",
+        "subtask_id": "sub_m1eefzkvud77hgws",
+        "nft_id": "0009000051E6CA35EFA0073E1A0E033047455779DEB5BBFD4418FB140147867B",
+        "offer_id": null,
+        "explorer_url": "https://testnet.xrpl.org/transactions/7D4EF37D4D082B7877F0B5FF640EFC3C2E57EA8ACAED57EF18CBA1A5C599BBFF",
+        "error": null,
+        "created_at": "2026-10-12T08:34:10.716Z",
+        "validated_at": "2026-10-12T08:34:17.174Z"
+      },
+      {
+        "hash": "AA3F15B61B4EB0EF1985AE0D42F64AEC8B6D1F72F0CAE784D77BD5E936182A76",
+        "kind": "subtask_offer",
+        "status": "validated",
+        "amount": "0.00",
+        "currency": "RLUSD",
+        "from": "r37hDaqXGUL574V8y91XSoktYDpc9HpPjN",
+        "to": null,
+        "memo": "agent-pledge:subtask:sub_m1eefzkvud77hgws",
+        "task_id": "task_tocrvmv90cv1ojpy",
+        "subtask_id": "sub_m1eefzkvud77hgws",
+        "nft_id": "0009000051E6CA35EFA0073E1A0E033047455779DEB5BBFD4418FB140147867B",
+        "offer_id": "D24ABC3952F323EF03FC8F9AA43B0B8A8E27D61CF253AAEBA55FF4D66A0082EA",
+        "explorer_url": "https://testnet.xrpl.org/transactions/AA3F15B61B4EB0EF1985AE0D42F64AEC8B6D1F72F0CAE784D77BD5E936182A76",
+        "error": null,
+        "created_at": "2026-10-12T08:34:17.255Z",
+        "validated_at": "2026-10-12T08:34:20.489Z"
+      },
+      {
+        "hash": "92727484C16AA30623ABC51431FC0BB68F248D887E4F7F24CAB8E02B65936D14",
+        "kind": "subtask_claim",
+        "status": "validated",
+        "amount": null,
+        "currency": null,
+        "from": "rNeoVmPNgr1LQM23q95RaXrN4Hr1E2PwSn",
+        "to": null,
+        "memo": "agent-pledge:subtask:sub_m1eefzkvud77hgws",
+        "task_id": "task_tocrvmv90cv1ojpy",
+        "subtask_id": "sub_m1eefzkvud77hgws",
+        "nft_id": "0009000051E6CA35EFA0073E1A0E033047455779DEB5BBFD4418FB140147867B",
+        "offer_id": "D24ABC3952F323EF03FC8F9AA43B0B8A8E27D61CF253AAEBA55FF4D66A0082EA",
+        "explorer_url": "https://testnet.xrpl.org/transactions/92727484C16AA30623ABC51431FC0BB68F248D887E4F7F24CAB8E02B65936D14",
+        "error": null,
+        "created_at": "2026-10-12T08:37:22.042Z",
+        "validated_at": "2026-10-12T08:37:26.446Z"
+      },
+      {
+        "hash": "F6F9C13D5F72E5A99CE23B5DD392602B9E9ED2D58FE127486199EAB0F9EF5629",
+        "kind": "helper_redeem_offer",
+        "status": "validated",
+        "amount": "5.50",
+        "currency": "RLUSD",
+        "from": "rNeoVmPNgr1LQM23q95RaXrN4Hr1E2PwSn",
+        "to": "r37hDaqXGUL574V8y91XSoktYDpc9HpPjN",
+        "memo": "agent-pledge:subtask:sub_m1eefzkvud77hgws",
+        "task_id": "task_tocrvmv90cv1ojpy",
+        "subtask_id": "sub_m1eefzkvud77hgws",
+        "nft_id": "0009000051E6CA35EFA0073E1A0E033047455779DEB5BBFD4418FB140147867B",
+        "offer_id": "6D98BEC3622A12E237EC563D0DFF7F78E26111F127824F5E6C3CFD3F4AED8F92",
+        "explorer_url": "https://testnet.xrpl.org/transactions/F6F9C13D5F72E5A99CE23B5DD392602B9E9ED2D58FE127486199EAB0F9EF5629",
+        "error": null,
+        "created_at": "2026-10-12T08:40:36.143Z",
+        "validated_at": "2026-10-12T08:40:40.459Z"
+      },
+      {
+        "hash": "A7DA8F81E9C9F8E0A67DD616292F3B2C73072C9868C424D36A794B18BF8569EF",
+        "kind": "helper_payout",
+        "status": "validated",
+        "amount": "5.50",
+        "currency": "RLUSD",
+        "from": "r37hDaqXGUL574V8y91XSoktYDpc9HpPjN",
+        "to": "rNeoVmPNgr1LQM23q95RaXrN4Hr1E2PwSn",
+        "memo": "agent-pledge:subtask:sub_m1eefzkvud77hgws",
+        "task_id": "task_tocrvmv90cv1ojpy",
+        "subtask_id": "sub_m1eefzkvud77hgws",
+        "nft_id": "0009000051E6CA35EFA0073E1A0E033047455779DEB5BBFD4418FB140147867B",
+        "offer_id": "6D98BEC3622A12E237EC563D0DFF7F78E26111F127824F5E6C3CFD3F4AED8F92",
+        "explorer_url": "https://testnet.xrpl.org/transactions/A7DA8F81E9C9F8E0A67DD616292F3B2C73072C9868C424D36A794B18BF8569EF",
+        "error": null,
+        "created_at": "2026-10-12T08:40:40.607Z",
+        "validated_at": "2026-10-12T08:40:44.915Z"
+      },
+      {
+        "hash": "FE62CF9C07C627646F0AD55938E1BC02B34FF51069B6DBD8D218218287A31C4C",
+        "kind": "subtask_nft_burn",
+        "status": "validated",
+        "amount": null,
+        "currency": null,
+        "from": "r37hDaqXGUL574V8y91XSoktYDpc9HpPjN",
+        "to": null,
+        "memo": "agent-pledge:subtask:sub_m1eefzkvud77hgws",
+        "task_id": "task_tocrvmv90cv1ojpy",
+        "subtask_id": "sub_m1eefzkvud77hgws",
+        "nft_id": "0009000051E6CA35EFA0073E1A0E033047455779DEB5BBFD4418FB140147867B",
+        "offer_id": null,
+        "explorer_url": "https://testnet.xrpl.org/transactions/FE62CF9C07C627646F0AD55938E1BC02B34FF51069B6DBD8D218218287A31C4C",
+        "error": null,
+        "created_at": "2026-10-12T08:40:45.397Z",
+        "validated_at": "2026-10-12T08:40:52.037Z"
+      },
+      {
+        "hash": "16F66D3C05F29888CBD6FF47FBA21EEF21F80D7524E962AA1E70C3BE55440DFD",
+        "kind": "agent_redeem_offer",
+        "status": "validated",
+        "amount": "8.00",
+        "currency": "RLUSD",
+        "from": "rpRVQjEZW5a31V7imzBfng8yxTKPgQZFZg",
+        "to": "r37hDaqXGUL574V8y91XSoktYDpc9HpPjN",
+        "memo": "agent-pledge:task:task_tocrvmv90cv1ojpy",
+        "task_id": "task_tocrvmv90cv1ojpy",
+        "subtask_id": null,
+        "nft_id": "0009000051E6CA35EFA0073E1A0E033047455779DEB5BBFDBAB6151101478675",
+        "offer_id": "9890F3BF3AD1786D3EF98AD5881785BECE083F292419C162E01273EDC4CBBE42",
+        "explorer_url": "https://testnet.xrpl.org/transactions/16F66D3C05F29888CBD6FF47FBA21EEF21F80D7524E962AA1E70C3BE55440DFD",
+        "error": null,
+        "created_at": "2026-10-12T08:40:59.694Z",
+        "validated_at": "2026-10-12T08:40:59.694Z"
+      },
+      {
+        "hash": "EEF998D589BC67ED1896F9A036BDF5BBFC10618E993846D48D14AE5689978B88",
+        "kind": "agent_payout",
+        "status": "validated",
+        "amount": "8.00",
+        "currency": "RLUSD",
+        "from": "r37hDaqXGUL574V8y91XSoktYDpc9HpPjN",
+        "to": "rpRVQjEZW5a31V7imzBfng8yxTKPgQZFZg",
+        "memo": "agent-pledge:task:task_tocrvmv90cv1ojpy",
+        "task_id": "task_tocrvmv90cv1ojpy",
+        "subtask_id": null,
+        "nft_id": "0009000051E6CA35EFA0073E1A0E033047455779DEB5BBFDBAB6151101478675",
+        "offer_id": "9890F3BF3AD1786D3EF98AD5881785BECE083F292419C162E01273EDC4CBBE42",
+        "explorer_url": "https://testnet.xrpl.org/transactions/EEF998D589BC67ED1896F9A036BDF5BBFC10618E993846D48D14AE5689978B88",
+        "error": null,
+        "created_at": "2026-10-12T08:40:59.829Z",
+        "validated_at": "2026-10-12T08:41:06.316Z"
+      },
+      {
+        "hash": "CD2DE5A40E3AB62814FEC6F6A6570FDAE7585B0F16F1C1C4F4534CE99E39ABA9",
+        "kind": "task_nft_burn",
+        "status": "validated",
+        "amount": null,
+        "currency": null,
+        "from": "r37hDaqXGUL574V8y91XSoktYDpc9HpPjN",
+        "to": null,
+        "memo": "agent-pledge:task:task_tocrvmv90cv1ojpy",
+        "task_id": "task_tocrvmv90cv1ojpy",
+        "subtask_id": null,
+        "nft_id": "0009000051E6CA35EFA0073E1A0E033047455779DEB5BBFDBAB6151101478675",
+        "offer_id": null,
+        "explorer_url": "https://testnet.xrpl.org/transactions/CD2DE5A40E3AB62814FEC6F6A6570FDAE7585B0F16F1C1C4F4534CE99E39ABA9",
+        "error": null,
+        "created_at": "2026-10-12T08:41:06.425Z",
+        "validated_at": "2026-10-12T08:41:12.885Z"
+      }
+    ]
+  },
+  "roles": {
+    "r37hDaqXGUL574V8y91XSoktYDpc9HpPjN": "vault",
+    "rpRVQjEZW5a31V7imzBfng8yxTKPgQZFZg": "local agent",
+    "rDL6eSZQm3RMxdNQCEQtbKtjGNFN3K8e8W": "treasury",
+    "rBSSq1ZKWbjhF5wxzYWzFVygiWfyQqLxeg": "requester",
+    "rNeoVmPNgr1LQM23q95RaXrN4Hr1E2PwSn": "helper"
+  },
+  "transactions": [
+    {
+      "hash": "F5C3C91AB099841F2F7F7BBE0B0E9748E08469B33CF8F0E4742F5A246D7A072E",
+      "kind": "requester_funding",
+      "step": "0. Wallet setup",
+      "type": "Payment",
+      "signer": "rDL6eSZQm3RMxdNQCEQtbKtjGNFN3K8e8W",
+      "signerRole": "treasury",
+      "destination": "rBSSq1ZKWbjhF5wxzYWzFVygiWfyQqLxeg",
+      "destinationRole": "requester",
+      "amount": null,
+      "deliveredAmount": "7 USD (issuer r96NfRjhJrHyZBjNRepH2M7kVNdUVG71BT)",
+      "boardAmount": "$7.00",
+      "nftId": null,
+      "offerId": null,
+      "flags": 0,
+      "sequence": 21464683,
+      "fee": "12 drops",
+      "signingPubKey": "ED8E2AD5BF779BD15758BF83C04D198438235C629145D4B69159BB51C6FCCE70DF",
+      "signature": "2A8F6199C5F189667611341D3ACE0C5CF9F72B31E40C478656AD39B624BE157D3CA0ADCE5BA8E9286B1E4C5339C772288F75BBF408A7DD0ABA9D21325645E901",
+      "result": "tesSUCCESS",
+      "ledgerIndex": 21475043,
+      "closeTime": "2026-10-12T08:31:32Z",
+      "ctid": "C147AEE3000D0001",
+      "memos": [
+        {
+          "type": "agent-pledge/task",
+          "data": "task_tocrvmv90cv1ojpy"
+        },
+        {
+          "type": "agent-pledge/action",
+          "data": "token.transfer"
+        }
+      ],
+      "uri": null,
+      "explorerUrl": "https://testnet.xrpl.org/transactions/F5C3C91AB099841F2F7F7BBE0B0E9748E08469B33CF8F0E4742F5A246D7A072E"
+    },
+    {
+      "hash": "245F6D2DD2483771A7C3C0C409DB66E88B33212BF232AAD7ABE5D6DED104F458",
+      "kind": "task_funding",
+      "step": "1. Task NFT in escrow",
+      "type": "Payment",
+      "signer": "rBSSq1ZKWbjhF5wxzYWzFVygiWfyQqLxeg",
+      "signerRole": "requester",
+      "destination": "r37hDaqXGUL574V8y91XSoktYDpc9HpPjN",
+      "destinationRole": "vault",
+      "amount": null,
+      "deliveredAmount": "7 USD (issuer r96NfRjhJrHyZBjNRepH2M7kVNdUVG71BT)",
+      "boardAmount": "$7.00",
+      "nftId": null,
+      "offerId": null,
+      "flags": 0,
+      "sequence": 21475040,
+      "fee": "12 drops",
+      "signingPubKey": "ED5CDCE27C8A466ED13CE103D25E462F5D15EC6B6B814952D7CA120D8E7579764B",
+      "signature": "3ACA79BCF723913C87879647076AD3C5FDC7C54E814C0EB55DBAF37AEA8B57D4EE79E66707B430C68EC914DE76B8474B606038133CA7EB2DEF85A90904770A09",
+      "result": "tesSUCCESS",
+      "ledgerIndex": 21475045,
+      "closeTime": "2026-10-12T08:31:41Z",
+      "ctid": "C147AEE500210001",
+      "memos": [
+        {
+          "type": "agent-pledge/task",
+          "data": "task_tocrvmv90cv1ojpy"
+        },
+        {
+          "type": "agent-pledge/action",
+          "data": "task.fund"
+        }
+      ],
+      "uri": null,
+      "explorerUrl": "https://testnet.xrpl.org/transactions/245F6D2DD2483771A7C3C0C409DB66E88B33212BF232AAD7ABE5D6DED104F458"
+    },
+    {
+      "hash": "A1488F09BF0E5C16EF8C00925FB11320C603DD6BF458F44218A0414D198C10C8",
+      "kind": "task_nft_mint",
+      "step": "1. Task NFT in escrow",
+      "type": "NFTokenMint",
+      "signer": "r37hDaqXGUL574V8y91XSoktYDpc9HpPjN",
+      "signerRole": "vault",
+      "destination": null,
+      "destinationRole": null,
+      "amount": null,
+      "deliveredAmount": null,
+      "boardAmount": null,
+      "nftId": "0009000051E6CA35EFA0073E1A0E033047455779DEB5BBFDBAB6151101478675",
+      "offerId": null,
+      "flags": 9,
+      "sequence": 21464749,
+      "fee": "12 drops",
+      "signingPubKey": "EDCFC2904B90E57C2F97DF53149A632EE40F10D81D2918B6B413F3376AF7093FB4",
+      "signature": "219F90B7F18F42CDA7539143EFEB1D5443A5D3839B611D563F8515E197F25CC640375A54ACFF5D38B469489ACEC9447E035854BE1CC25B84BE8A62BF3CDDFC07",
+      "result": "tesSUCCESS",
+      "ledgerIndex": 21475047,
+      "closeTime": "2026-10-12T08:31:50Z",
+      "ctid": "C147AEE700020001",
+      "memos": [
+        {
+          "type": "agent-pledge/task",
+          "data": "task_tocrvmv90cv1ojpy"
+        },
+        {
+          "type": "agent-pledge/action",
+          "data": "task.mint"
+        }
+      ],
+      "uri": "https://regulated-improvement-dose-closest.trycloudflare.com/tasks/task_tocrvmv90cv1ojpy.json",
+      "explorerUrl": "https://testnet.xrpl.org/transactions/A1488F09BF0E5C16EF8C00925FB11320C603DD6BF458F44218A0414D198C10C8"
+    },
+    {
+      "hash": "7F6BFE30FD05CC1A28C813D0F10BEAB4205C38BE72C9634010B6A49DB8A10DA2",
+      "kind": "task_offer",
+      "step": "1. Task NFT in escrow",
+      "type": "NFTokenCreateOffer",
+      "signer": "r37hDaqXGUL574V8y91XSoktYDpc9HpPjN",
+      "signerRole": "vault",
+      "destination": "rpRVQjEZW5a31V7imzBfng8yxTKPgQZFZg",
+      "destinationRole": "local agent",
+      "amount": "1 USD (issuer r96NfRjhJrHyZBjNRepH2M7kVNdUVG71BT)",
+      "deliveredAmount": null,
+      "boardAmount": "$1.00",
+      "nftId": "0009000051E6CA35EFA0073E1A0E033047455779DEB5BBFDBAB6151101478675",
+      "offerId": "30C1E49E287E35E7AE41206F331811B5FFE06AF8328D534A92ADE0C4D07D2538",
+      "flags": 1,
+      "sequence": 21464753,
+      "fee": "12 drops",
+      "signingPubKey": "EDCFC2904B90E57C2F97DF53149A632EE40F10D81D2918B6B413F3376AF7093FB4",
+      "signature": "E45037E9C101F1CC053CDEA74E79A526C95B2AD290B10096384D436E74A644601E9D4EAA89C32D6D22C3C6E03D0E76FD3FBA3FA3CB0476BB8088BC9A0229820D",
+      "result": "tesSUCCESS",
+      "ledgerIndex": 21475049,
+      "closeTime": "2026-10-12T08:32:00Z",
+      "ctid": "C147AEE900160001",
+      "memos": [
+        {
+          "type": "agent-pledge/task",
+          "data": "task_tocrvmv90cv1ojpy"
+        },
+        {
+          "type": "agent-pledge/action",
+          "data": "task.offer"
+        }
+      ],
+      "uri": null,
+      "explorerUrl": "https://testnet.xrpl.org/transactions/7F6BFE30FD05CC1A28C813D0F10BEAB4205C38BE72C9634010B6A49DB8A10DA2"
+    },
+    {
+      "hash": "7DD95960D367A3FF716778579F76F83324861BCB7F122A68E4B9BB96EF207292",
+      "kind": "task_claim",
+      "step": "1. Task NFT in escrow",
+      "type": "NFTokenAcceptOffer",
+      "signer": "rpRVQjEZW5a31V7imzBfng8yxTKPgQZFZg",
+      "signerRole": "local agent",
+      "destination": null,
+      "destinationRole": null,
+      "amount": null,
+      "deliveredAmount": null,
+      "boardAmount": "$1.00",
+      "nftId": "0009000051E6CA35EFA0073E1A0E033047455779DEB5BBFDBAB6151101478675",
+      "offerId": "30C1E49E287E35E7AE41206F331811B5FFE06AF8328D534A92ADE0C4D07D2538",
+      "flags": 0,
+      "sequence": 21464700,
+      "fee": "12 drops",
+      "signingPubKey": "ED6DCF671661492EC87DB60AE9C8BCB62673D49D4CD8AFA0B42C634C3EC0121DF0",
+      "signature": "9E3A9E93C07EC8FA48DC6DB685C28324868DE4F8BFB4AEE64A81EB076D86D117826300D7F84B47E6E370C982DC962B78DA0977FA453801313DA91F6F219E5E07",
+      "result": "tesSUCCESS",
+      "ledgerIndex": 21475085,
+      "closeTime": "2026-10-12T08:34:01Z",
+      "ctid": "C147AF0D000D0001",
+      "memos": [
+        {
+          "type": "agent-pledge/task",
+          "data": "task_tocrvmv90cv1ojpy"
+        },
+        {
+          "type": "agent-pledge/action",
+          "data": "task.claim"
+        }
+      ],
+      "uri": null,
+      "explorerUrl": "https://testnet.xrpl.org/transactions/7DD95960D367A3FF716778579F76F83324861BCB7F122A68E4B9BB96EF207292"
+    },
+    {
+      "hash": "25E2B77A271EF6ACFBFE91485B6502F63DE3EE48F2B13C11B6A5BFA11EB90CDC",
+      "kind": "subtask_funding",
+      "step": "2. Delegated sub-task on Yik Yak",
+      "type": "Payment",
+      "signer": "rpRVQjEZW5a31V7imzBfng8yxTKPgQZFZg",
+      "signerRole": "local agent",
+      "destination": "r37hDaqXGUL574V8y91XSoktYDpc9HpPjN",
+      "destinationRole": "vault",
+      "amount": null,
+      "deliveredAmount": "5.5 USD (issuer r96NfRjhJrHyZBjNRepH2M7kVNdUVG71BT)",
+      "boardAmount": "$5.50",
+      "nftId": null,
+      "offerId": null,
+      "flags": 0,
+      "sequence": 21464701,
+      "fee": "12 drops",
+      "signingPubKey": "ED6DCF671661492EC87DB60AE9C8BCB62673D49D4CD8AFA0B42C634C3EC0121DF0",
+      "signature": "51BB13E8D95C89A55B8C8FB04313166B824F9042396FBDAD6A8F8D0A7764122C8AA1DC1217898D61F52F3BB39C4A3A332ECF7E9425E3A65C9588491E08E5C10F",
+      "result": "tesSUCCESS",
+      "ledgerIndex": 21475087,
+      "closeTime": "2026-10-12T08:34:10Z",
+      "ctid": "C147AF0F00070001",
+      "memos": [
+        {
+          "type": "agent-pledge/task",
+          "data": "task_tocrvmv90cv1ojpy"
+        },
+        {
+          "type": "agent-pledge/subtask",
+          "data": "sub_m1eefzkvud77hgws"
+        },
+        {
+          "type": "agent-pledge/action",
+          "data": "subtask.fund"
+        }
+      ],
+      "uri": null,
+      "explorerUrl": "https://testnet.xrpl.org/transactions/25E2B77A271EF6ACFBFE91485B6502F63DE3EE48F2B13C11B6A5BFA11EB90CDC"
+    },
+    {
+      "hash": "7D4EF37D4D082B7877F0B5FF640EFC3C2E57EA8ACAED57EF18CBA1A5C599BBFF",
+      "kind": "subtask_nft_mint",
+      "step": "2. Delegated sub-task on Yik Yak",
+      "type": "NFTokenMint",
+      "signer": "r37hDaqXGUL574V8y91XSoktYDpc9HpPjN",
+      "signerRole": "vault",
+      "destination": null,
+      "destinationRole": null,
+      "amount": null,
+      "deliveredAmount": null,
+      "boardAmount": null,
+      "nftId": "0009000051E6CA35EFA0073E1A0E033047455779DEB5BBFD4418FB140147867B",
+      "offerId": null,
+      "flags": 9,
+      "sequence": 21464764,
+      "fee": "12 drops",
+      "signingPubKey": "EDCFC2904B90E57C2F97DF53149A632EE40F10D81D2918B6B413F3376AF7093FB4",
+      "signature": "AEE05FCCA3E096A6E2CDAA06C2A1AF5F8EDBF9D05CB259DA2C734EB04FC0AB384567F40E18E9421704B79FE4375723E79A198D8A2408695A11DB6608D2FFDE0D",
+      "result": "tesSUCCESS",
+      "ledgerIndex": 21475089,
+      "closeTime": "2026-10-12T08:34:12Z",
+      "ctid": "C147AF1100100001",
+      "memos": [
+        {
+          "type": "agent-pledge/task",
+          "data": "task_tocrvmv90cv1ojpy"
+        },
+        {
+          "type": "agent-pledge/subtask",
+          "data": "sub_m1eefzkvud77hgws"
+        },
+        {
+          "type": "agent-pledge/parent-nft",
+          "data": "0009000051E6CA35EFA0073E1A0E033047455779DEB5BBFDBAB6151101478675"
+        },
+        {
+          "type": "agent-pledge/action",
+          "data": "subtask.mint"
+        }
+      ],
+      "uri": "https://regulated-improvement-dose-closest.trycloudflare.com/tasks/sub_m1eefzkvud77hgws.json",
+      "explorerUrl": "https://testnet.xrpl.org/transactions/7D4EF37D4D082B7877F0B5FF640EFC3C2E57EA8ACAED57EF18CBA1A5C599BBFF"
+    },
+    {
+      "hash": "AA3F15B61B4EB0EF1985AE0D42F64AEC8B6D1F72F0CAE784D77BD5E936182A76",
+      "kind": "subtask_offer",
+      "step": "2. Delegated sub-task on Yik Yak",
+      "type": "NFTokenCreateOffer",
+      "signer": "r37hDaqXGUL574V8y91XSoktYDpc9HpPjN",
+      "signerRole": "vault",
+      "destination": null,
+      "destinationRole": null,
+      "amount": "0 XRP (0 drops)",
+      "deliveredAmount": null,
+      "boardAmount": "$0.00",
+      "nftId": "0009000051E6CA35EFA0073E1A0E033047455779DEB5BBFD4418FB140147867B",
+      "offerId": "D24ABC3952F323EF03FC8F9AA43B0B8A8E27D61CF253AAEBA55FF4D66A0082EA",
+      "flags": 1,
+      "sequence": 21464765,
+      "fee": "12 drops",
+      "signingPubKey": "EDCFC2904B90E57C2F97DF53149A632EE40F10D81D2918B6B413F3376AF7093FB4",
+      "signature": "BFF42D59D2CB3FCD2BE4355EDE882771E0CC22ED515EAA643BC4FC3FD29B7A15E7276F4A33F347DA8BEB7EA57F4E7A3C1F2BC3790AF6F05A0154B84143B8C206",
+      "result": "tesSUCCESS",
+      "ledgerIndex": 21475090,
+      "closeTime": "2026-10-12T08:34:20Z",
+      "ctid": "C147AF1200050001",
+      "memos": [
+        {
+          "type": "agent-pledge/task",
+          "data": "task_tocrvmv90cv1ojpy"
+        },
+        {
+          "type": "agent-pledge/subtask",
+          "data": "sub_m1eefzkvud77hgws"
+        },
+        {
+          "type": "agent-pledge/action",
+          "data": "subtask.offer"
+        }
+      ],
+      "uri": null,
+      "explorerUrl": "https://testnet.xrpl.org/transactions/AA3F15B61B4EB0EF1985AE0D42F64AEC8B6D1F72F0CAE784D77BD5E936182A76"
+    },
+    {
+      "hash": "92727484C16AA30623ABC51431FC0BB68F248D887E4F7F24CAB8E02B65936D14",
+      "kind": "subtask_claim",
+      "step": "3. Helper claims and sends the photo",
+      "type": "NFTokenAcceptOffer",
+      "signer": "rNeoVmPNgr1LQM23q95RaXrN4Hr1E2PwSn",
+      "signerRole": "helper",
+      "destination": null,
+      "destinationRole": null,
+      "amount": null,
+      "deliveredAmount": null,
+      "boardAmount": null,
+      "nftId": "0009000051E6CA35EFA0073E1A0E033047455779DEB5BBFD4418FB140147867B",
+      "offerId": "D24ABC3952F323EF03FC8F9AA43B0B8A8E27D61CF253AAEBA55FF4D66A0082EA",
+      "flags": 0,
+      "sequence": 21466247,
+      "fee": "12 drops",
+      "signingPubKey": "ED45F4F82699718B8281547F914B3A48B56CF734919A0FABDAB95F863AC027DF7E",
+      "signature": "3D7B2D08647FEBE200B3C15D7636ED486EF1D6F11FF198B51F0C9F8C7B6C4AD67CAFB7953EAD9DD79FD25B254E1340D5BD47293DB6B644AB581ACF8BDCD10105",
+      "result": "tesSUCCESS",
+      "ledgerIndex": 21475143,
+      "closeTime": "2026-10-12T08:37:22Z",
+      "ctid": "C147AF4700030001",
+      "memos": [
+        {
+          "type": "agent-pledge/task",
+          "data": "task_tocrvmv90cv1ojpy"
+        },
+        {
+          "type": "agent-pledge/subtask",
+          "data": "sub_m1eefzkvud77hgws"
+        },
+        {
+          "type": "agent-pledge/action",
+          "data": "subtask.claim"
+        }
+      ],
+      "uri": null,
+      "explorerUrl": "https://testnet.xrpl.org/transactions/92727484C16AA30623ABC51431FC0BB68F248D887E4F7F24CAB8E02B65936D14"
+    },
+    {
+      "hash": "F6F9C13D5F72E5A99CE23B5DD392602B9E9ED2D58FE127486199EAB0F9EF5629",
+      "kind": "helper_redeem_offer",
+      "step": "4. Photo and PIN release the NFTs",
+      "type": "NFTokenCreateOffer",
+      "signer": "rNeoVmPNgr1LQM23q95RaXrN4Hr1E2PwSn",
+      "signerRole": "helper",
+      "destination": "r37hDaqXGUL574V8y91XSoktYDpc9HpPjN",
+      "destinationRole": "vault",
+      "amount": "5.5 USD (issuer r96NfRjhJrHyZBjNRepH2M7kVNdUVG71BT)",
+      "deliveredAmount": null,
+      "boardAmount": "$5.50",
+      "nftId": "0009000051E6CA35EFA0073E1A0E033047455779DEB5BBFD4418FB140147867B",
+      "offerId": "6D98BEC3622A12E237EC563D0DFF7F78E26111F127824F5E6C3CFD3F4AED8F92",
+      "flags": 1,
+      "sequence": 21466248,
+      "fee": "12 drops",
+      "signingPubKey": "ED45F4F82699718B8281547F914B3A48B56CF734919A0FABDAB95F863AC027DF7E",
+      "signature": "D078B814CD40A639E40CC083BB3ACBE9C2929456FA230DB56FEE48F6BBB93D1C785E86339C21F1D7567306B75FF97F503B0877ED416636355BB0DC03ACA3A20F",
+      "result": "tesSUCCESS",
+      "ledgerIndex": 21475198,
+      "closeTime": "2026-10-12T08:40:40Z",
+      "ctid": "C147AF7E00070001",
+      "memos": [
+        {
+          "type": "agent-pledge/task",
+          "data": "task_tocrvmv90cv1ojpy"
+        },
+        {
+          "type": "agent-pledge/subtask",
+          "data": "sub_m1eefzkvud77hgws"
+        },
+        {
+          "type": "agent-pledge/action",
+          "data": "payout.offer"
+        },
+        {
+          "type": "agent-pledge/proof",
+          "data": "9fbfec02207457bbc28f545fb78ed5b213f305503ff90aebae77c642af5a6818"
+        }
+      ],
+      "uri": null,
+      "explorerUrl": "https://testnet.xrpl.org/transactions/F6F9C13D5F72E5A99CE23B5DD392602B9E9ED2D58FE127486199EAB0F9EF5629"
+    },
+    {
+      "hash": "A7DA8F81E9C9F8E0A67DD616292F3B2C73072C9868C424D36A794B18BF8569EF",
+      "kind": "helper_payout",
+      "step": "4. Photo and PIN release the NFTs",
+      "type": "NFTokenAcceptOffer",
+      "signer": "r37hDaqXGUL574V8y91XSoktYDpc9HpPjN",
+      "signerRole": "vault",
+      "destination": null,
+      "destinationRole": null,
+      "amount": null,
+      "deliveredAmount": null,
+      "boardAmount": "$5.50",
+      "nftId": "0009000051E6CA35EFA0073E1A0E033047455779DEB5BBFD4418FB140147867B",
+      "offerId": "6D98BEC3622A12E237EC563D0DFF7F78E26111F127824F5E6C3CFD3F4AED8F92",
+      "flags": 0,
+      "sequence": 21464766,
+      "fee": "12 drops",
+      "signingPubKey": "EDCFC2904B90E57C2F97DF53149A632EE40F10D81D2918B6B413F3376AF7093FB4",
+      "signature": "3645CCB634481007435358172A3E8E9196B98A9DD7D6A1C798BD0FF7E6D0950E4C5133690A62A781D0FB1FEC674D89F6D5120138925F26EF91111C8D124C720D",
+      "result": "tesSUCCESS",
+      "ledgerIndex": 21475199,
+      "closeTime": "2026-10-12T08:40:41Z",
+      "ctid": "C147AF7F000C0001",
+      "memos": [
+        {
+          "type": "agent-pledge/task",
+          "data": "task_tocrvmv90cv1ojpy"
+        },
+        {
+          "type": "agent-pledge/subtask",
+          "data": "sub_m1eefzkvud77hgws"
+        },
+        {
+          "type": "agent-pledge/action",
+          "data": "payout.accept"
+        },
+        {
+          "type": "agent-pledge/proof",
+          "data": "9fbfec02207457bbc28f545fb78ed5b213f305503ff90aebae77c642af5a6818"
+        }
+      ],
+      "uri": null,
+      "explorerUrl": "https://testnet.xrpl.org/transactions/A7DA8F81E9C9F8E0A67DD616292F3B2C73072C9868C424D36A794B18BF8569EF"
+    },
+    {
+      "hash": "FE62CF9C07C627646F0AD55938E1BC02B34FF51069B6DBD8D218218287A31C4C",
+      "kind": "subtask_nft_burn",
+      "step": "4. Photo and PIN release the NFTs",
+      "type": "NFTokenBurn",
+      "signer": "r37hDaqXGUL574V8y91XSoktYDpc9HpPjN",
+      "signerRole": "vault",
+      "destination": null,
+      "destinationRole": null,
+      "amount": null,
+      "deliveredAmount": null,
+      "boardAmount": null,
+      "nftId": "0009000051E6CA35EFA0073E1A0E033047455779DEB5BBFD4418FB140147867B",
+      "offerId": null,
+      "flags": 0,
+      "sequence": 21464767,
+      "fee": "12 drops",
+      "signingPubKey": "EDCFC2904B90E57C2F97DF53149A632EE40F10D81D2918B6B413F3376AF7093FB4",
+      "signature": "D89699890FA72A87E3936396D767A0B065C649D1B9B59AA73C868E31655E21B1501BB6F0A2B1CF31E24502D5B0C02C8B901651AB68968C0CA663B03647C7E205",
+      "result": "tesSUCCESS",
+      "ledgerIndex": 21475201,
+      "closeTime": "2026-10-12T08:40:50Z",
+      "ctid": "C147AF8100100001",
+      "memos": [
+        {
+          "type": "agent-pledge/task",
+          "data": "task_tocrvmv90cv1ojpy"
+        },
+        {
+          "type": "agent-pledge/subtask",
+          "data": "sub_m1eefzkvud77hgws"
+        },
+        {
+          "type": "agent-pledge/action",
+          "data": "nft.burn"
+        }
+      ],
+      "uri": null,
+      "explorerUrl": "https://testnet.xrpl.org/transactions/FE62CF9C07C627646F0AD55938E1BC02B34FF51069B6DBD8D218218287A31C4C"
+    },
+    {
+      "hash": "16F66D3C05F29888CBD6FF47FBA21EEF21F80D7524E962AA1E70C3BE55440DFD",
+      "kind": "agent_redeem_offer",
+      "step": "4. Photo and PIN release the NFTs",
+      "type": "NFTokenCreateOffer",
+      "signer": "rpRVQjEZW5a31V7imzBfng8yxTKPgQZFZg",
+      "signerRole": "local agent",
+      "destination": "r37hDaqXGUL574V8y91XSoktYDpc9HpPjN",
+      "destinationRole": "vault",
+      "amount": "8 USD (issuer r96NfRjhJrHyZBjNRepH2M7kVNdUVG71BT)",
+      "deliveredAmount": null,
+      "boardAmount": "$8.00",
+      "nftId": "0009000051E6CA35EFA0073E1A0E033047455779DEB5BBFDBAB6151101478675",
+      "offerId": "9890F3BF3AD1786D3EF98AD5881785BECE083F292419C162E01273EDC4CBBE42",
+      "flags": 1,
+      "sequence": 21464702,
+      "fee": "12 drops",
+      "signingPubKey": "ED6DCF671661492EC87DB60AE9C8BCB62673D49D4CD8AFA0B42C634C3EC0121DF0",
+      "signature": "79AAB0E31C8A5F51F9AF49BA48D08B909FF3917F267C77A47A5E4AADC5D9E99E9EB9D5E63CA2F9ADE62C87A3C86B1051575427132523600C731EBD1CD12C290F",
+      "result": "tesSUCCESS",
+      "ledgerIndex": 21475203,
+      "closeTime": "2026-10-12T08:41:00Z",
+      "ctid": "C147AF8300110001",
+      "memos": [
+        {
+          "type": "agent-pledge/task",
+          "data": "task_tocrvmv90cv1ojpy"
+        },
+        {
+          "type": "agent-pledge/action",
+          "data": "payout.offer"
+        }
+      ],
+      "uri": null,
+      "explorerUrl": "https://testnet.xrpl.org/transactions/16F66D3C05F29888CBD6FF47FBA21EEF21F80D7524E962AA1E70C3BE55440DFD"
+    },
+    {
+      "hash": "EEF998D589BC67ED1896F9A036BDF5BBFC10618E993846D48D14AE5689978B88",
+      "kind": "agent_payout",
+      "step": "4. Photo and PIN release the NFTs",
+      "type": "NFTokenAcceptOffer",
+      "signer": "r37hDaqXGUL574V8y91XSoktYDpc9HpPjN",
+      "signerRole": "vault",
+      "destination": null,
+      "destinationRole": null,
+      "amount": null,
+      "deliveredAmount": null,
+      "boardAmount": "$8.00",
+      "nftId": "0009000051E6CA35EFA0073E1A0E033047455779DEB5BBFDBAB6151101478675",
+      "offerId": "9890F3BF3AD1786D3EF98AD5881785BECE083F292419C162E01273EDC4CBBE42",
+      "flags": 0,
+      "sequence": 21464768,
+      "fee": "12 drops",
+      "signingPubKey": "EDCFC2904B90E57C2F97DF53149A632EE40F10D81D2918B6B413F3376AF7093FB4",
+      "signature": "2C7028E305EEDDE23633485A6C1295A9939D1359D469A21ADA7EDA69AD195E2E46C43D2BD4500D5588165FFF6AD0724065C5FDF6816678E596C6FFB76418E904",
+      "result": "tesSUCCESS",
+      "ledgerIndex": 21475205,
+      "closeTime": "2026-10-12T08:41:02Z",
+      "ctid": "C147AF8500060001",
+      "memos": [
+        {
+          "type": "agent-pledge/task",
+          "data": "task_tocrvmv90cv1ojpy"
+        },
+        {
+          "type": "agent-pledge/action",
+          "data": "payout.accept"
+        }
+      ],
+      "uri": null,
+      "explorerUrl": "https://testnet.xrpl.org/transactions/EEF998D589BC67ED1896F9A036BDF5BBFC10618E993846D48D14AE5689978B88"
+    },
+    {
+      "hash": "CD2DE5A40E3AB62814FEC6F6A6570FDAE7585B0F16F1C1C4F4534CE99E39ABA9",
+      "kind": "task_nft_burn",
+      "step": "4. Photo and PIN release the NFTs",
+      "type": "NFTokenBurn",
+      "signer": "r37hDaqXGUL574V8y91XSoktYDpc9HpPjN",
+      "signerRole": "vault",
+      "destination": null,
+      "destinationRole": null,
+      "amount": null,
+      "deliveredAmount": null,
+      "boardAmount": null,
+      "nftId": "0009000051E6CA35EFA0073E1A0E033047455779DEB5BBFDBAB6151101478675",
+      "offerId": null,
+      "flags": 0,
+      "sequence": 21464769,
+      "fee": "12 drops",
+      "signingPubKey": "EDCFC2904B90E57C2F97DF53149A632EE40F10D81D2918B6B413F3376AF7093FB4",
+      "signature": "5F154CFB4E70C276CB1F85FD293CB2A8C8EE3424A7711A1B7BD2B8DB56272F1EE8F053E2DDFD607E6446DCBE01E655387550F038487D9B1C752B0C12BF4ACC03",
+      "result": "tesSUCCESS",
+      "ledgerIndex": 21475207,
+      "closeTime": "2026-10-12T08:41:11Z",
+      "ctid": "C147AF8700080001",
+      "memos": [
+        {
+          "type": "agent-pledge/task",
+          "data": "task_tocrvmv90cv1ojpy"
+        },
+        {
+          "type": "agent-pledge/action",
+          "data": "nft.burn"
+        }
+      ],
+      "uri": null,
+      "explorerUrl": "https://testnet.xrpl.org/transactions/CD2DE5A40E3AB62814FEC6F6A6570FDAE7585B0F16F1C1C4F4534CE99E39ABA9"
+    }
+  ],
+  "nft_uri_data": {
+    "task_tocrvmv90cv1ojpy": {
+      "id": "task_tocrvmv90cv1ojpy",
+      "kind": "task",
+      "description": "Deliver me a peach-flavored Ghost energy drink",
+      "place": "1234 Main St, Berkeley CA",
+      "price": "7.00",
+      "deadline": "2026-10-12T12:31:15.591Z",
+      "status": "done",
+      "nft_id": "0009000051E6CA35EFA0073E1A0E033047455779DEB5BBFDBAB6151101478675",
+      "parent_task_id": null,
+      "parent_nft_id": null,
+      "board_url": "https://www.yopledge.site/?task=task_tocrvmv90cv1ojpy"
+    },
+    "sub_m1eefzkvud77hgws": {
+      "id": "sub_m1eefzkvud77hgws",
+      "kind": "subtask",
+      "description": "Deliver me a peach-flavored Ghost energy drink",
+      "place": "1234 Main St, Berkeley CA",
+      "price": "5.50",
+      "deadline": "2026-10-12T12:31:15.591Z",
+      "status": "done",
+      "nft_id": "0009000051E6CA35EFA0073E1A0E033047455779DEB5BBFD4418FB140147867B",
+      "parent_task_id": "task_tocrvmv90cv1ojpy",
+      "parent_nft_id": "0009000051E6CA35EFA0073E1A0E033047455779DEB5BBFDBAB6151101478675",
+      "board_url": "https://www.yopledge.site/?task=task_tocrvmv90cv1ojpy"
+    }
+  },
+  "accounts": [
+    {
+      "role": "vault",
+      "address": "r37hDaqXGUL574V8y91XSoktYDpc9HpPjN",
+      "xrp": "99.998788",
+      "tokens": [
+        "77.5 USD (issuer r96NfRjhJrHyZBjNRepH2M7kVNdUVG71BT)"
+      ],
+      "nfts": [
+        "0009000051E6CA35EFA0073E1A0E033047455779DEB5BBFD164D591601478679",
+        "0009000051E6CA35EFA0073E1A0E033047455779DEB5BBFD2D332A170147867A",
+        "0009000051E6CA35EFA0073E1A0E033047455779DEB5BBFDD19BE61301478676",
+        "0009000051E6CA35EFA0073E1A0E033047455779DEB5BBFDE881B71001478677",
+        "0009000051E6CA35EFA0073E1A0E033047455779DEB5BBFDFF67881101478678"
+      ],
+      "explorerUrl": "https://testnet.xrpl.org/accounts/r37hDaqXGUL574V8y91XSoktYDpc9HpPjN"
+    },
+    {
+      "role": "local agent",
+      "address": "rpRVQjEZW5a31V7imzBfng8yxTKPgQZFZg",
+      "xrp": "99.999592",
+      "tokens": [
+        "60 USD (issuer r96NfRjhJrHyZBjNRepH2M7kVNdUVG71BT)"
+      ],
+      "nfts": [
+        "0009000051E6CA35EFA0073E1A0E033047455779DEB5BBFD4839000A01478670",
+        "0009000051E6CA35EFA0073E1A0E033047455779DEB5BBFD5F1ED10D01478671",
+        "0009000051E6CA35EFA0073E1A0E033047455779DEB5BBFD7604A20C01478672",
+        "0009000051E6CA35EFA0073E1A0E033047455779DEB5BBFD8CEA730F01478673",
+        "0009000051E6CA35EFA0073E1A0E033047455779DEB5BBFDA3D0440E01478674"
+      ],
+      "explorerUrl": "https://testnet.xrpl.org/accounts/rpRVQjEZW5a31V7imzBfng8yxTKPgQZFZg"
+    },
+    {
+      "role": "treasury",
+      "address": "rDL6eSZQm3RMxdNQCEQtbKtjGNFN3K8e8W",
+      "xrp": "99.999796",
+      "tokens": [
+        "190 USD (issuer r96NfRjhJrHyZBjNRepH2M7kVNdUVG71BT)"
+      ],
+      "nfts": [],
+      "explorerUrl": "https://testnet.xrpl.org/accounts/rDL6eSZQm3RMxdNQCEQtbKtjGNFN3K8e8W"
+    },
+    {
+      "role": "requester",
+      "address": "rBSSq1ZKWbjhF5wxzYWzFVygiWfyQqLxeg",
+      "xrp": "99.999976",
+      "tokens": [
+        "0 USD (issuer r96NfRjhJrHyZBjNRepH2M7kVNdUVG71BT)"
+      ],
+      "nfts": [],
+      "explorerUrl": "https://testnet.xrpl.org/accounts/rBSSq1ZKWbjhF5wxzYWzFVygiWfyQqLxeg"
+    },
+    {
+      "role": "helper",
+      "address": "rNeoVmPNgr1LQM23q95RaXrN4Hr1E2PwSn",
+      "xrp": "99.999964",
+      "tokens": [
+        "5.5 USD (issuer r96NfRjhJrHyZBjNRepH2M7kVNdUVG71BT)"
+      ],
+      "nfts": [],
+      "explorerUrl": "https://testnet.xrpl.org/accounts/rNeoVmPNgr1LQM23q95RaXrN4Hr1E2PwSn"
+    }
+  ],
+  "media": [
+    {
+      "label": "Helper photo",
+      "file": "sub_m1eefzkvud77hgws-photo.jpg",
+      "url": "https://consideration-auditor-equations-think.trycloudflare.com/media/med_d8ekf39v12nhz08q"
+    },
+    {
+      "label": "Yik Yak post",
+      "file": "sub_m1eefzkvud77hgws-yikyak.jpg",
+      "url": "https://consideration-auditor-equations-think.trycloudflare.com/media/med_1iovel13uci9v3sf"
+    }
+  ]
+}
