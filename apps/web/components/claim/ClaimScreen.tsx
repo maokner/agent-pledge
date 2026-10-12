@@ -171,10 +171,11 @@ function ClaimFlow({
       panel = <ClaimClosed reason={step} />;
   }
 
-  // Phones: one column, the ledger always right under the sub-task; the outcome
-  // first once there is one. Desktop: the sub-task on the left; the progress,
-  // the step and the ledger on the right. The right column's wrapper is
-  // `contents` on phones, so its two blocks take part in the phone ordering.
+  // Phones: one column, the sub-task, then the step (the Claim button or the
+  // photo form), then the ledger; the outcome first once there is one. Desktop:
+  // the sub-task on the left; the progress, the step and the ledger on the
+  // right. The right column's wrapper is `contents` on phones, so its two
+  // blocks take part in the phone ordering.
   const outcomeFirst = OUTCOME_FIRST.includes(step);
   return (
     <div className={COLUMNS}>
@@ -185,16 +186,13 @@ function ClaimFlow({
       </div>
       <div className="contents lg:sticky lg:top-24 lg:flex lg:flex-col lg:gap-5">
         <div
-          className={cn("flex flex-col gap-5 lg:order-none", outcomeFirst ? "order-1" : "order-3")}
+          className={cn("flex flex-col gap-5 lg:order-none", outcomeFirst ? "order-1" : "order-2")}
         >
           <StepIndicator step={step} proof={view.proof} />
           {/* Keyed by step, so each new step fades up once. */}
           <Step key={step}>{panel}</Step>
         </div>
-        <LedgerPanel
-          view={view}
-          className={cn("lg:order-none", outcomeFirst ? "order-3" : "order-2")}
-        />
+        <LedgerPanel view={view} className="order-3 lg:order-none" />
       </div>
     </div>
   );

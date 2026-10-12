@@ -148,4 +148,5 @@ All buttons use `transition-all duration-200`.
 - All text meets WCAG AA contrast.
 - Focus rings are visible.
 - Nothing flashes.
-- **No crypto words** (see DIRECTION.md): no wallet, NFT, XRPL, XRP Ledger, RLUSD, ledger or token.
+- **Few crypto words** (see DIRECTION.md): no wallet, RLUSD or token.
+  "NFT", "XRPL" and "ledger" are allowed only in the claim page's "On the ledger" panel, where the helper sees the NFT and the payment as proof.
