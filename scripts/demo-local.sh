@@ -254,7 +254,8 @@ prepare_env_files() {
   env_set "$AGENT_ENV" SERVER_URL "$local_url"
   env_set "$AGENT_ENV" SERVER_WS_URL "ws://localhost:$PORT/ws/agent"
   if [ "$TUNNEL" = 1 ]; then
-    env_set "$VOICE_ENV" PUBLIC_BASE_URL "$(base_url)"
+    # The phone agent's tools call the API, so this is the tunnel even when the pages are hosted elsewhere.
+    env_set "$VOICE_ENV" PUBLIC_BASE_URL "$PUBLIC_URL"
   fi
   ok "PUBLIC_API_URL -> $PUBLIC_URL"
   ok "PUBLIC_BASE_URL (claim links, board link) -> $(base_url); CORS_ORIGINS -> $cors"
@@ -576,7 +577,7 @@ provision_voice() {
   fi
   log="$(log_file provision)"
   # shellcheck disable=SC2086
-  (cd "$ROOT/apps/voice-agent" && env PUBLIC_BASE_URL="$(base_url)" pnpm provision $args) >"$log" 2>&1 </dev/null || rc=$?
+  (cd "$ROOT/apps/voice-agent" && env PUBLIC_BASE_URL="$PUBLIC_URL" pnpm provision $args) >"$log" 2>&1 </dev/null || rc=$?
   sed 's/^/    | /' "$log"
   [ "$rc" = 0 ] || die "Phone agent provisioning failed (exit $rc). Log: $log" \
     "The server and agent are still running. Fix it and run: cd apps/voice-agent && pnpm provision"
