@@ -16,6 +16,8 @@ import type { Money } from "./money";
 export interface TxContext {
   taskId?: string;
   subtaskId?: string;
+  /** sha256 (hex) of the proof photo; written to the `agent-pledge/proof` memo of payout transactions. */
+  proofSha256?: string;
 }
 
 export interface TxEvent {

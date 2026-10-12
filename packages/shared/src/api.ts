@@ -171,8 +171,23 @@ export type ClaimSubtaskResponse = z.infer<typeof ClaimSubtaskResponse>;
  */
 export const PhotoFields = z.object({ note: z.string().max(280).optional() });
 export type PhotoFields = z.infer<typeof PhotoFields>;
-export const PhotoResponse = z.object({ claim: ClaimView, media: MediaView.nullable() });
+export const PhotoResponse = z.object({
+  claim: ClaimView,
+  media: MediaView.nullable(),
+  /** Set when the photo paid the helper (claim.proof === "photo" and a file was sent). Null in PIN mode or for a note alone. */
+  payout: z.object({ amount: Money, tx_hash: z.string(), explorer_url: z.string() }).nullable(),
+});
 export type PhotoResponse = z.infer<typeof PhotoResponse>;
+
+/**
+ * POST /claim/:code/pay (helper token): pays the helper for a sub-task that already has a proof photo.
+ * Idempotent; a retry after a ledger error or a lost response returns the same payout. 409 conflict without a photo.
+ */
+export const PayResponse = z.object({
+  claim: ClaimView,
+  payout: z.object({ amount: Money, tx_hash: z.string(), explorer_url: z.string() }),
+});
+export type PayResponse = z.infer<typeof PayResponse>;
 
 /** POST /claim/:code/pin */
 export const PinRequest = z.object({ pin: z.string().regex(PIN_REGEX) });

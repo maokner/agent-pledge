@@ -155,6 +155,29 @@ export const ClaimView = z.object({
   photo: MediaView.nullable(),
   pin: PinState,
   payout: z.object({ amount: Money, tx_hash: z.string(), explorer_url: z.string() }).nullable(),
+  /**
+   * How this sub-task gets paid (server config PROOF_MODE, default "photo"):
+   * "photo" = uploading the proof photo pays the helper; "pin" = the requester's PIN does.
+   */
+  proof: z.enum(["photo", "pin"]),
+  /** sha256 (hex) of the stored proof photo. The payout transactions carry it in the `agent-pledge/proof` memo. */
+  proof_sha256: z.string().nullable(),
+  /** The sub-task NFT: whoever holds it has the only right to do the task and to the payout. Null until minted. */
+  nft: z
+    .object({
+      id: z.string(),
+      explorer_url: z.string(),
+      /** vault = open (nobody has it yet), you = this phone claimed it, helper = another phone did, burned = closed */
+      holder: z.enum(["vault", "you", "helper", "burned"]),
+      /** The parent task NFT (PRD 5.3), null for a task. */
+      parent_nft_id: z.string().nullable(),
+      parent_explorer_url: z.string().nullable(),
+    })
+    .nullable(),
+  /** The money for this sub-task, held by the vault until the proof is in. */
+  escrow: z.object({ amount: Money, vault_address: z.string(), vault_explorer_url: z.string() }),
+  /** Every ledger transaction of this sub-task, oldest first: mint, offer, claim, payout offer, payout, burn. */
+  transactions: z.array(TxView),
 });
 export type ClaimView = z.infer<typeof ClaimView>;
 

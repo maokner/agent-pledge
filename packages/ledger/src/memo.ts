@@ -12,6 +12,8 @@ export const MEMO_TYPES = {
   parentNft: "agent-pledge/parent-nft",
   /** What the transaction does. Values are the shared TxKind strings, for example "refund". */
   action: "agent-pledge/action",
+  /** sha256 (hex) of the proof photo that released a payout. On the holder's payout offer and the vault's accept. */
+  proof: "agent-pledge/proof",
 } as const;
 
 /** MemoType of the task memo. */
